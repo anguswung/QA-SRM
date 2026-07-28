@@ -6,7 +6,7 @@
   <div class="card-body">
     <form method="post" enctype="multipart/form-data">
       <?php
-      $companyKeys = ['company_name' => '公司名称', 'company_phone' => '公司电话', 'company_address' => '公司地址', 'system_name' => '系统名称'];
+      $companyKeys = ['company_name' => '公司名称', 'company_short_name' => '公司简称', 'company_phone' => '公司电话', 'company_address' => '公司地址', 'system_name' => '系统名称'];
       foreach ($companyKeys as $ck => $cl):
         $val = '';
         foreach ($configs as $c) { if ($c['config_key'] === $ck) { $val = $c['config_value']; break; } }
@@ -47,7 +47,7 @@
         <thead><tr><th>配置键</th><th>配置值</th><th>说明</th></tr></thead>
         <tbody>
           <?php foreach ($configs as $c):
-            if (in_array($c['config_key'], ['company_name','company_phone','company_address','company_logo','system_name'])) continue;
+            if (in_array($c['config_key'], ['company_name','company_short_name','company_phone','company_address','company_logo','system_name'])) continue;
           ?>
           <tr>
             <td><?=h($c['config_key'])?></td>

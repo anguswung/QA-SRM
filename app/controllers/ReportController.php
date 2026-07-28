@@ -23,12 +23,6 @@ class ReportController extends Controller {
             $comment = $_POST['audit_comment'] ?? '';
             if ($id && $status) {
                 $db->execute("UPDATE test_report SET audit_status=?, audit_user=?, audit_time=datetime('now','localtime'), audit_comment=? WHERE id=?", [$status, $_SESSION['realname'] ?? '', $comment, $id]);
-                if ($status === 'approved') {
-                    $r = $db->single("SELECT material_id FROM test_report WHERE id=?", [$id], true);
-                    if ($r && $r['material_id']) {
-                        $this->syncMaterialStatus($r['material_id']);
-                    }
-                }
                 logOp('audit', 'report', $id, "报告审核 $status - $comment");
                 flash('success', '审核完成');
             }
@@ -224,10 +218,5 @@ class ReportController extends Controller {
             flash('success', '批量保存完毕');
         }
         header('Location: /report/elements?report_id=' . $reportId); exit;
-    }
-    private function syncMaterialStatus($materialId) {
-        $db = DB::getInstance();
-        $hasOverLimit = $db->single("SELECT COUNT(*) FROM element_content ec JOIN test_report tr ON ec.report_id=tr.id WHERE tr.material_id=? AND tr.audit_status='approved' AND ec.is_over_limit=1", [$materialId]);
-        $db->execute("UPDATE material SET env_status=? WHERE id=?", [$hasOverLimit ? 'non_compliant' : 'compliant', $materialId]);
     }
 }

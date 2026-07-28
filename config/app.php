@@ -56,6 +56,8 @@ return [
     'poppler' => [
         'pdftotext' => dirname(__DIR__) . '/' . env('POPPLER_PDFTEXT', './poppler/poppler-26.02.0/Library/bin/pdftotext.exe'),
         'pdfinfo'   => dirname(__DIR__) . '/' . env('POPPLER_PDFINFO', './poppler/poppler-26.02.0/Library/bin/pdfinfo.exe'),
+        'pdftoppm'  => dirname(__DIR__) . '/' . env('POPPLER_PDFPPM', './poppler/poppler-26.02.0/Library/bin/pdftoppm.exe'),
+        'tesseract' => dirname(__DIR__) . '/' . env('TESSERACT_PATH', './tesseract/tesseract.exe'),
     ],
     'ocr' => [
         'api_key' => env('OCR_API_KEY', ''),

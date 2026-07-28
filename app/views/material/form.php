@@ -31,15 +31,25 @@
             <div class="form-row">
               <div class="form-group col-md-4">
                 <label>物料编号 <?=!$isHM ? '<span class="text-danger">*</span>' : ''?></label>
-                <input type="text" name="material_no" class="form-control" value="<?=h($item['material_no'] ?? '')?>" <?=!$isHM ? 'required' : ''?> placeholder="<?=$isHM ? '均质材料无需编号' : ''?>">
+                <div class="input-group">
+                  <?php
+                  $companyShort = '';
+                  foreach ($configs as $c) { if ($c['config_key'] === 'company_short_name') { $companyShort = $c['config_value']; break; } }
+                  ?>
+                  <?php if ($companyShort): ?>
+                  <div class="input-group-prepend"><span class="input-group-text"><?=h($companyShort)?></span></div>
+                  <?php endif; ?>
+                  <input type="text" name="material_no" class="form-control" value="<?=h($item['material_no'] ?? '')?>" <?=!$isHM ? 'required' : ''?> placeholder="<?=$isHM ? '均质材料无需编号' : ''?>" <?php if (!empty($isImported)): ?>readonly title="批量导入的物料编号不可修改"<?php endif; ?>>
+                </div>
+                <?php if (!empty($isImported)): ?><small class="text-muted">批量导入的物料编号不可修改</small><?php endif; ?>
               </div>
               <div class="form-group col-md-4">
                 <label>制造商料号(MPN)</label>
                 <input type="text" name="mpn" class="form-control" value="<?=h($item['mpn'] ?? '')?>">
               </div>
               <div class="form-group col-md-4">
-                <label>版本</label>
-                <input type="text" name="material_version" class="form-control" value="<?=h($item['material_version'] ?? 'V1.0')?>">
+                <label>单重(g)</label>
+                <input type="number" name="unit_weight" class="form-control" step="0.001" value="<?=h($item['unit_weight'] ?? '')?>" id="unitWeight">
               </div>
             </div>
             <div class="form-row">
@@ -64,20 +74,6 @@
                 <?php endif; ?>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group col-md-4">
-                <label>单位重量(g)</label>
-                <input type="number" name="unit_weight" class="form-control" step="0.001" value="<?=h($item['unit_weight'] ?? '')?>" id="unitWeight">
-              </div>
-              <div class="form-group col-md-4">
-                <label>单位</label>
-                <select name="weight_unit" class="form-control">
-                  <option value="g" <?=($item['weight_unit'] ?? 'g') === 'g' ? 'selected' : ''?>>g</option>
-                  <option value="M" <?=($item['weight_unit'] ?? '') === 'M' ? 'selected' : ''?>>M</option>
-                  <option value="Pcs" <?=($item['weight_unit'] ?? '') === 'Pcs' ? 'selected' : ''?>>Pcs</option>
-                </select>
-              </div>
-            </div>
             <div class="text-right mt-3">
               <button type="submit" class="btn btn-primary px-4" onclick="document.getElementById('formStep').value=2">下一步<i class="fas fa-arrow-right ml-1"></i></button>
             </div>
@@ -86,25 +82,15 @@
           <!-- 步骤2: 成分组成 -->
           <div class="step-panel <?=($currentStep ?? 1) !== 2 ? 'd-none' : ''?>" id="step2">
             <div class="border rounded p-3 bg-light">
-              <h6 class="mb-3"><i class="fas fa-flask text-success mr-1"></i> 成分组成
-                <small class="text-muted ml-2">
-                  <i class="fas fa-download"></i> <a href="/material?action=mcd_template" target="_blank">下载MCD模板</a>
-                </small>
-              </h6>
-              <div class="mb-3">
-                <div class="custom-file" style="max-width:400px">
-                  <input type="file" name="mcd_file" class="custom-file-input" accept=".xls,.xlsx" id="mcdFileInput">
-                  <label class="custom-file-label" for="mcdFileInput">上传MCD文件(Excel)</label>
-                </div>
-                <small class="text-muted ml-2" id="mcdStatus"></small>
-              </div>
+              <h6 class="mb-3"><i class="fas fa-flask text-success mr-1"></i> 成分组成</h6>
               <div class="table-responsive">
                 <table class="table table-bordered table-sm mb-2" id="compositionTable">
                   <thead class="thead-light">
                     <tr>
-                      <th style="width:35%">均质材料</th>
-                      <th style="width:18%">供应商</th>
-                      <th style="width:18%">用量 <small class="text-muted" id="weightUnitLabel">(g)</small></th>
+                      <th style="width:30%">均质材料</th>
+                      <th style="width:15%">供应商</th>
+                      <th style="width:15%">用量 <small class="text-muted">(%)</small></th>
+                      <th style="width:15%">重量 <small class="text-muted">(g)</small></th>
                       <th style="width:10%">操作</th>
                     </tr>
                   </thead>
@@ -112,16 +98,18 @@
                     <?php if (!empty($composition)): foreach ($composition as $c):
                       $selHm = array_filter($hmMaterials, fn($h) => $h['id'] == $c['substance_id']);
                       $selHm = reset($selHm);
+                      $wt = round(($item['unit_weight'] ?? 0) * ($c['min_percentage'] ?? 0) / 100, 4);
                     ?>
                     <tr data-hmid="<?=$c['substance_id']?>">
                       <td><span class="font-weight-bold"><?=h($selHm['material_name'] ?? '')?></span><input type="hidden" name="hm_id[]" value="<?=$c['substance_id']?>"></td>
                       <td class="text-muted small"><?=h(($selHm['supplier_name'] ?? '') ?: (DB::getInstance()->single("SELECT name FROM supplier WHERE id=?", [$selHm['supplier_id'] ?? 2]) ?: '第三方'))?></td>
-                      <td><input type="number" name="min_percentage[]" class="form-control form-control-sm" step="0.001" value="<?=h($c['min_percentage'])?>"></td>
+                      <td><input type="number" name="min_percentage[]" class="form-control form-control-sm" step="0.01" min="0" max="100" value="<?=h($c['min_percentage'])?>" oninput="calcWeight(this);updateQuantityTotal()"></td>
+                      <td class="comp-weight"><?=$wt?></td>
                       <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
                     </tr>
                     <?php endforeach; else: ?>
                     <tr class="empty-row">
-                      <td colspan="4" class="text-center text-muted py-3">
+                      <td colspan="5" class="text-center text-muted py-3">
                         <i class="fas fa-plus-circle mr-1"></i> 点击下方按钮从均质材料库中添加成分                      </td>
                     </tr>
                     <?php endif; ?>
@@ -133,9 +121,9 @@
                   <i class="fas fa-plus"></i> 从库中选择均质材料
                 </button>
                 <div class="text-right">
-                  <small class="text-muted">累计用量: </small>
-                  <strong><span id="totalQuantity">0</span></strong>
-                  <small class="text-muted"> / <span id="totalWeightRef"><?=h($item['weight_mg'] ?? 0)?></span> g</small>
+                  <small class="text-muted">累计占比: </small>
+                  <strong id="totalQuantity" class="<?=abs(0) < 0.01 ? '' : 'text-danger'?>">0%</strong>
+                  <small class="text-muted"> / 100%</small>
                   <div class="progress" style="height:4px;width:120px;display:inline-block;vertical-align:middle;margin-left:8px">
                     <div class="progress-bar" id="quantityProgress" role="progressbar" style="width:0%"></div>
                   </div>
@@ -144,7 +132,7 @@
             </div>
             <div class="text-right mt-3">
               <button type="button" class="btn btn-outline-secondary px-4 mr-2" onclick="location.href='?action=edit&id=<?=$id?>&step=1'"><i class="fas fa-arrow-left mr-1"></i> 上一步</button>
-              <button type="submit" class="btn btn-primary px-4" onclick="var t=parseFloat(document.getElementById('totalQuantity').textContent)||0,m=parseFloat(document.querySelector('[name=weight_mg]').value)||0;if(t>m&&m>0){event.preventDefault();toastr.error('用量合计'+t.toFixed(3)+'超出总重量'+m.toFixed(3)+'，请调整')}else{document.getElementById('formStep').value=3}">提交 <i class="fas fa-check ml-1"></i></button>
+              <button type="submit" class="btn btn-primary px-4" onclick="document.getElementById('formStep').value=3">提交 <i class="fas fa-check ml-1"></i></button>
             </div>
           </div>
 
@@ -160,8 +148,8 @@
                 <tr><td style="width:100px">名称</td><td id="s_name"></td></tr>
                 <tr><td>编号</td><td id="s_no"></td></tr>
                 <tr><td>性质</td><td id="s_spec"></td></tr>
-                <tr><td>供应商</td><td id="s_supplier"></td></tr>
-                <tr><td>成分数</td><td id="s_comp"></td></tr>
+                <tr><td>供应商</td><td><?=h($supplierName ?? '-')?></td></tr>
+                <tr><td>成分数</td><td><?=count($composition ?? [])?> 项</td></tr>
               </table>
             </div>
             <div class="text-right mt-3">
@@ -184,13 +172,14 @@
       <div class="modal-body">
         <input type="text" class="form-control mb-3" id="hmFilter" placeholder="搜索均质材料名称..." onkeyup="filterHM(this.value)">
         <table class="table table-hover table-sm mb-0" id="hmPickerTable">
-          <thead><tr><th>名称</th><th>供应商</th><th style="width:80px">操作</th></tr></thead>
+          <thead><tr><th>名称</th><th>供应商</th><th>重量(mg)</th><th style="width:80px">操作</th></tr></thead>
           <tbody>
             <?php foreach ($hmMaterials as $hm): $spName = $hm['supplier_name'] ?: (DB::getInstance()->single("SELECT name FROM supplier WHERE id=?", [$hm['supplier_id']]) ?: '第三方'); ?>
             <tr data-hmid="<?=$hm['id']?>" data-name="<?=h($hm['material_name'])?>" data-supplier="<?=h($spName)?>">
               <td class="font-weight-bold"><?=h($hm['material_name'])?></td>
               <td class="small"><?=h($spName)?></td>
-              <td><button class="btn btn-sm btn-success" onclick="pickHM(<?=$hm['id']?>,'<?=h(addslashes($hm['material_name']))?>','', '<?=h(addslashes($spName))?>')">选择</button></td>
+              <td class="small"><?=h($hm['weight_mg'] ?? 0)?></td>
+              <td><button class="btn btn-sm btn-success" onclick="pickHM(<?=$hm['id']?>,'<?=h(addslashes($hm['material_name']))?>','', '<?=h(addslashes($spName))?>', <?=$hm['weight_mg'] ?? 0?>)">选择</button></td>
             </tr>
             <?php endforeach; ?>
           </tbody>
@@ -210,12 +199,11 @@ document.querySelectorAll('#stepIndicator li').forEach(function(el) {
   el.classList.toggle('done', s < currentStep);
 });
 if (currentStep === 3) {
-  var map = {s_name:'material_name', s_no:'material_no', s_spec:'spec', s_supplier:'supplier_id', s_comp:null};
+  var map = {s_name:'material_name', s_no:'material_no', s_spec:'spec'};
   for (var id in map) {
     var el = document.getElementById(id);
     if (!el) continue;
     var name = map[id];
-    if (!name) { el.textContent = document.querySelectorAll('#compositionTable tbody tr:not(.empty-row)').length + ' 项'; continue; }
     var input = document.querySelector('[name="' + name + '"]');
     if (!input) continue;
     if (input.tagName === 'SELECT') {
@@ -227,31 +215,30 @@ if (currentStep === 3) {
 }
 if (currentStep === 2) { setTimeout(updateQuantityTotal, 100); }
 function updateQuantityTotal() {
-  var total = 0, maxWt = parseFloat(document.querySelector('[name="weight_mg"]').value) || 0;
+  var total = 0;
   document.querySelectorAll('#compositionTable tbody tr:not(.empty-row) [name="min_percentage[]"]').forEach(function(inp) {
     total += parseFloat(inp.value) || 0;
   });
-  document.getElementById('totalQuantity').textContent = total.toFixed(3);
-  var pct = maxWt > 0 ? Math.min(total / maxWt * 100, 100) : 0;
+  var totalEl = document.getElementById('totalQuantity');
+  totalEl.textContent = total.toFixed(2) + '%';
+  totalEl.className = 'font-weight-bold ' + (Math.abs(total - 100) < 0.01 ? 'text-success' : (total > 100 ? 'text-danger' : ''));
   var bar = document.getElementById('quantityProgress');
+  var pct = Math.min(total, 100);
   bar.style.width = pct + '%';
-  bar.className = 'progress-bar ' + (pct > 100 ? 'bg-danger' : (pct > 90 ? 'bg-warning' : 'bg-success'));
-  if (total > maxWt && maxWt > 0) {
-    document.getElementById('totalQuantity').className = 'text-danger font-weight-bold';
-  } else {
-    document.getElementById('totalQuantity').className = '';
-  }
+  bar.className = 'progress-bar ' + (total > 100 ? 'bg-danger' : (Math.abs(total - 100) < 0.01 ? 'bg-success' : 'bg-warning'));
 }
 document.getElementById('compositionTable').addEventListener('input', function(e) {
   if (e.target && e.target.name === 'min_percentage[]') updateQuantityTotal();
 });
-function pickHM(id, name, code, supplier) {
+function pickHM(id, name, code, supplier, weightMg) {
   var exists = document.querySelector('#compositionTable tbody tr[data-hmid="' + id + '"]');
   if (exists) { toastr.warning('该均质材料已添加'); return; }
+  var unitWt = parseFloat(document.querySelector('[name="unit_weight"]')?.value) || 0;
   var html = '<tr data-hmid="' + id + '">';
   html += '<td><span class="font-weight-bold">' + name + '</span><input type="hidden" name="hm_id[]" value="' + id + '"></td>';
   html += '<td class="text-muted small">' + (supplier || '第三方') + '</td>';
-  html += '<td><input type="number" name="min_percentage[]" class="form-control form-control-sm" step="0.001" placeholder="用量" oninput="updateQuantityTotal()"></td>';
+  html += '<td><input type="number" name="min_percentage[]" class="form-control form-control-sm" step="0.01" min="0" max="100" placeholder="%" oninput="calcWeight(this);updateQuantityTotal()"></td>';
+  html += '<td class="comp-weight">0</td>';
   html += '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'tr\').remove();updateQuantityTotal()"><i class="fas fa-trash"></i></button></td>';
   html += '</tr>';
   var $tbody = $('#compositionTable tbody');
@@ -259,6 +246,12 @@ function pickHM(id, name, code, supplier) {
   $tbody.append(html);
   $('#hmPickerModal').modal('hide');
   setTimeout(updateQuantityTotal, 50);
+}
+function calcWeight(inp) {
+  var unitWt = parseFloat(document.querySelector('[name="unit_weight"]')?.value) || 0;
+  var pct = parseFloat(inp.value) || 0;
+  var wt = (unitWt * pct / 100).toFixed(4);
+  inp.closest('tr').querySelector('.comp-weight').textContent = wt;
 }
 function filterHM(val) {
   document.querySelectorAll('#hmPickerTable tbody tr').forEach(function(r) {

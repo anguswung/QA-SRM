@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['file']['tmp_name'])
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
     if ($ext === 'pdf') {
-        // Try poppler pdftotext first, then smalot fallback
+        // Try poppler pdftotext first, then smalot fallback, then Tesseract OCR
         $text = '';
         $pdftotext = $config['poppler']['pdftotext'] ?? 'pdftotext';
         if (file_exists($pdftotext)) {
@@ -42,7 +42,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['file']['tmp_name'])
                 $pdf = $parser->parseFile($file['tmp_name']);
                 $text = $pdf->getText();
             } catch (Exception $e) {
-                $result['message'] = 'PDF解析失败: ' . $e->getMessage();
+                // Ignore, will try Tesseract next
+            }
+        }
+
+        if (empty($text)) {
+            // Fallback to Tesseract OCR (for scanned PDFs)
+            $tesseract = $config['poppler']['tesseract'] ?? '';
+            if ($tesseract && file_exists($tesseract)) {
+                $tmpDir = sys_get_temp_dir() . '/tesseract_' . md5($file['name']);
+                if (!is_dir($tmpDir)) mkdir($tmpDir, 0755, true);
+                // Convert PDF to images using poppler pdftoppm
+                $pdftoppm = $config['poppler']['pdftoppm'] ?? '';
+                if ($pdftoppm && file_exists($pdftoppm)) {
+                    $cmd = '"' . $pdftoppm . '" -png -r 300 "' . $file['tmp_name'] . '" "' . $tmpDir . '/page"';
+                    exec($cmd . ' 2>&1', $output, $exitCode);
+                    if ($exitCode === 0) {
+                        $images = glob($tmpDir . '/page*.png');
+                        sort($images);
+                        foreach ($images as $img) {
+                            $txtFile = $img . '.txt';
+                            $cmd = '"' . $tesseract . '" "' . $img . '" "' . substr($txtFile, 0, -4) . '" -l chi_sim+eng';
+                            exec($cmd . ' 2>&1', $output, $exitCode);
+                            if ($exitCode === 0 && file_exists($txtFile)) {
+                                $text .= file_get_contents($txtFile) . "\n";
+                                @unlink($txtFile);
+                            }
+                            @unlink($img);
+                        }
+                    }
+                }
+                // Cleanup
+                @rmdir($tmpDir);
             }
         }
 

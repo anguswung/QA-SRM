@@ -63,14 +63,16 @@
 </div>
 <div class="card mt-0">
   <div class="card-body p-0">
+    <div class="table-responsive">
     <table class="table table-hover datatable mb-0" data-options='{"order":[[0,"desc"]]}'>
       <thead class="thead-light">
         <tr>
+          <?php if (isSupplier()): ?><th width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th><?php endif; ?>
           <th width="50">ID</th>
-          <th width="150">编号</th>
+          <th width="150"><?php $cs=''; foreach($configs as $c){if($c['config_key']==='company_short_name'){$cs=$c['config_value'];break;}} echo h($cs.'物料编号'); ?></th>
           <th>名称</th>
           <th>供应商</th>
-          <th width="80">单位</th>
+          <th width="80">单重(g)</th>
           <th width="100">环保状态</th>
           <th width="100">审核</th>
           <th width="120">操作</th>
@@ -79,33 +81,44 @@
       <tbody>
         <?php foreach ($materials as $m): ?>
         <tr>
+          <?php if (isSupplier()): ?><td><input type="checkbox" class="mat-check" value="<?=$m['id']?>" <?=in_array($m['audit_status'], ['N','R']) ? '' : 'disabled'?>></td><?php endif; ?>
           <td class="text-muted"><?=h($m['id'])?></td>
           <td><?=h($m['material_no'])?></td>
           <td>
             <a href="/material?action=detail&id=<?=$m['id']?>" class="font-weight-bold"><?=h($m['material_name'])?></a>
           </td>
           <td><small><?=h($m['supplier_name'] ? ($m['supplier_name_short'] ?? $m['supplier_name']) : '-')?></small></td>
-          <td><span class="badge badge-soft-secondary"><?=h($m['weight_unit'] ?? 'g')?></span></td>
+          <td><?=h($m['unit_weight'] ?? 0)?> g</td>
           <td><?=statusBadge($m['env_status'])?></td>
           <td class="text-center"><?=statusBadge($m['audit_status'])?></td>
           <td>
             <div class="btn-group btn-group-sm">
               <a href="/material?action=detail&id=<?=$m['id']?>" class="btn btn-outline-info" title="查看"><i class="fas fa-eye"></i></a>
               <?php if (can('material.edit')): ?><a href="/material?action=edit&id=<?=$m['id']?>" class="btn btn-outline-primary" title="编辑"><i class="fas fa-pen"></i></a><?php endif; ?>
+              <?php if (isSupplier() && in_array($m['audit_status'], ['N','R'])): ?>
+              <button class="btn btn-outline-success" title="提交审核" onclick="if(confirm('确定提交审核？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=submit_audit><input name=id value=<?=$m['id']?>>';document.body.appendChild(f);f.submit()}"><i class="fas fa-paper-plane"></i></button>
+              <?php endif; ?>
               <?php if (isAdmin() && $m['audit_status'] === 'S' && can('material.audit')): ?>
               <button class="btn btn-outline-success" title="通过" data-toggle="modal" data-target="#auditModal" data-id="<?=$m['id']?>" data-action="A"><i class="fas fa-check"></i></button>
               <button class="btn btn-outline-danger" title="驳回" data-toggle="modal" data-target="#auditModal" data-id="<?=$m['id']?>" data-action="R"><i class="fas fa-times"></i></button>
               <?php endif; ?>
-              <?php if (can('material.delete')): ?><button class="btn btn-outline-danger" title="删除" onclick="if(confirm('确认删除？)){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=delete><input name=id value=<?=$m['id']?>>';document.body.appendChild(f);f.submit()}"><i class="fas fa-trash"></i></button><?php endif; ?>
+              <?php if (can('material.delete')): ?><button class="btn btn-outline-danger" title="删除" onclick="if(confirm('确认删除？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=delete><input name=id value=<?=$m['id']?>>';document.body.appendChild(f);f.submit()}"><i class="fas fa-trash"></i></button><?php endif; ?>
             </div>
           </td>
         </tr>
         <?php endforeach; ?>
         <?php if (empty($materials)): ?>
-        <tr><td colspan="6" class="text-center text-muted py-5"><i class="fas fa-inbox fa-3x mb-3 d-block"></i>暂无物料数据</td></tr>
+        <tr><td colspan="7" class="text-center text-muted py-5"><i class="fas fa-inbox fa-3x mb-3 d-block"></i>暂无物料数据</td></tr>
         <?php endif; ?>
       </tbody>
     </table>
+    </div>
+    <?php if (isSupplier()): ?>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <span id="selectedCount" class="text-muted"></span>
+      <button type="button" class="btn btn-success" onclick="batchSubmitAudit()"><i class="fas fa-paper-plane mr-1"></i> 批量提交审核</button>
+    </div>
+    <?php endif; ?>
   </div>
 </div>
 <div class="modal fade" id="importModal">
@@ -153,4 +166,36 @@ $('#auditModal').on('show.bs.modal', function(e){
   $(this).find('#auditId').val(btn.data('id'));
   $(this).find('#auditStatus').val(btn.data('action'));
 });
+
+function toggleAll(el) {
+  document.querySelectorAll('.mat-check:not(:disabled)').forEach(function(cb) { cb.checked = el.checked; });
+  updateSelectedCount();
+}
+
+document.querySelectorAll('.mat-check').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    var all = document.querySelectorAll('.mat-check');
+    var checked = document.querySelectorAll('.mat-check:checked');
+    document.getElementById('checkAll').checked = all.length === checked.length;
+    updateSelectedCount();
+  });
+});
+
+function updateSelectedCount() {
+  var n = document.querySelectorAll('.mat-check:checked').length;
+  var el = document.getElementById('selectedCount');
+  if (el) el.textContent = n > 0 ? '已选择 ' + n + ' 项' : '';
+}
+
+function batchSubmitAudit() {
+  var ids = [];
+  document.querySelectorAll('.mat-check:checked').forEach(function(cb) { ids.push(cb.value); });
+  if (ids.length === 0) { alert('请先选择物料'); return; }
+  if (!confirm('确定提交选中的 ' + ids.length + ' 项物料审核？')) return;
+  var f = document.createElement('form');
+  f.method = 'post';
+  f.innerHTML = '<input name="action" value="batch_submit_audit"><input name="ids" value="' + ids.join(',') + '">';
+  document.body.appendChild(f);
+  f.submit();
+}
 </script>

@@ -24,21 +24,14 @@
             <td><?=h($item['supplier_name'] ?? '-')?></td>
           </tr>
           <tr>
-            <td style="color:#64748b">分类</td>
-            <td><?=h($item['category'] ?? '-')?></td>
             <td style="color:#64748b">审核状态</td>
             <td><?=statusBadge($item['audit_status'])?></td>
-          </tr>
-          <tr>
-            <td style="color:#64748b">版本</td>
-            <td><?=h($item['material_version'] ?? 'V1.0')?></td>
-            <td style="color:#64748b">单位</td>
-            <td><span class="badge badge-soft-secondary"><?=h($item['weight_unit'] ?? 'g')?></span></td>
+            <td style="color:#64748b">单重</td>
+            <td><?=h($item['unit_weight'] ?? 0)?> g</td>
           </tr>
           <tr>
             <td style="color:#64748b">创建时间</td>
             <td><?=h($item['created_at'])?></td>
-            <td></td><td></td>
           </tr>
         </table>
       </div>
@@ -85,16 +78,19 @@
             <input type="hidden" name="material_id" value="<?=$item['id']?>">
           <table class="table table-sm table-bordered mb-0" id="compTable">
             <thead class="thead-light">
-              <tr><th style="width:40%;min-width:120px">物质名称</th><th style="width:13%">含量%</th><th style="width:13%">最小%</th><th style="width:13%">最大%</th><th style="width:11%">主成分</th><th style="width:10%">操作</th></tr>
+              <tr><th style="width:35%;min-width:120px">物质名称</th><th style="width:12%">含量%</th><th style="width:12%">重量(g)</th><th style="width:12%">最小%</th><th style="width:12%">最大%</th><th style="width:10%">主成分</th><th style="width:8%">操作</th></tr>
             </thead>
             <tbody>
-<?php foreach ($composition as $c): ?>
+<?php foreach ($composition as $c):
+  $wt = round(($item['unit_weight'] ?? 0) * ($c['min_percentage'] ?? 0) / 100, 4);
+?>
               <tr class="comp-row" data-substance="<?=h($c['substance_name'])?>" data-hm-id="<?=$c['substance_id'] ?: 0?>">
                 <td class="font-weight-bold" style="word-break:break-word;white-space:normal"><a href="javascript:void(0)" class="text-primary" onclick="toggleHmDetail(<?=$c['substance_id'] ?: 0?>, this)"><?=h($c['substance_name'])?></a></td>
                 <td>
                   <input type="hidden" name="comp_id[]" value="<?=$c['id']?>">
                   <input type="number" name="comp_pct[]" class="form-control form-control-sm" step="0.01" value="<?=$c['min_percentage']?>" style="width:80px">
                 </td>
+                <td class="comp-weight"><?=$wt?></td>
                 <td><?=h($c['min_percentage'])?></td>
                 <td><?=h($c['max_percentage'])?></td>
                 <td><?=$c['is_main_component'] ? '<span class="status-tag success">主成分</span>' : ''?></td>
@@ -108,10 +104,16 @@
               <tr class="bg-light font-weight-bold">
                 <td></td>
                 <td class="text-center py-2">合计: <span id="totalPct">0.00</span>% <span id="totalStatus"></span></td>
+                <td class="text-center py-2"><span id="totalWt">0</span> g</td>
                 <td></td><td></td><td></td><td></td>
               </tr>
             </tfoot>
           </table>
+          <div class="card-footer text-right">
+            <?php if (isSupplier() && in_array($item['audit_status'], ['N','R'])): ?>
+            <button type="button" class="btn btn-success" onclick="if(confirm('确定提交审核？')){submitAudit(<?=$item['id']?>)}"><i class="fas fa-paper-plane mr-1"></i> 提交审核</button>
+            <?php endif; ?>
+          </div>
           </form>
         </div>
       </div>
@@ -391,12 +393,22 @@ var _csrf = '<?=csrf_token()?>';
 
 function calcTotal() {
   var total = 0;
+  var totalWt = 0;
+  var unitWt = <?=($item['unit_weight'] ?? 0)?>;
   var inputs = document.querySelectorAll('#compTable tbody input[name="comp_pct[]"]');
   for (var i = 0; i < inputs.length; i++) {
-    total += parseFloat(inputs[i].value) || 0;
+    var pct = parseFloat(inputs[i].value) || 0;
+    total += pct;
+    var wt = (unitWt * pct / 100).toFixed(4);
+    var row = inputs[i].closest('tr');
+    var wtTd = row.querySelector('.comp-weight');
+    if (wtTd) wtTd.textContent = wt;
+    totalWt += parseFloat(wt);
   }
   var el = document.getElementById('totalPct');
   if (el) el.textContent = total.toFixed(2);
+  var tw = document.getElementById('totalWt');
+  if (tw) tw.textContent = totalWt.toFixed(4);
   var st = document.getElementById('totalStatus');
   if (st) {
     if (total >= 99.99 && total <= 100.01) {
@@ -405,6 +417,16 @@ function calcTotal() {
       st.innerHTML = '<span class="badge badge-danger">需100%</span>';
     }
   }
+}
+
+function submitAudit(id) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/material', true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    if (xhr.status === 200) { location.reload(); }
+  };
+  xhr.send('action=submit_audit&id=' + id);
 }
 
 function deleteComposition(id, btn) {
@@ -442,6 +464,8 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
 function toggleHmDetail(hmId, linkEl) {
+  var tab = document.querySelector('#materialTabs .nav-link[href="#tabReports"]');
+  if (tab) tab.click();
   if (!hmId) return;
   var row = linkEl.closest("tr");
   if (_activeHmId === hmId) {

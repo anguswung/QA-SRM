@@ -18,11 +18,15 @@ class AuthController extends Controller {
                 $db->execute("INSERT INTO login_log (user_id, username, ip_address, result) VALUES (?,?,?,?)",
                     [$user['id'], $user['username'], $_SERVER['REMOTE_ADDR'] ?? '', 'success']);
                 if ($user['role'] === 'supplier' && $user['supplier_id']) {
-                    $sp = $db->single("SELECT blacklist FROM supplier WHERE id=?", [$user['supplier_id']], true);
-                    if ($sp && $sp['blacklist']) {
-                        session_destroy();
-                        flash('error', '该供应商已被列入黑名单，无法登录');
-                        header('Location: /login'); exit;
+                    $sp = $db->single("SELECT blacklist, name FROM supplier WHERE id=?", [$user['supplier_id']], true);
+                    if ($sp) {
+                        $_SESSION['supplier_name'] = $sp['name'] ?? '';
+                        if ($sp['blacklist']) {
+                            $supplierLabel = $sp['name'] ?? '';
+                            session_destroy();
+                            setcookie('login_error', "$supplierLabel 已被列入黑名单，无法登录", time() + 30, '/');
+                            header('Location: /login'); exit;
+                        }
                     }
                 }
                 header('Location: /dashboard'); exit;

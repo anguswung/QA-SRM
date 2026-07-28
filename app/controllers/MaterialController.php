@@ -12,6 +12,8 @@ class MaterialController extends Controller {
             if ($action === 'composition_update') { $this->compositionUpdate(); return; }
             if ($action === 'composition_batch_update') { $this->compositionBatchUpdate(); return; }
             if ($action === 'import') { $this->doImport(); return; }
+            if ($action === 'submit_audit') { $this->submitAudit(); return; }
+            if ($action === 'batch_submit_audit') { $this->batchSubmitAudit(); return; }
         }
         $action = $_GET['action'] ?? '';
         if ($action === 'create') { $this->showForm(); return; }
@@ -35,10 +37,12 @@ class MaterialController extends Controller {
         if ($env) { $where[] = "m.env_status=?"; $params[] = $env; }
         if ($audit) { $where[] = "m.audit_status=?"; $params[] = $audit; }
         $materials = $db->query("SELECT m.*, s.name AS supplier_name, s.name_short AS supplier_name_short FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id WHERE " . implode(' AND ', $where) . " ORDER BY m.id DESC", $params);
-        $total = $db->single("SELECT COUNT(*) FROM material WHERE spec='零部件'");
-        $compliantCount = $db->single("SELECT COUNT(*) FROM material WHERE spec='零部件' AND env_status='compliant'");
-        $nonCompliantCount = $db->single("SELECT COUNT(*) FROM material WHERE spec='零部件' AND env_status='non_compliant'");
-        $pendingCount = $db->single("SELECT COUNT(*) FROM material WHERE spec='零部件' AND env_status='pending'");
+        $countSql = "SELECT COUNT(*) FROM material m WHERE " . implode(' AND ', $where);
+        $total = $db->single($countSql, $params);
+        $compliantCount = $db->single($countSql . " AND m.env_status='compliant'", $params);
+        $nonCompliantCount = $db->single($countSql . " AND m.env_status='non_compliant'", $params);
+        $pendingCount = $db->single($countSql . " AND m.env_status='pending'", $params);
+        $configs = $db->query("SELECT config_key, config_value FROM system_config");
         $title = '物料管理';
         $this->render('material/index', get_defined_vars());
     }
@@ -49,8 +53,15 @@ class MaterialController extends Controller {
         if ($id && !$item) { header('Location: /material'); exit; }
         if ($id && isSupplier() && (int)($item['supplier_id'] ?? 0) !== userSupplierId()) { header('Location: /material?error=no_permission'); exit; }
         $suppliers = $db->query("SELECT id, code, name FROM supplier WHERE blacklist=0 ORDER BY code");
-        $hmMaterials = $db->query("SELECT id, material_name, supplier_id, supplier_name FROM homogeneous_material ORDER BY material_name");
+        $hmMaterials = $db->query("SELECT id, material_name, supplier_id, supplier_name, weight_mg FROM homogeneous_material ORDER BY material_name");
         $composition = $id ? $db->query("SELECT * FROM material_composition WHERE material_id=?", [$id]) : [];
+        $configs = $db->query("SELECT config_key, config_value FROM system_config");
+        $supplierName = '-';
+        if (!empty($item['supplier_id'])) {
+            $s = $db->single("SELECT name FROM supplier WHERE id=?", [$item['supplier_id']], true);
+            if ($s) $supplierName = $s['name'];
+        }
+        $isImported = $id && !empty($item['created_by']) && (int)$item['created_by'] !== userId();
         $currentStep = (int)($_GET['step'] ?? 1);
         $title = $id ? '编辑物料' : '新增物料';
         $this->render('material/form', get_defined_vars());
@@ -75,7 +86,7 @@ class MaterialController extends Controller {
             $totalReports += (int)$db->single("SELECT COUNT(*) FROM hm_report WHERE hm_id IN ($hmList)");
             $totalElements += (int)$db->single("SELECT COUNT(*) FROM analysis_record WHERE hm_id IN ($hmList)");
         }
-        $hmMaterials = $db->query("SELECT id, material_name, supplier_id, supplier_name FROM homogeneous_material ORDER BY material_name");
+        $hmMaterials = $db->query("SELECT id, material_name, supplier_id, supplier_name, weight_mg FROM homogeneous_material ORDER BY material_name");
         $additives = $db->query("SELECT a.* FROM additive a WHERE a.material_category_id=(SELECT id FROM material_category WHERE name=(SELECT category FROM material WHERE id=?))", [$id]);
         $activeTab = $_GET['tab'] ?? 'composition';
         $title = '物料详情 - ' . $item['material_name'];
@@ -107,9 +118,9 @@ class MaterialController extends Controller {
         // step=3: submit from step2 ??save composition + report, show step3 (confirm) next
         // step=4: submit from step3 ??final save, redirect to list
         if ($step == 2) {
-            $db->execute("INSERT INTO material (material_no, material_name, spec, mpn, supplier_id, unit_weight, quantity, weight_mg, weight_unit) VALUES (?,?,?,?,?,?,?,?,?)",
+            $db->execute("INSERT INTO material (material_no, material_name, spec, mpn, supplier_id, unit_weight, weight_mg, env_status) VALUES (?,?,?,?,?,?,?,?)",
                 [$no, $_POST['material_name'] ?? '', $spec, $_POST['mpn'] ?? '',
-                 $supplierId, (float)($_POST['unit_weight'] ?? 0), (float)($_POST['quantity'] ?? 1), (float)($_POST['weight_mg'] ?? 0), $_POST['weight_unit'] ?? 'g']);
+                 $supplierId, (float)($_POST['unit_weight'] ?? 0), (float)($_POST['weight_mg'] ?? 0), 'non_compliant']);
             $mid = $db->lastInsertId();
             logOp('create', 'material', $mid, '新增物料(步骤2): ' . ($_POST['material_name'] ?? ''));
             header('Location: /material?action=edit&id=' . $mid . '&step=2'); exit;
@@ -118,9 +129,9 @@ class MaterialController extends Controller {
         if ($step == 3) { $this->saveComposition($mid); $this->saveReport($mid); logOp('update', 'material', $mid, '保存成分与报告(步骤3)'); header('Location: /material?action=edit&id=' . $mid . '&step=3'); exit; }
         // step 4: final save all + redirect
         $this->saveComposition($mid); $this->saveReport($mid);
-        $db->execute("UPDATE material SET material_no=?, material_name=?, spec=?, mpn=?, unit_weight=?, quantity=?, weight_mg=?, weight_unit=?, updated_at=datetime('now','localtime') WHERE id=?",
+        $db->execute("UPDATE material SET material_no=?, material_name=?, spec=?, mpn=?, unit_weight=?, weight_mg=?, updated_at=datetime('now','localtime') WHERE id=?",
             [$_POST['material_no'] ?? '', $_POST['material_name'] ?? '', $spec, $_POST['mpn'] ?? '',
-             (float)($_POST['unit_weight'] ?? 0), (float)($_POST['quantity'] ?? 1), (float)($_POST['weight_mg'] ?? 0), $_POST['weight_unit'] ?? 'g', $mid]);
+             (float)($_POST['unit_weight'] ?? 0), (float)($_POST['weight_mg'] ?? 0), $mid]);
         logOp('create', 'material', $mid, '完成物料创建 ' . ($_POST['material_name'] ?? ''));
         flash('success', '物料创建成功'); header('Location: /material'); exit;
     }
@@ -136,9 +147,9 @@ class MaterialController extends Controller {
         }
         $spec = $_POST['spec'] ?? '';
         if ($step == 2) {
-            $db->execute("UPDATE material SET material_no=?, material_name=?, spec=?, mpn=?, unit_weight=?, quantity=?, weight_mg=?, weight_unit=?, updated_at=datetime('now','localtime') WHERE id=?",
+            $db->execute("UPDATE material SET material_no=?, material_name=?, spec=?, mpn=?, supplier_id=?, unit_weight=?, updated_at=datetime('now','localtime') WHERE id=?",
                 [$_POST['material_no'] ?? '', $_POST['material_name'] ?? '', $spec, $_POST['mpn'] ?? '',
-                 (float)($_POST['unit_weight'] ?? 0), (float)($_POST['quantity'] ?? 1), (float)($_POST['weight_mg'] ?? 0), $_POST['weight_unit'] ?? 'g', $id]);
+                 (int)($_POST['supplier_id'] ?? 0), (float)($_POST['unit_weight'] ?? 0), $id]);
             logOp('update', 'material', $id, '更新基本信息(步骤2)');
             header('Location: /material?action=edit&id=' . $id . '&step=2'); exit;
         }
@@ -149,9 +160,9 @@ class MaterialController extends Controller {
             logOp('update', 'material', $id, '更新成分与报告(步骤3)'); header('Location: /material?action=edit&id=' . $id . '&step=3'); exit;
         }
         $db->execute("DELETE FROM material_composition WHERE material_id=?", [$id]); $this->saveComposition($id); $this->saveReport($id);
-        $db->execute("UPDATE material SET material_no=?, material_name=?, spec=?, mpn=?, unit_weight=?, quantity=?, weight_mg=?, weight_unit=?, updated_at=datetime('now','localtime') WHERE id=?",
+        $db->execute("UPDATE material SET material_no=?, material_name=?, spec=?, mpn=?, supplier_id=?, unit_weight=?, updated_at=datetime('now','localtime') WHERE id=?",
             [$_POST['material_no'] ?? '', $_POST['material_name'] ?? '', $spec, $_POST['mpn'] ?? '',
-             (float)($_POST['unit_weight'] ?? 0), (float)($_POST['quantity'] ?? 1), (float)($_POST['weight_mg'] ?? 0), $_POST['weight_unit'] ?? 'g', $id]);
+             (int)($_POST['supplier_id'] ?? 0), (float)($_POST['unit_weight'] ?? 0), $id]);
         logOp('update', 'material', $id, '完成物料更新');
         flash('success', '物料更新成功'); header('Location: /material'); exit;
     }
@@ -181,6 +192,40 @@ class MaterialController extends Controller {
         }
         header('Location: /material'); exit;
     }
+    private function submitAudit() {
+        $this->requirePermission('material.edit');
+        $id = (int)($_POST['id'] ?? 0);
+        if (!$id) { header('Location: /material'); exit; }
+        $db = DB::getInstance();
+        if (isSupplier()) {
+            $m = $db->single("SELECT supplier_id FROM material WHERE id=?", [$id], true);
+            if (!$m || (int)$m['supplier_id'] !== userSupplierId()) { header('Location: /material'); exit; }
+        }
+        $db->execute("UPDATE material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$id]);
+        logOp('update', 'material', $id, '提交审核');
+        flash('success', '已提交审核');
+        header('Location: /material'); exit;
+    }
+    private function batchSubmitAudit() {
+        $this->requirePermission('material.edit');
+        $ids = $_POST['ids'] ?? '';
+        if (!$ids) { header('Location: /material'); exit; }
+        $idArr = array_map('intval', explode(',', $ids));
+        $idArr = array_filter($idArr);
+        if (!$idArr) { header('Location: /material'); exit; }
+        $db = DB::getInstance();
+        $placeholders = implode(',', array_fill(0, count($idArr), '?'));
+        $params = $idArr;
+        if (isSupplier()) {
+            $params[] = userSupplierId();
+            $db->execute("UPDATE material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id IN ($placeholders) AND supplier_id=?", $params);
+        } else {
+            $db->execute("UPDATE material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id IN ($placeholders)", $params);
+        }
+        logOp('update', 'material', 0, '批量提交审核 ' . count($idArr) . ' 项');
+        flash('success', '已提交 ' . count($idArr) . ' 项物料审核');
+        header('Location: /material'); exit;
+    }
     private function doAudit() {
         $this->requirePermission('material.audit');
         $id = (int)($_POST['id'] ?? 0);
@@ -193,7 +238,9 @@ class MaterialController extends Controller {
             $db->execute("INSERT INTO material_audit_log (material_id, action, comment, operator_id) VALUES (?,?,?,?)",
                 [$id, $status === 'A' ? 'approve' : 'reject', $comment, userId()]);
             if ($status === 'A') {
-                $db->execute("UPDATE material SET env_status='compliant' WHERE id=? AND env_status='pending'", [$id]);
+                $db->execute("UPDATE material SET env_status='compliant' WHERE id=?", [$id]);
+            } elseif ($status === 'R') {
+                $db->execute("UPDATE material SET env_status='non_compliant' WHERE id=?", [$id]);
             }
             logOp('audit', 'material', $id, "物料审核 $status - $comment");
             flash('success', '审核完成');
@@ -482,6 +529,7 @@ class MaterialController extends Controller {
                 flash('success', '成分已添加');
             }
         }
+        $this->updateMainComponent($mid);
         header('Location: /material?action=detail&id=' . $mid . '&tab=composition'); exit;
     }
     private function compositionDelete() {
@@ -490,7 +538,10 @@ class MaterialController extends Controller {
         if ($id) {
             $c = DB::getInstance()->single("SELECT material_id FROM material_composition WHERE id=?", [$id], true);
             DB::getInstance()->execute("DELETE FROM material_composition WHERE id=?", [$id]);
-            if ($c) { header('Location: /material?action=detail&id=' . $c['material_id'] . '&tab=composition'); exit; }
+            if ($c) {
+                $this->updateMainComponent($c['material_id']);
+                header('Location: /material?action=detail&id=' . $c['material_id'] . '&tab=composition'); exit;
+            }
         }
         header('Location: /material'); exit;
     }
@@ -518,9 +569,18 @@ class MaterialController extends Controller {
                 $db->execute("UPDATE material_composition SET min_percentage=?, max_percentage=? WHERE id=? AND material_id=?", [$pct, $pct, $id, $mid]);
             }
         }
+        $this->updateMainComponent($mid);
         flash('success', '成分已保存');
         header('Location: /material?action=detail&id=' . $mid);
         exit;
+    }
+    private function updateMainComponent(int $materialId): void {
+        $db = DB::getInstance();
+        $db->execute("UPDATE material_composition SET is_main_component=0 WHERE material_id=?", [$materialId]);
+        $top = $db->single("SELECT id FROM material_composition WHERE material_id=? ORDER BY min_percentage DESC LIMIT 1", [$materialId]);
+        if ($top) {
+            $db->execute("UPDATE material_composition SET is_main_component=1 WHERE id=?", [$top]);
+        }
     }
     private function saveReport($materialId) {
         $db = DB::getInstance();

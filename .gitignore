@@ -19,6 +19,10 @@
 
 # --- 用户上传文件（含供应商机密资料） ---
 /源文件/
+!/源文件/*
+
+
+# --- 用户上传文件（含供应商机密资料） ---
 /uploads/*
 !/uploads/.gitkeep
 !/uploads/notice/.gitkeep

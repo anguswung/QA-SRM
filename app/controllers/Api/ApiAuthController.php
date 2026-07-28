@@ -12,8 +12,11 @@ class ApiAuthController extends ApiBaseController {
             ApiResponse::error('账号或密码错误', 401, 401);
         }
         if ($user['role'] === 'supplier' && $user['supplier_id']) {
-            $sp = $this->db->single("SELECT blacklist FROM supplier WHERE id=?", [$user['supplier_id']], true);
+            $sp = $this->db->single("SELECT blacklist, name FROM supplier WHERE id=?", [$user['supplier_id']], true);
             if ($sp && $sp['blacklist']) ApiResponse::forbidden('该供应商已被列入黑名单');
+            $supplierName = $sp ? ($sp['name'] ?? '') : '';
+        } else {
+            $supplierName = '';
         }
         $this->db->execute("INSERT INTO login_log (user_id, username, ip_address, status, login_time) VALUES (?,?,?,?,datetime('now','localtime'))",
             [$user['id'], $username, $_SERVER['REMOTE_ADDR'] ?? '', 'success']);
@@ -29,6 +32,7 @@ class ApiAuthController extends ApiBaseController {
                 'realname' => $user['realname'] ?? $user['username'],
                 'role' => $user['role'],
                 'supplier_id' => (int)($user['supplier_id'] ?? 0),
+                'supplier_name' => $supplierName,
             ]
         ]);
     }
@@ -49,12 +53,18 @@ class ApiAuthController extends ApiBaseController {
         $uid = $this->userId();
         $user = $this->db->single("SELECT id, username, realname, role, supplier_id FROM users WHERE id=?", [$uid], true);
         if (!$user) ApiResponse::unauthorized();
+        $supplierName = '';
+        if ($user['role'] === 'supplier' && $user['supplier_id']) {
+            $sp = $this->db->single("SELECT name FROM supplier WHERE id=?", [$user['supplier_id']], true);
+            $supplierName = $sp ? ($sp['name'] ?? '') : '';
+        }
         ApiResponse::success([
             'id' => (int)$user['id'],
             'username' => $user['username'],
             'realname' => $user['realname'] ?? $user['username'],
             'role' => $user['role'],
             'supplier_id' => (int)($user['supplier_id'] ?? 0),
+            'supplier_name' => $supplierName,
         ]);
     }
 

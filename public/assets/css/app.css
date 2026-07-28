@@ -67,9 +67,11 @@ body {
     letter-spacing: .3px
 }
 
-.sidebar-header i {
+.sidebar-header i,
+.sidebar-header .icon-zh-w {
     font-size: 20px;
-    color: var(--success)
+    color: var(--success);
+    display: inline-block;
 }
 
 .sidebar-title {
@@ -451,24 +453,38 @@ td,
     font-size: 1.25rem
 }
 
+.btn-group {
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.btn-group .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .btn {
     padding: 7px 16px;
     border-radius: 6px;
     font-weight: 500;
     transition: all .15s;
     line-height: 1.5;
-    height: 36px
+    height: 36px;
+    vertical-align: middle;
 }
 
 .btn-sm {
     padding: 4px 12px;
     font-size: 14px;
-    height: 32px
+    height: 32px;
+    vertical-align: middle;
 }
 
 .btn-lg {
     padding: 10px 20px;
-    height: 44px
+    height: 44px;
+    vertical-align: middle;
 }
 
 .btn-primary {
@@ -734,9 +750,11 @@ select.form-control-sm,
     text-align: center
 }
 
-.login-header i {
+.login-header i,
+.login-header .icon-zh-w {
     font-size: 36px;
-    margin-bottom: 10px
+    margin-bottom: 10px;
+    display: inline-block;
 }
 
 .login-header h3 {
@@ -773,7 +791,10 @@ select.form-control-sm,
 
 .page-header .btn {
     padding: 7px 18px;
-    height: 36px
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .page-header .btn-sm {

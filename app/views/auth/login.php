@@ -1,13 +1,16 @@
 <div class="login-page">
   <div class="login-card">
     <div class="login-header">
-      <i class="fas fa-shield-halved"></i>
+      <i class="icon-zh-w"></i>
       <h3><?=h(DB::getInstance()->single("SELECT config_value FROM system_config WHERE config_key='system_name'", [], false) ?: '绿色产品管理系统GPM')?></h3>
       <p>Supplier Material Compliance Management System</p>
     </div>
     <div class="login-body">
       <?php if (!empty($error)): ?>
       <div class="alert alert-danger alert-auto"><?=h($error)?></div>
+      <?php endif; ?>
+      <?php $loginError = $_COOKIE['login_error'] ?? ''; if ($loginError): ?>
+      <div class="alert alert-danger alert-auto"><?=h($loginError)?><script>setTimeout(function(){document.cookie='login_error=; path=/; max-age=0'},3000)</script></div>
       <?php endif; ?>
       <form method="post">
         <div class="form-group">

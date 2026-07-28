@@ -175,6 +175,9 @@ class SupplierController extends Controller {
         header('Location: /supplier'); exit;
     }
     private function doUpdate() {
+        $id = (int)($_POST['id'] ?? 0);
+        if (!$id) { header('Location: /supplier'); exit; }
+        $db = DB::getInstance();
         $db->execute("UPDATE supplier SET code=?, name=?, name_short=?, credit_code=?, contact_person=?, contact_phone=?, address=?, level=?, updated_at=datetime('now','localtime') WHERE id=?",
             [$_POST['code'] ?? '', $_POST['name'] ?? '', $_POST['name_short'] ?? '', $_POST['credit_code'] ?? '',
              $_POST['contact_person'] ?? '', $_POST['contact_phone'] ?? '', $_POST['address'] ?? '',

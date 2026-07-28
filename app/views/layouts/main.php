@@ -16,6 +16,7 @@ $logoPath ??= '/assets/images/logo.png';
 <link href="/assets/vendor/datatables/css/dataTables.bootstrap4.min.css" rel="stylesheet">
 <link href="/assets/vendor/toastr/toastr.min.css" rel="stylesheet">
 <link href="/assets/css/app.css" rel="stylesheet">
+<link href="/assets/css/icomoon.css" rel="stylesheet">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body class="app-body">

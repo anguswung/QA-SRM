@@ -73,7 +73,7 @@ unset($m);
 ?>
 <aside class="app-sidebar">
   <div class="sidebar-header">
-    <i class="fas fa-shield-halved"></i>
+    <i class="icon-zh-w"></i>
     <span class="sidebar-title">合规管理系统</span>
   </div>
   <nav class="sidebar-nav">
