@@ -1,0 +1,95 @@
+# ============================================================
+#  QA-SRM .gitignore
+#  维护原则：编译产物/上传文件/敏感配置 全部不入仓
+# ============================================================
+
+# --- 环境配置（敏感） ---
+/.env
+/.env.local
+/.env.*.local
+/config/.env
+
+# --- 数据库（运行时数据，含业务数据） ---
+/database/*.db
+/database/*.db-journal
+/database/*.db-wal
+/database/*.db-shm
+/database/*.sqlite
+/database/*.sqlite3
+
+# --- 用户上传文件（含供应商机密资料） ---
+/源文件/
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/notice/.gitkeep
+!/uploads/report/.gitkeep
+!/uploads/material/.gitkeep
+!/uploads/excel/.gitkeep
+!/uploads/temp/.gitkeep
+
+# --- PHP / Composer ---
+/vendor/   # PHP: 通常由 composer install 重建（保留 vendor 需团队约定）
+# 如选择保留 vendor 提交，可删掉上一行
+
+# --- 前端（Vue 3） ---
+/public/frontend/node_modules/
+/public/frontend/dist/
+/public/frontend/.vite/
+/public/frontend/coverage/
+/public/frontend/.cache/
+
+# 如果团队约定 dist 也入仓（让运维直接部署），可删 /public/frontend/dist/ 一行
+# 当前选择：dist 不入仓，CD 阶段 npm run build 生成
+
+# --- 测试产物 ---
+/tests/coverage/
+/tests/.phpunit.cache/
+/coverage/
+/build/logs/
+/build/report/
+/report/  # phpunit coverage report
+/.phpunit.result.cache
+
+# --- 本地脚本 ---
+/push.bat
+
+# --- 调试/临时文件 ---
+*.bak
+*.tmp
+*.swp
+*.swo
+*~
+/null
+/database/check_records.php.bak
+/scripts/*.bak
+
+# --- IDE / 编辑器 ---
+/.idea/
+/.vscode/
+/*.iml
+/.project
+/.settings/
+/nbproject/
+/nb-configuration.xml
+
+# --- 系统文件 ---
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# --- 日志 ---
+/*.log
+/logs/
+/storage/logs/
+
+# --- Docker / 本地编排覆盖 ---
+/.docker-data/
+/docker-compose.override.yml
+
+# --- 部署密钥 ---
+*.pem
+*.key
+*.crt
+/secrets/
