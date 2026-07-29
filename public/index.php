@@ -1,9 +1,9 @@
-﻿<?php
+<?php
 $config = require __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../app/helpers.php';
 
 spl_autoload_register(function ($class) {
-    foreach (['controllers','models','core','api','controllers/Api','middleware','services'] as $dir) {
+    foreach (['controllers','models','core'] as $dir) {
         $file = __DIR__ . "/../app/$dir/$class.php";
         if (file_exists($file)) { require $file; return; }
     }
@@ -15,17 +15,9 @@ date_default_timezone_set($config['timezone'] ?? 'Asia/Shanghai');
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = rtrim($uri, '/') ?: '/dashboard';
 
-// API routes (JWT auth, no session)
-if (strpos($uri, '/api/') === 0) {
-    ApiRequest::init();
-    require __DIR__ . '/api_routes.php';
-    exit;
-}
-
 // Regex routes for detail/edit pages
 $regexRoutes = [
     '#^/supplier/(\d+)/(edit|rating|detail)$#' => ['SupplierController', 'index'],
-    '#^/notice/(\d+)/view$#' => ['NoticeController', 'view'],
     '#^/bpm/(\d+)/detail$#' => ['BpmController', 'detail'],
     '#^/compliance/detail/(\d+)$#' => ['ComplianceController', 'detail'],
     '#^/regulation/(\d+)/detail$#' => ['RegulationController', 'index'],

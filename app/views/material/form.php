@@ -110,7 +110,7 @@
                     <?php endforeach; else: ?>
                     <tr class="empty-row">
                       <td colspan="5" class="text-center text-muted py-3">
-                        <i class="fas fa-plus-circle mr-1"></i> 点击下方按钮从均质材料库中添加成分                      </td>
+                        <i class="fas fa-plus-circle mr-1"></i> 点击下方按钮从均质材料库中添加均质</td>
                     </tr>
                     <?php endif; ?>
                   </tbody>

@@ -73,7 +73,6 @@ class SubstanceController extends Controller {
         $db = DB::getInstance();
         $item = $id ? $db->single("SELECT * FROM substance WHERE id=?", [$id], true) : [];
         if ($id && !$item) { header('Location: /substance'); exit; }
-        $groups = $db->query("SELECT id, name FROM substance_group ORDER BY name");
         $uses = $db->query("SELECT * FROM maybe_use ORDER BY name");
         $selectedUses = $id ? $db->query("SELECT maybe_use_id FROM substance_maybe_use WHERE substance_id=?", [$id]) : [];
         $selectedIds = array_map(fn($u) => $u['maybe_use_id'], $selectedUses);
@@ -83,10 +82,10 @@ class SubstanceController extends Controller {
     private function doCreate() {
         $db = DB::getInstance();
         try {
-            $db->execute("INSERT INTO substance (cas_no, ec_no, index_no, name, name_en, molecular_formula, alias, substance_group_id, is_controlled) VALUES (?,?,?,?,?,?,?,?,?)",
+            $db->execute("INSERT INTO substance (cas_no, ec_no, index_no, name, name_en, molecular_formula, alias, is_controlled) VALUES (?,?,?,?,?,?,?,?)",
                 [$_POST['cas_no'] ?? '', $_POST['ec_no'] ?? '', $_POST['index_no'] ?? '', $_POST['name'] ?? '',
                  $_POST['name_en'] ?? '', $_POST['molecular_formula'] ?? '', $_POST['alias'] ?? '',
-                 (int)($_POST['substance_group_id'] ?? 0) ?: null, (int)($_POST['is_controlled'] ?? 0)]);
+                 (int)($_POST['is_controlled'] ?? 0)]);
             $sid = $db->lastInsertId();
             foreach ((array)($_POST['maybe_use_ids'] ?? []) as $uid) {
                 $db->execute("INSERT INTO substance_maybe_use (substance_id, maybe_use_id) VALUES (?,?)", [$sid, (int)$uid]);
@@ -102,10 +101,10 @@ class SubstanceController extends Controller {
         $id = (int)($_POST['id'] ?? 0);
         if (!$id) return;
         $db = DB::getInstance();
-        $db->execute("UPDATE substance SET cas_no=?, ec_no=?, index_no=?, name=?, name_en=?, molecular_formula=?, alias=?, substance_group_id=?, is_controlled=? WHERE id=?",
+        $db->execute("UPDATE substance SET cas_no=?, ec_no=?, index_no=?, name=?, name_en=?, molecular_formula=?, alias=?, is_controlled=? WHERE id=?",
             [$_POST['cas_no'] ?? '', $_POST['ec_no'] ?? '', $_POST['index_no'] ?? '', $_POST['name'] ?? '',
              $_POST['name_en'] ?? '', $_POST['molecular_formula'] ?? '', $_POST['alias'] ?? '',
-             (int)($_POST['substance_group_id'] ?? 0) ?: null, (int)($_POST['is_controlled'] ?? 0), $id]);
+             (int)($_POST['is_controlled'] ?? 0), $id]);
         $db->execute("DELETE FROM substance_maybe_use WHERE substance_id=?", [$id]);
         foreach ((array)($_POST['maybe_use_ids'] ?? []) as $uid) {
             $db->execute("INSERT INTO substance_maybe_use (substance_id, maybe_use_id) VALUES (?,?)", [$id, (int)$uid]);

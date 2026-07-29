@@ -12,7 +12,7 @@
           <li data-step="4"><div class="step-circle">4</div><div class="step-label">完成创建</div></li>
         </ul>
         <script>var initStep = <?=$currentStep ?? 1?>;</script>
-        <form method="post" id="hmForm" action="/homogeneous" enctype="multipart/form-data"><?=csrf_field()?>
+        <form method="post" id="hmForm" action="/homogeneous" enctype="multipart/form-data" onkeydown="if(event.key==='Enter'&&event.target.type!=='submit'&&event.target.name!=='substanceQuery')event.preventDefault()"><?=csrf_field()?>
           <input type="hidden" name="action" value="<?=$id ? 'update' : 'create'?>">
           <?php if ($id): ?><input type="hidden" name="id" value="<?=$id?>"><?php endif; ?>
           <input type="hidden" name="step" id="formStep" value="<?=$currentStep ?? 1?>">
@@ -64,7 +64,7 @@
               <button type="button" class="btn btn-sm btn-outline-success" onclick="addOthers()"><i class="fas fa-plus mr-1"></i>添加至成分表</button>
             </div>
             <div class="border rounded p-3 bg-light">
-                <h6 class="mb-3"><i class="fas fa-list mr-1"></i> 已添加成分</h6>
+                <h6 class="mb-3"><i class="fas fa-list mr-1"></i> 已添加均质材料</h6>
               <table class="table table-sm table-bordered mb-0" id="compTable">
                 <thead class="thead-light">
                   <tr><th style="width:14%">CAS号</th><th style="width:18%">中文名</th><th style="width:18%">英文名</th><th style="width:12%">含量%</th><th style="width:12%">最小</th><th style="width:12%">最大</th><th style="width:14%">操作</th></tr>
@@ -342,12 +342,12 @@ function searchSubstance() {
       } else if (data.length === 0) {
         html = '<div class="alert alert-warning py-2">未找到相关物质</div>';
       } else {
-        html = '<table class="table table-sm table-bordered"><thead class="thead-light"><tr><th style="width:18%">CAS</th><th style="width:30%">英文名</th><th style="width:20%">中文名</th><th style="width:18%">分子式</th><th style="width:14%">操作</th></tr></thead><tbody>';
+        html = '<table class="table table-sm table-bordered"><thead class="thead-light"><tr><th style="width:18%">CAS</th><th style="width:20%">中文名</th><th style="width:30%">英文名</th><th style="width:18%">分子式</th><th style="width:14%">操作</th></tr></thead><tbody>';
         for (var i = 0; i < data.length; i++) {
           var cn = data[i].name_cn || '';
-          html += '<tr><td>' + data[i].cas + '</td><td>' + data[i].name + '</td><td>' + cn + '</td><td>' + (data[i].formula || '-') + '</td>';
+          html += '<tr><td>' + data[i].cas + '</td><td>' + cn + '</td><td>' + data[i].name + '</td><td>' + (data[i].formula || '-') + '</td>';
           var nameCn = (data[i].name_cn || '').replace(/'/g,"\\'");
-          html += '<td><button class="btn btn-sm btn-success" onclick="addSubstance(\'' + data[i].name.replace(/'/g,"\\'") + '\',\'' + nameCn + '\',\'' + data[i].cas + '\')">选择</button></td></tr>';
+          html += '<td><button type="button" class="btn btn-sm btn-success" onclick="addSubstance(\'' + data[i].name.replace(/'/g,"\\'") + '\',\'' + nameCn + '\',\'' + data[i].cas + '\')">选择</button></td></tr>';
         }
         html += '</tbody></table>';
       }

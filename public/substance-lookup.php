@@ -28,7 +28,6 @@ if ($isCas) {
     $st = $db->prepare("SELECT * FROM substance WHERE name LIKE ? OR name_en LIKE ? OR cas_no LIKE ? LIMIT 10");
     $st->execute(["%$q%", "%$q%", "%$q%"]);
     $rows = $st->fetchAll();
-    // Also search by cleaned CAS
     if (empty($rows) && preg_match('/^\d+$/', $qClean)) {
         $st = $db->prepare("SELECT * FROM substance WHERE REPLACE(cas_no,'-','') LIKE ? LIMIT 10");
         $st->execute(["%$qClean%"]);
@@ -39,56 +38,127 @@ if ($isCas) {
     }
 }
 
-// Auto-save helper
 function autoSaveSubstance($db, $r) {
     if (empty($r['cas']) || !preg_match('/^\d{2,7}-\d{2}-\d$/', $r['cas'])) return;
-    // Skip unconfirmed PubChem results (xref/RN returned CID but CAS not in compound synonyms)
-    if (isset($r['confirmed']) && !$r['confirmed']) return;
-    $st = $db->prepare("SELECT id FROM substance WHERE cas_no=?");
-    $st->execute([$r['cas']]);
-    if (!$st->fetch()) {
-        $ins = $db->prepare("INSERT OR IGNORE INTO substance (cas_no, name, name_en, molecular_formula, is_controlled) VALUES (?,?,?,?,0)");
-        $ins->execute([$r['cas'], $r['name_cn'] ?: $r['name'], $r['name'], $r['formula'] ?? '']);
+    $cn = $r['name_cn'] ?? '';
+    $en = $r['name'] ?? '';
+    $db->execute("INSERT OR IGNORE INTO substance (cas_no, name, name_en, molecular_formula, is_controlled) VALUES (?,?,?,?,0)", [$r['cas'], $cn ?: $en, $en, $r['formula'] ?? '']);
+    if ($cn) {
+        $db->execute("UPDATE substance SET name=?, name_en=? WHERE cas_no=? AND (name IS NULL OR name='' OR name=name_en)", [$cn, $en, $r['cas']]);
     }
 }
 
-if ($isCas) {
-    // CAS: local -> iChemistry -> PubChem -> Chemsrc
-    if (empty($results)) {
-        $results = scrapeIChemistry($q, true);
-        foreach ($results as $r) autoSaveSubstance($db, $r);
-    }
-    if (empty($results)) {
-        $results = searchPubChemByName($q);
-        foreach ($results as $r) autoSaveSubstance($db, $r);
-    }
-    if (empty($results)) {
-        $results = scrapeChemsrcCasindex($q);
-    }
-} else {
-    // Non-CAS: local -> PubChem -> iChemistry search
-    if (empty($results)) {
-        $results = searchPubChemByName($q);
-        foreach ($results as $r) autoSaveSubstance($db, $r);
-    }
-    if (empty($results)) {
-        $results = scrapeIChemistry($q, false);
-    }
+// 2) Search common substance map (covers polymers that PubChem may not resolve well)
+if (empty($results)) {
+    $results = searchCommonSubstances($q, $isCas);
+    foreach ($results as $r) autoSaveSubstance($db, $r);
 }
 
-// Strip internal fields before output
-$results = array_map(function($r) { unset($r['confirmed']); return $r; }, $results);
+// 3) Search ichemistry.cn (Chinese chemical database, good for Chinese/English names)
+if (empty($results)) {
+    $results = searchIChemistry($q);
+    foreach ($results as $r) autoSaveSubstance($db, $r);
+}
+
+// 4) Search PubChem (most reliable, works for most CAS numbers)
+if (empty($results)) {
+    $results = searchPubChemByName($q);
+    foreach ($results as $r) autoSaveSubstance($db, $r);
+}
 
 echo json_encode($results ?: ['error' => '未找到相关物质'], JSON_UNESCAPED_UNICODE);
+
+function searchCommonSubstances($q, $isCas) {
+    $common = [
+        '9002-86-2' => ['name' => 'Polyvinyl chloride', 'name_cn' => '聚氯乙烯', 'formula' => '(C2H3Cl)n'],
+        '9003-07-0' => ['name' => 'Polypropylene', 'name_cn' => '聚丙烯', 'formula' => '(C3H6)n'],
+        '9002-88-4' => ['name' => 'Polyethylene', 'name_cn' => '聚乙烯', 'formula' => '(C2H4)n'],
+        '9003-55-8' => ['name' => 'Polystyrene', 'name_cn' => '聚苯乙烯', 'formula' => '(C8H8)n'],
+        '25038-59-9' => ['name' => 'Polyethylene terephthalate', 'name_cn' => '聚对苯二甲酸乙二醇酯', 'formula' => '(C10H8O4)n'],
+        '9003-20-7' => ['name' => 'Polyvinyl acetate', 'name_cn' => '聚醋酸乙烯酯', 'formula' => '(C4H6O2)n'],
+        '9003-35-4' => ['name' => 'Phenolic resin', 'name_cn' => '酚醛树脂', 'formula' => ''],
+        '25085-99-6' => ['name' => 'Epoxy resin', 'name_cn' => '环氧树脂', 'formula' => ''],
+        '9003-31-0' => ['name' => 'Polyisoprene', 'name_cn' => '聚异戊二烯', 'formula' => '(C5H8)n'],
+        '9010-98-4' => ['name' => 'Polychloroprene', 'name_cn' => '氯丁橡胶', 'formula' => '(C4H5Cl)n'],
+        '25034-71-3' => ['name' => 'Polyoxymethylene', 'name_cn' => '聚甲醛', 'formula' => '(CH2O)n'],
+        '24969-26-4' => ['name' => 'Polytetrahydrofuran', 'name_cn' => '聚四氢呋喃', 'formula' => ''],
+        '9002-83-9' => ['name' => 'Polychlorotrifluoroethylene', 'name_cn' => '聚三氟氯乙烯', 'formula' => '(C2ClF3)n'],
+        '9002-84-0' => ['name' => 'Polytetrafluoroethylene', 'name_cn' => '聚四氟乙烯', 'formula' => '(C2F4)n'],
+        '9002-85-1' => ['name' => 'Polyvinylidene fluoride', 'name_cn' => '聚偏二氟乙烯', 'formula' => '(C2H2F2)n'],
+        '9002-89-5' => ['name' => 'Polyvinyl alcohol', 'name_cn' => '聚乙烯醇', 'formula' => '(C2H4O)n'],
+        '9003-01-4' => ['name' => 'Polyacrylic acid', 'name_cn' => '聚丙烯酸', 'formula' => '(C3H4O2)n'],
+        '9003-05-8' => ['name' => 'Polyacrylamide', 'name_cn' => '聚丙烯酰胺', 'formula' => '(C3H5NO)n'],
+        '9011-14-7' => ['name' => 'Polycarbonate', 'name_cn' => '聚碳酸酯', 'formula' => ''],
+        '25037-45-0' => ['name' => 'Polybutylene terephthalate', 'name_cn' => '聚对苯二甲酸丁二醇酯', 'formula' => '(C12H12O4)n'],
+        '9003-11-6' => ['name' => 'Polypropylene glycol', 'name_cn' => '聚丙二醇', 'formula' => '(C3H8O2)n'],
+        '25322-68-3' => ['name' => 'Polyethylene glycol', 'name_cn' => '聚乙二醇', 'formula' => '(C2H6O2)n'],
+        '26655-00-5' => ['name' => 'Polyamide', 'name_cn' => '聚酰胺(尼龙)', 'formula' => ''],
+    ];
+    $results = [];
+    if ($isCas) {
+        if (isset($common[$q])) {
+            $r = $common[$q];
+            $results[] = ['name' => $r['name'], 'name_cn' => $r['name_cn'], 'cas' => $q, 'formula' => $r['formula'], 'source' => 'common'];
+        }
+    } else {
+        foreach ($common as $cas => $r) {
+            if (stripos($r['name'], $q) !== false || mb_strpos($r['name_cn'], $q) !== false) {
+                $results[] = ['name' => $r['name'], 'name_cn' => $r['name_cn'], 'cas' => $cas, 'formula' => $r['formula'], 'source' => 'common'];
+            }
+        }
+    }
+    return $results;
+}
+
+function searchIChemistry($query) {
+    $results = [];
+    $isCas = preg_match('/^\d{2,7}-\d{2}-\d$/', $query);
+
+    if ($isCas) {
+        $html = fetchUrl('http://www.ichemistry.cn/cas/' . urlencode($query) . '.html');
+        if (!$html) return $results;
+        $html = @mb_convert_encoding($html, 'UTF-8', 'GBK,GB2312,GB18030');
+
+        if (!preg_match('/<table[^>]*id=["\']container-right["\'][^>]*>(.*?)<\/table>/s', $html, $m)) return $results;
+        if (!preg_match_all('/<tr[^>]*>(.*?)<\/tr>/s', $m[1], $rows)) return $results;
+        if (count($rows[1]) < 2) return $results;
+
+        preg_match_all('/<td[^>]*>(.*?)<\/td>/s', $rows[1][1], $tds);
+        if (count($tds[1]) < 5) return $results;
+
+        $nameCn = trim(explode(';', str_replace('；', ';', strip_tags(str_replace(['<br>','<br/>','<br />'], ';', $tds[1][1]))))[0]);
+        $name = trim(explode(';', str_replace('；', ';', strip_tags(str_replace(['<br>','<br/>','<br />'], ';', $tds[1][2]))))[0]);
+        $formula = trim(strip_tags($tds[1][4]));
+
+        $results[] = ['name' => $name, 'name_cn' => $nameCn, 'cas' => $query, 'formula' => $formula, 'source' => 'ichemistry'];
+    } else {
+        $html = fetchUrl('http://search.ichemistry.cn?keys=' . urlencode($query) . '&types=2');
+        if (!$html) return $results;
+        $html = @mb_convert_encoding($html, 'UTF-8', 'GBK,GB2312,GB18030');
+
+        if (!preg_match('/<table[^>]*id=["\']container-right["\'][^>]*>(.*?)<\/table>/s', $html, $m)) return $results;
+        if (!preg_match_all('/<tr[^>]*>(.*?)<\/tr>/s', $m[1], $rows)) return $results;
+        for ($i = 1; $i < count($rows[1]) && count($results) < 5; $i++) {
+            preg_match_all('/<td[^>]*>(.*?)<\/td>/s', $rows[1][$i], $tds);
+            if (count($tds[1]) < 5) continue;
+            $casHtml = strip_tags($tds[1][0]);
+            if (!preg_match('/\b(\d{2,7}-\d{2}-\d)\b/', $casHtml, $casM)) continue;
+            $nameCn = trim(explode(';', str_replace('；', ';', strip_tags(str_replace(['<br>','<br/>','<br />'], ';', $tds[1][1]))))[0]);
+            $name = trim(explode(';', str_replace('；', ';', strip_tags(str_replace(['<br>','<br/>','<br />'], ';', $tds[1][2]))))[0]);
+            $formula = trim(strip_tags($tds[1][4]));
+            $results[] = ['name' => $name, 'name_cn' => $nameCn, 'cas' => $casM[1], 'formula' => $formula, 'source' => 'ichemistry'];
+        }
+    }
+
+    return $results;
+}
 
 function pubchemGetCids($path) {
     $url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/' . $path . '/cids/JSON';
     $resp = fetchUrl($url);
     if (!$resp) return [];
     $data = json_decode($resp, true);
-    // compound endpoint: { IdentifierList: { CID: [...] } }
     if (!empty($data['IdentifierList']['CID'])) return $data['IdentifierList']['CID'];
-    // substance endpoint: { InformationList: { Information: [{ SID, CID }, ...] } }
     $cids = [];
     foreach ($data['InformationList']['Information'] ?? [] as $info) {
         if (isset($info['CID'][0])) $cids[] = $info['CID'][0];
@@ -100,6 +170,7 @@ function searchPubChemByName($query) {
     $results = [];
     $isCas = preg_match('/^\d{2,7}-\d{2}-\d$/', $query);
     $cids = []; $xrefFound = false;
+
     if ($isCas) {
         $cids = pubchemGetCids('compound/xref/RN/' . urlencode($query));
         if (!empty($cids)) $xrefFound = true;
@@ -110,6 +181,7 @@ function searchPubChemByName($query) {
         if (empty($cids)) $cids = pubchemGetCids('substance/name/' . urlencode($query));
     }
     if (empty($cids)) return $results;
+
     foreach (array_slice($cids, 0, 5) as $cid) {
         $propUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' . $cid . '/property/MolecularFormula,IUPACName/JSON';
         $synUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' . $cid . '/synonyms/JSON';
@@ -122,8 +194,8 @@ function searchPubChemByName($query) {
         $synonyms = $syns['InformationList']['Information'][0]['Synonym'] ?? [];
         $name = $synonyms[0] ?? $iupac;
         $nameCn = '';
+
         if ($isCas) {
-            // xref/RN is authoritative 鈥?trust its results even if CAS not in compound synonyms
             $confirmed = $xrefFound;
             if (!$confirmed) {
                 foreach ($synonyms as $s) {
@@ -139,64 +211,13 @@ function searchPubChemByName($query) {
                 if (preg_match('/^\d{2,7}-\d{2}-\d$/', trim($s))) { $cas = trim($s); break; }
             }
         }
+
         foreach ($synonyms as $s) {
             $s = trim($s);
             if (preg_match('/[\x{4e00}-\x{9fff}]/u', $s) && mb_strlen($s) <= 30) { $nameCn = $s; break; }
         }
+
         $results[] = ['name' => $name, 'name_cn' => $nameCn, 'cas' => $cas, 'formula' => $formula, 'source' => 'pubchem', 'confirmed' => $confirmed];
-    }
-    return $results;
-}
-
-function scrapeChemsrcCasindex($cas) {
-    $results = [];
-    foreach (['https://www.chemsrc.com/casindex/','https://www.chemsrc.com/en/cas/'] as $base) {
-        $html = fetchUrl($base . urlencode($cas) . '.html');
-        if (!$html) continue;
-        $name = ''; $nameCn = ''; $formula = '';
-        if (preg_match('/<title>([^<]+)<\/title>/i', $html, $m)) {
-            $title = trim(preg_replace('/\s*\|.*$/', '', $m[1]));
-            $title = preg_replace('/^CAS\s+\S+\s+/i', '', $title);
-            if (preg_match('/^([A-Za-z0-9\s\/\(\)\-,.]+)\s+([\x{4e00}-\x{9fff}].*)$/u', $title, $p)) {
-                $name = trim($p[1]); $nameCn = trim($p[2]);
-            } elseif (preg_match('/^[\x{4e00}-\x{9fff}]/u', $title)) { $nameCn = $title; $name = $cas; }
-            else { $name = $title; }
-        }
-        if (preg_match('/鍒嗗瓙寮廩锛?]\s*([^<>&\n]{1,30})/i', $html, $m)) $formula = trim($m[1]);
-        elseif (preg_match('/Molecular\s*Formula[^:]*:\s*([^<>&\n]{1,30})/i', $html, $m)) $formula = trim($m[1]);
-        $results[] = ['name' => $name ?: $cas, 'name_cn' => $nameCn, 'cas' => $cas, 'formula' => $formula, 'source' => 'chemsrc'];
-        break;
-    }
-    return $results;
-}
-
-function scrapeIChemistry($q, $isCas) {
-    $results = [];
-    $url = $isCas ? 'http://www.ichemistry.cn/chemical/' . urlencode($q) . '.htm'
-                 : 'http://www.ichemistry.cn/search.asp?keyword=' . urlencode($q) . '&st=all&search=%CB%D1%CB%F7';
-    $html = fetchUrl($url);
-    if (!$html) return $results;
-    if ($isCas) {
-        $name = ''; $nameCn = ''; $formula = '';
-        if (preg_match('/<(h1|h2)[^>]*>([^<]+)<\/\1>/i', $html, $m)) {
-            $title = trim($m[2]);
-            if (preg_match('/^([A-Za-z0-9\s\/\(\)\-,.]+)\s+([\x{4e00}-\x{9fff}].*)$/u', $title, $p)) {
-                $name = trim($p[1]); $nameCn = trim($p[2]);
-            } elseif (preg_match('/^[\x{4e00}-\x{9fff}]/u', $title)) { $nameCn = $title; $name = $q; }
-            else { $name = $title; }
-        }
-        if (preg_match('/鍒嗗瓙寮廩锛?]\s*([^<>&\n]{1,30})/i', $html, $m)) $formula = trim($m[1]);
-        $results[] = ['name' => $name ?: $q, 'name_cn' => $nameCn, 'cas' => $q, 'formula' => $formula, 'source' => 'ichemistry'];
-    } else {
-        if (preg_match_all('/<td[^>]*>\s*(\d{2,7}-\d{2}-\d)\s*<\/td>\s*<td[^>]*>\s*<a[^>]*>([^<]+)</i', $html, $matches, PREG_SET_ORDER)) {
-            $seen = [];
-            foreach ($matches as $m) {
-                $cas = $m[1]; if (isset($seen[$cas])) continue;
-                $seen[$cas] = true;
-                $results[] = ['name' => trim(strip_tags($m[2])), 'name_cn' => '', 'cas' => $cas, 'formula' => '', 'source' => 'ichemistry'];
-                if (count($results) >= 10) break;
-            }
-        }
     }
     return $results;
 }
@@ -207,9 +228,17 @@ function fetchUrl($url) {
         CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         CURLOPT_FOLLOWLOCATION => true, CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
     ]);
     $resp = curl_exec($ch);
     $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = curl_error($ch);
+    if (!$resp && strpos($err, 'SSL') !== false) {
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        $resp = curl_exec($ch);
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    }
     curl_close($ch);
     return ($http >= 200 && $http < 400) ? $resp : null;
 }

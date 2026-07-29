@@ -1,4 +1,4 @@
-﻿<div class="page-header">
+<div class="page-header">
   <h5><i class="fas fa-boxes"></i> <?=h($item['material_name'])?> <small class="text-muted">[<?=h($item['material_no'])?>]</small></h5>
   <div>
     <?php if (can('material.edit')): ?><a href="/material?action=edit&id=<?=$item['id']?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> 编辑</a><?php endif; ?>
@@ -69,8 +69,8 @@
 <div class="tab-pane active" id="tabComposition">
       <div class="card">
         <div class="card-header">
-          物料成分
-          <div class="card-actions"><?php if (can('material.edit')): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#hmPickerModal"><i class="fas fa-plus"></i> 添加成分</button><?php endif; ?></div>
+          均质物料
+          <div class="card-actions"><?php if (can('material.edit')): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#hmPickerModal"><i class="fas fa-plus"></i> 选择均质材料</button><?php endif; ?></div>
         </div>
         <div class="card-body p-0">
           <form method="post" id="compForm"><?=csrf_field()?>
@@ -78,7 +78,7 @@
             <input type="hidden" name="material_id" value="<?=$item['id']?>">
           <table class="table table-sm table-bordered mb-0" id="compTable">
             <thead class="thead-light">
-              <tr><th style="width:35%;min-width:120px">物质名称</th><th style="width:12%">含量%</th><th style="width:12%">重量(g)</th><th style="width:12%">最小%</th><th style="width:12%">最大%</th><th style="width:10%">主成分</th><th style="width:8%">操作</th></tr>
+              <tr><th style="width:22%">均质材料名称</th><th width="70">RoHS</th><th width="70">REACH</th><th width="70">HF</th><th width="70">MSDS</th><th style="width:9%">含量%</th><th style="width:9%">重量(g)</th><th style="width:8%">最小%</th><th style="width:8%">最大%</th><th style="width:8%">主成分</th><th style="width:8%">操作</th></tr>
             </thead>
             <tbody>
 <?php foreach ($composition as $c):
@@ -86,6 +86,19 @@
 ?>
               <tr class="comp-row" data-substance="<?=h($c['substance_name'])?>" data-hm-id="<?=$c['substance_id'] ?: 0?>">
                 <td class="font-weight-bold" style="word-break:break-word;white-space:normal"><a href="javascript:void(0)" class="text-primary" onclick="toggleHmDetail(<?=$c['substance_id'] ?: 0?>, this)"><?=h($c['substance_name'])?></a></td>
+                <?php foreach (['RoHS','REACH','HF','MSDS'] as $rt):
+                  $hasId = $c[strtolower($rt).'_id'] ?? '';
+                  $expiry = $c[strtolower($rt).'_expiry'] ?? '';
+                ?>
+                <td class="text-center small px-1"><?php
+                  if (!$hasId || !$expiry): ?><span class="text-muted">无</span><?php
+                  elseif ($rt === 'MSDS'): ?><span class="text-success" title="有MSDS">✓</span><?php
+                  elseif (strtotime($expiry) < time()): ?><a href="/homogeneous?action=edit&id=<?=$c['substance_id']?>&step=3" class="badge badge-danger text-white" title="点击重新上传">过期</a><?php
+                  elseif (strtotime($expiry) <= strtotime('+30 days')): ?><a href="/homogeneous?action=edit&id=<?=$c['substance_id']?>&step=3" class="badge badge-warning text-white" title="点击更新">将到期</a><?php
+                  else: ?><span class="badge badge-success" title="<?=h($expiry)?>"><?=h(substr($expiry,5))?></span><?php
+                  endif; ?>
+                </td>
+                <?php endforeach; ?>
                 <td>
                   <input type="hidden" name="comp_id[]" value="<?=$c['id']?>">
                   <input type="number" name="comp_pct[]" class="form-control form-control-sm" step="0.01" value="<?=$c['min_percentage']?>" style="width:80px">
@@ -103,6 +116,7 @@
             <tfoot>
               <tr class="bg-light font-weight-bold">
                 <td></td>
+                <td></td><td></td><td></td><td></td>
                 <td class="text-center py-2">合计: <span id="totalPct">0.00</span>% <span id="totalStatus"></span></td>
                 <td class="text-center py-2"><span id="totalWt">0</span> g</td>
                 <td></td><td></td><td></td><td></td>
@@ -110,9 +124,6 @@
             </tfoot>
           </table>
           <div class="card-footer text-right">
-            <?php if (isSupplier() && in_array($item['audit_status'], ['N','R'])): ?>
-            <button type="button" class="btn btn-success" onclick="if(confirm('确定提交审核？')){submitAudit(<?=$item['id']?>)}"><i class="fas fa-paper-plane mr-1"></i> 提交审核</button>
-            <?php endif; ?>
           </div>
           </form>
         </div>
@@ -312,12 +323,6 @@
                 <td><button type="submit" class="btn btn-sm btn-success" onclick="document.getElementById('pickHmId').value=<?=$hm['id']?>">选择</button></td>
               </tr>
             <?php endforeach; ?>
-            <?php $totalPct = array_sum(array_column($composition, 'min_percentage')); ?>
-            <tr class="table-light font-weight-bold">
-              <td>合计</td>
-              <td class="hm-total-pct"><?=$totalPct?>%</td>
-              <td></td>
-            </tr>
           </tbody>
           </table>
           <div id="hmPagination" class="d-flex justify-content-between align-items-center mt-3">
@@ -419,15 +424,6 @@ function calcTotal() {
   }
 }
 
-function submitAudit(id) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', '/material', true);
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  xhr.onload = function() {
-    if (xhr.status === 200) { location.reload(); }
-  };
-  xhr.send('action=submit_audit&id=' + id);
-}
 
 function deleteComposition(id, btn) {
   var xhr = new XMLHttpRequest();

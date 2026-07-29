@@ -29,18 +29,8 @@
             <div class="col-md-4">
               <div class="form-group"><label>分子式</label><input type="text" name="molecular_formula" class="form-control" value="<?=h($item['molecular_formula'] ?? '')?>"></div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-8">
               <div class="form-group"><label>别名</label><input type="text" name="alias" class="form-control" value="<?=h($item['alias'] ?? '')?>"></div>
-            </div>
-            <div class="col-md-4">
-              <div class="form-group"><label>物质组</label>
-                <select name="substance_group_id" class="form-control">
-                  <option value="">无分组</option>
-                  <?php foreach ($groups as $g): ?>
-                  <option value="<?=$g['id']?>" <?=($item['substance_group_id'] ?? 0) == $g['id'] ? 'selected' : ''?>><?=h($g['name'])?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
             </div>
           </div>
           <div class="form-group">

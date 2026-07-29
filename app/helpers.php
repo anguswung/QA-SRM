@@ -28,10 +28,6 @@ function loadUserPermissions($roleName): void {
     $perms = DB::getInstance()->single("SELECT permissions FROM roles WHERE name=?", [$roleName], false);
     $_SESSION['permissions'] = $perms ? json_decode($perms, true) : [];
 }
-function routeActive($path): string {
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    return $uri === $path ? 'active' : '';
-}
 function menuOpen($path): string {
     $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
     return strpos($uri, $path) === 0 ? 'menu-open' : '';
@@ -53,9 +49,6 @@ function logOp($action, $module, $targetId, $detail) {
         "INSERT INTO operation_log (user_id, action, module, target_type, target_id, detail, ip_address, created_at) VALUES (?,?,?,?,?,?,?,datetime('now','localtime'))",
         [$_SESSION['user_id'] ?? 0, $action, $module, $module, (int)$targetId, $detail, $_SERVER['REMOTE_ADDR'] ?? '']
     );
-}
-function generateNo($prefix): string {
-    return $prefix . date('Ymd') . str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
 }
 function flash($type, $message): void {
     $_SESSION['_flash'] = ['type' => $type, 'message' => $message];

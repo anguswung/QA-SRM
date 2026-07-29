@@ -1,7 +1,7 @@
 <?php
 class AuthController extends Controller {
     public function login() {
-        RateLimitMiddleware::checkLogin();
+        $this->checkLoginRateLimit();
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = trim($_POST['username'] ?? '');
@@ -64,5 +64,22 @@ class AuthController extends Controller {
         }
         $title = '修改密码';
         $this->render('auth/password_change', get_defined_vars());
+    }
+    private function checkLoginRateLimit(): void {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $key = 'login:' . $ip;
+        $maxAttempts = 5;
+        $window = 60;
+        $file = sys_get_temp_dir() . '/ratelimit_' . md5($key) . '.lock';
+        $attempts = @file_get_contents($file) ? (array)json_decode(file_get_contents($file), true) : ['count' => 0, 'start' => time()];
+        if (time() - $attempts['start'] > $window) {
+            $attempts = ['count' => 0, 'start' => time()];
+        }
+        $attempts['count']++;
+        file_put_contents($file, json_encode($attempts), LOCK_EX);
+        if ($attempts['count'] > $maxAttempts) {
+            http_response_code(429);
+            echo '登录尝试过于频繁，请稍后再试'; exit;
+        }
     }
 }

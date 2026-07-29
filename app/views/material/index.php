@@ -2,7 +2,6 @@
   <h5><i class="fas fa-boxes"></i> 物料管理</h5>
   <div>
      <?php if (can('material.create')): ?><a href="/material?action=create&type=part" class="btn btn-primary"><i class="fas fa-plus"></i> 新增物料</a><?php endif; ?>
-     <a href="/material?action=import_template" class="btn btn-outline-info"><i class="fas fa-download"></i> 物料列表模板</a>
      <?php if (can('material.create')): ?><button class="btn btn-success" data-toggle="modal" data-target="#importModal"><i class="fas fa-upload"></i> 批量导入</button><?php endif; ?>
   </div>
 </div>

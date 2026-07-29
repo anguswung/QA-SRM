@@ -1108,3 +1108,7 @@ input[type="number"] {
     height: auto;
     border-radius: 4px
 }
+#hmPickerModal .modal-body {
+    max-height: 65vh;
+    overflow-y: auto;
+}

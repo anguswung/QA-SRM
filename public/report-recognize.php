@@ -130,7 +130,7 @@ function parseReportText($text, $filename) {
     if (!$isGarbage) {
         // Same line first: "Report No. A2240815857101004"
         if (preg_match('/Report\s*No\.\s+([A-Z]\w{5,50})/i', $text, $m)) { $rn = trim($m[1]); }
-        // CTI Chinese: "鎶ュ憡缂栧彿\nReport No.\n\n缂栧彿鍊?  
+        // CTI Chinese: "报告编号\nReport No.\n\n编号值"  
         if (!$rn && preg_match('/报告编号\s*Report\s*No\.[^\n]*\n\s*([A-Z]\w{5,50})/i', $text, $m)) { $rn = trim($m[1]); }
         // Number on NEXT line after "Report No." (not same line)
         if (!$rn && preg_match('/Report\s*No\.[^\n]*\n\s*([A-Z]\w{5,50})/i', $text, $m)) { $rn = trim($m[1]); }
@@ -140,7 +140,7 @@ function parseReportText($text, $filename) {
         if (!$rn && preg_match('/^(?:编号|报告编号)\s*[:：]+\s*([A-Z][A-Z0-9\/\-]{7,40})/im', $text, $m)) { $rn = trim($m[1]); }
         // General "No. CANEC2301145801"
         if (!$rn && preg_match('/No\.\s+([A-Z]\w{5,50})/i', $text, $m)) { $rn = trim($m[1]); }
-        // Long code: A2230060852101014 (must not be partial 鈥?prefer longer match)
+        // Long code: A2230060852101014 (must not be partial - prefer longer match)
         if (!$rn && preg_match('/[A-Z][A-Z0-9]{8,30}/', $text, $m)) { $rn = $m[0]; }
     }
     // Fallback: extract from filename
@@ -272,7 +272,7 @@ function parseReportText($text, $filename) {
         }
     }
 
-    // Fallback: extract from 妫€娴嬬粨鏋?table section
+    // Fallback: extract from 检测结果 table section
     if (empty($data['elements'])) {
         $elementPatterns = [
             'Pb' => ['Lead\s*\(Pb\)', '铅.*Pb', 'Pb'],
@@ -324,13 +324,13 @@ function parseExcelReport($rows, $filename) {
     // Search through all rows for header info
     foreach ($rows as $row) {
         $rowText = implode(' ', array_filter($row, fn($v) => !empty($v)));
-        if (empty($data['report_no']) && preg_match('/(?:鎶ュ憡缂栧彿|鎶ュ憡鍙穦Report\s*(?:No|#|Number))[:锛歕s]*([A-Z0-9\-_\/]+)/i', $rowText, $m)) {
+        if (empty($data['report_no']) && preg_match('/(?:报告编号|报告号|Report\s*(?:No|#|Number))[:：\s]*([A-Z0-9\-_\/]+)/i', $rowText, $m)) {
             $data['report_no'] = trim($m[1]);
         }
-        if (empty($data['test_date']) && preg_match('/(?:妫€娴嬫棩鏈焲鏀舵牱鏃ユ湡|鏍峰搧鎺ユ敹鏃ユ湡|Test\s*Date|Receive\s*Date)[:锛歕s]*(\d{4}[-\.\/]\d{1,2}[-\.\/]\d{1,2})/', $rowText, $m)) {
+        if (empty($data['test_date']) && preg_match('/(?:检测日期|收样日期|样品接收日期|Test\s*Date|Receive\s*Date)[:：\s]*(\d{4}[-\.\/]\d{1,2}[-\.\/]\d{1,2})/', $rowText, $m)) {
             $data['test_date'] = $m[1];
         }
-        if (empty($data['test_agency']) && preg_match('/(?:妫€娴嬫満鏋剕娴嬭瘯鏈烘瀯|瀹為獙瀹Lab|Laboratory|Client|Issued\s*by)[:锛歕s]*([^\n\r]{2,60})/', $rowText, $m)) {
+        if (empty($data['test_agency']) && preg_match('/(?:检测机构|测试机构|实验室|Lab|Laboratory|Client|Issued\s*by)[:：\s]*([^\n\r]{2,60})/', $rowText, $m)) {
             $data['test_agency'] = trim($m[1]);
         }
     }
@@ -339,8 +339,8 @@ function parseExcelReport($rows, $filename) {
     $headerRow = null;
     foreach ($rows as $idx => $row) {
         $rowText = implode(' ', array_filter($row, fn($v) => !empty($v)));
-        if (preg_match('/(?:鐗╄川|鍏冪礌|鍚嶇О|Substance|Element|Analyte)/i', $rowText) &&
-            preg_match('/(?:鍚噺|鍊紎缁撴灉|Value|Result|Content|Concentration)/i', $rowText)) {
+        if (preg_match('/(?:物质|元素|名称|Substance|Element|Analyte)/i', $rowText) &&
+            preg_match('/(?:含量|值|结果|Value|Result|Content|Concentration)/i', $rowText)) {
             $headerRow = $idx;
             break;
         }
@@ -351,9 +351,9 @@ function parseExcelReport($rows, $filename) {
         $nameCol = null; $valueCol = null; $unitCol = null;
         foreach ($headers as $ci => $h) {
             $h = strtolower(trim($h ?? ''));
-            if (preg_match('/(鐗╄川|鍏冪礌|鍚嶇О|substance|element|analyte|parameter|test)/', $h)) $nameCol = $ci;
-            if (preg_match('/(鍚噺|鍊紎缁撴灉|value|result|content|concentration|amount)/', $h)) $valueCol = $ci;
-            if (preg_match('/(鍗曚綅|unit)/', $h)) $unitCol = $ci;
+            if (preg_match('/(物质|元素|名称|substance|element|analyte|parameter|test)/', $h)) $nameCol = $ci;
+            if (preg_match('/(含量|值|结果|value|result|content|concentration|amount)/', $h)) $valueCol = $ci;
+            if (preg_match('/(单位|unit)/', $h)) $unitCol = $ci;
         }
 
         for ($i = $headerRow + 1; $i < count($rows); $i++) {

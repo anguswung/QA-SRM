@@ -12,9 +12,7 @@
     "autoload": {
         "classmap": [
             "app/models",
-            "app/controllers",
-            "app/controllers/Api",
-            "app/api"
+            "app/controllers"
         ],
         "files": [
             "app/helpers.php"

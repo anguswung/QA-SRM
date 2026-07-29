@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 class MaterialController extends Controller {
     public function index() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -72,7 +72,16 @@ class MaterialController extends Controller {
         $item = $db->single("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id WHERE m.id=?", [$id], true);
         if (!$item) { header('Location: /material'); exit; }
         if (isSupplier() && (int)$item['supplier_id'] !== userSupplierId()) { header('Location: /material?error=no_permission'); exit; }
-        $composition = $db->query("SELECT * FROM material_composition WHERE material_id=?", [$id]);
+        $composition = $db->query("SELECT mc.*,
+          (SELECT id FROM hm_report WHERE hm_id=mc.substance_id AND report_type='RoHS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS rohs_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=mc.substance_id AND report_type='RoHS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS rohs_expiry,
+          (SELECT id FROM hm_report WHERE hm_id=mc.substance_id AND report_type='REACH' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS reach_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=mc.substance_id AND report_type='REACH' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS reach_expiry,
+          (SELECT id FROM hm_report WHERE hm_id=mc.substance_id AND report_type='HF' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS hf_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=mc.substance_id AND report_type='HF' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS hf_expiry,
+          (SELECT id FROM hm_report WHERE hm_id=mc.substance_id AND report_type='MSDS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS msds_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=mc.substance_id AND report_type='MSDS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS msds_expiry
+          FROM material_composition mc WHERE mc.material_id=?", [$id]);
         $reports = $db->query("SELECT * FROM test_report WHERE material_id=? ORDER BY created_at DESC", [$id]);
         $auditLogs = $db->query("SELECT * FROM material_audit_log WHERE material_id=? ORDER BY operated_at DESC", [$id]);
         $elements = $db->query("SELECT ec.*, tr.report_no FROM element_content ec JOIN test_report tr ON ec.report_id=tr.id WHERE tr.material_id=? ORDER BY ec.id", [$id]);
@@ -299,7 +308,7 @@ class MaterialController extends Controller {
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('均质材料元素明细');
-        $header = ['均质材料ID','均质材料名称','均质材料供应商','重量(mg)','物质名称','中文名称','CAS号','含量(%)','最小(%)','最大(%)','单位'];
+        $header = ['均质材料ID','均质材料名称','均质材料供应商','重量(mg)','均质材料名称','中文名称','CAS号','含量(%)','最小(%)','最大(%)','单位'];
         foreach ($header as $i => $h) {
             $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1);
             $sheet->setCellValue($col.'1', $h);
