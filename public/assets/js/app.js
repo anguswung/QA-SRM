@@ -87,8 +87,14 @@ $(function() {
             ],
             stateSave: true,
             stateDuration: -1,
-            stateLoadParams: function(settings, data) { data.start = 0;
-                data.length = settings._iDisplayLength; },
+            stateLoadParams: function(settings, data) {
+                data.start = 0;
+                data.length = settings._iDisplayLength;
+                if (data.columns && data.columns.length !== settings.aoColumns.length) {
+                    data.columns = [];
+                    data.order = [];
+                }
+            },
             drawCallback: function(settings) {
                 var api = new $.fn.dataTable.Api(settings);
                 var pageInfo = api.page.info();

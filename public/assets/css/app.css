@@ -1096,3 +1096,15 @@ input[type="number"] {
 .steps li.done .step-label {
     color: #166534
 }
+
+#notice-editor, #survey-editor, #edit-notice-editor, #edit-survey-editor {
+    height: 200px
+}
+#notice-editor .ql-editor, #survey-editor .ql-editor, #edit-notice-editor .ql-editor, #edit-survey-editor .ql-editor {
+    min-height: 180px
+}
+#viewContent img, #dashboardNoticeContent img, .notice-view-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px
+}

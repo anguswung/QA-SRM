@@ -115,6 +115,20 @@ class SystemController extends Controller {
     public function logs() {
         $this->requirePermission('system.logs');
         $db = DB::getInstance();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $action = $_POST['action'] ?? '';
+            if ($action === 'clean_logs') {
+                $keepDays = max(7, (int)($_POST['keep_days'] ?? 30));
+                $cutoff = date('Y-m-d H:i:s', strtotime("-{$keepDays} days"));
+                $opDeleted = $db->single("SELECT COUNT(*) FROM operation_log WHERE created_at < ?", [$cutoff]);
+                $db->execute("DELETE FROM operation_log WHERE created_at < ?", [$cutoff]);
+                $loginDeleted = $db->single("SELECT COUNT(*) FROM login_log WHERE login_time < ?", [$cutoff]);
+                $db->execute("DELETE FROM login_log WHERE login_time < ?", [$cutoff]);
+                logOp('clean', 'logs', 0, "清理 {$keepDays} 天前日志: 操作日志 {$opDeleted} 条, 登录日志 {$loginDeleted} 条");
+                flash('success', "已清理 {$keepDays} 天前的日志（操作日志 {$opDeleted} 条，登录日志 {$loginDeleted} 条）");
+                header('Location: /system/logs'); exit;
+            }
+        }
         $page = max(1, (int)($_GET['page'] ?? 1));
         $perPage = 50;
         $offset = ($page - 1) * $perPage;

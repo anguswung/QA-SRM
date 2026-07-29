@@ -21,6 +21,25 @@ class NoticeController extends Controller {
                 logOp('create', 'notice', $nid, '发布通知: ' . ($_POST['title'] ?? ''));
                 flash('success', '通知已发布');
             }
+            if ($action === 'update') {
+                $id = (int)($_POST['id'] ?? 0);
+                if ($id) {
+                    $db->execute("UPDATE notice SET title=?, content=?, publish_time=datetime('now','localtime') WHERE id=?",
+                        [$_POST['title'] ?? '', $_POST['content'] ?? '', $id]);
+                    $db->execute("DELETE FROM notice_attachment WHERE notice_id=?", [$id]);
+                    if (!empty($_FILES['attachment']['name'])) {
+                        $f = $_FILES['attachment'];
+                        $dir = uploadPath('notice');
+                        $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+                        $name = pathinfo($f['name'], PATHINFO_FILENAME) . '_' . date('Ymd') . '.' . $ext;
+                        move_uploaded_file($f['tmp_name'], $dir . '/' . $name);
+                        $db->execute("INSERT INTO notice_attachment (notice_id, file_name, file_path, file_size, upload_user) VALUES (?,?,?,?,?)",
+                            [$id, $f['name'], $dir . '/' . $name, $f['size'], $_SESSION['realname'] ?? '']);
+                    }
+                    logOp('update', 'notice', $id, '编辑通知: ' . ($_POST['title'] ?? ''));
+                    flash('success', '通知已更新');
+                }
+            }
             if ($action === 'delete') {
                 $id = (int)($_POST['id'] ?? 0);
                 if ($id) {

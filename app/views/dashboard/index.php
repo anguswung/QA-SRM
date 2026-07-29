@@ -56,6 +56,58 @@
 </div>
 <?php endif; ?>
 
+<?php if (isSupplier()): ?>
+<div class="row mb-3">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-tasks text-warning"></i> 待办事项</div>
+      <div class="card-body py-2">
+        <div class="d-flex justify-content-around text-center">
+          <a href="/material" class="text-decoration-none">
+            <div class="p-3">
+              <div class="h3 mb-1 font-weight-bold <?=$todoPendingSubmit > 0 ? 'text-danger' : 'text-muted'?>"><?=(int)($todoPendingSubmit ?? 0)?></div>
+              <div class="small text-muted">待提交审核</div>
+            </div>
+          </a>
+          <div class="border-right"></div>
+          <a href="/material" class="text-decoration-none">
+            <div class="p-3">
+              <div class="h3 mb-1 font-weight-bold <?=$todoExpiringReports > 0 ? 'text-warning' : 'text-muted'?>"><?=(int)($todoExpiringReports ?? 0)?></div>
+              <div class="small text-muted">报告即将过期</div>
+            </div>
+          </a>
+          <div class="border-right"></div>
+          <a href="/notice" class="text-decoration-none">
+            <div class="p-3">
+              <div class="h3 mb-1 font-weight-bold <?=$todoUnreadNotices > 0 ? 'text-primary' : 'text-muted'?>"><?=(int)($todoUnreadNotices ?? 0)?></div>
+              <div class="small text-muted">未读通知</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-bullhorn text-info"></i> 最新通知</div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          <?php if (!empty($recentNotices)): $snum = 0; foreach ($recentNotices as $n): if (++$snum > 5) break; ?>
+          <li class="list-group-item py-2 px-3">
+            <span class="text-muted mr-2"><?=$snum?>.</span>
+            <a href="javascript:;" onclick='showDashboardNotice(<?=htmlspecialchars(json_encode($n['title']), ENT_QUOTES)?>,<?=htmlspecialchars(json_encode($n['content']), ENT_QUOTES)?>,"<?=h($n['publisher_name'])?>","<?=h($n['publish_time'] ?: $n['created_at'])?>")'><?=h($n['title'])?></a>
+            <small class="text-muted float-right"><?=h(substr($n['publish_time'] ?: $n['created_at'], 0, 10))?></small>
+          </li>
+          <?php endforeach; else: ?>
+          <li class="list-group-item py-3 text-center text-muted">暂无通知</li>
+          <?php endif; ?>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="row">
   <div class="col-md-6">
     <div class="card">
@@ -107,7 +159,30 @@
   </div>
 </div>
 
+<div class="modal fade" id="dashboardNoticeModal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="dashboardNoticeTitle"></h4>
+        <button class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="text-right text-muted mb-3 pb-2 border-bottom" style="font-size:13px">
+          <span id="dashboardNoticePubInfo"></span>
+        </div>
+        <div id="dashboardNoticeContent" class="ql-editor" style="padding:0"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+function showDashboardNotice(title, content, publisher, pubTime) {
+  $('#dashboardNoticeTitle').text(title);
+  $('#dashboardNoticePubInfo').text('发布人: ' + (publisher || '-') + ' | 时间: ' + (pubTime || '-'));
+  $('#dashboardNoticeContent').html(content);
+  $('#dashboardNoticeModal').modal('show');
+}
 new Chart(document.getElementById('statusChart'), {
   type: 'doughnut',
   data: {

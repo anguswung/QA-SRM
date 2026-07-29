@@ -23,6 +23,12 @@ class DashboardController extends Controller {
             $pendingMaterials = 0;
             $activeWarnings = $db->single("SELECT COUNT(*) FROM warning_record WHERE material_id IN (SELECT id FROM material WHERE supplier_id=?) AND solved=0", [$sid]);
             $totalSuppliers = 0;
+
+            // Supplier-specific todo items
+            $todoPendingSubmit = $db->single("SELECT COUNT(*) FROM material WHERE supplier_id=? AND audit_status IN ('N','R') AND valid_status='Valid'", [$sid]);
+            $todoExpiringReports = $db->single("SELECT COUNT(*) FROM test_report WHERE material_id IN (SELECT id FROM material WHERE supplier_id=?) AND audit_status='approved' AND expiry_date IS NOT NULL AND julianday(expiry_date)-julianday('now') BETWEEN 0 AND 30", [$sid]);
+            $todoUnreadNotices = $db->single("SELECT COUNT(*) FROM notice n WHERE n.status='published' AND n.id NOT IN (SELECT notice_id FROM notice_read_log WHERE supplier_id=?)", [$sid]);
+            $recentNotices = $db->query("SELECT n.*, (SELECT COUNT(*) FROM notice_read_log WHERE notice_id=n.id AND supplier_id=?) AS is_read FROM notice n WHERE n.status='published' ORDER BY n.publish_time DESC LIMIT 5", [$sid]);
         }
         $trends = $db->query("SELECT strftime('%Y-%m', created_at) AS month, SUM(CASE WHEN is_over_limit=1 THEN 1 ELSE 0 END) AS violations, COUNT(*) AS total FROM element_content WHERE created_at >= date('now','-6 months') GROUP BY month ORDER BY month");
         $months = []; $violations = []; $totals = [];

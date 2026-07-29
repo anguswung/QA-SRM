@@ -17,6 +17,7 @@ $logoPath ??= '/assets/images/logo.png';
 <link href="/assets/vendor/toastr/toastr.min.css" rel="stylesheet">
 <link href="/assets/css/app.css" rel="stylesheet">
 <link href="/assets/css/icomoon.css" rel="stylesheet">
+<link href="/assets/vendor/quill/quill.snow.css" rel="stylesheet">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body class="app-body">
@@ -70,6 +71,7 @@ toastr.options.newestOnTop=true;
 <script src="/assets/vendor/chartjs/chart.umd.min.js"></script>
 <script>if(typeof Chart==='undefined')document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>');</script>
 <script src="/assets/js/app.js"></script>
+<script src="/assets/vendor/quill/quill.min.js"></script>
 <div class="app-watermark"><img src="<?=h($logoPath)?>" alt="logo"></div>
 <div class="app-footer"><?=h($sysName)?> - v<?=h($version)?></br><?=h($companyName ?: $sysName)?> - 版权所有，翻录必究。</div>
 <?php if (isset($_SESSION['_flash'])): ?>
