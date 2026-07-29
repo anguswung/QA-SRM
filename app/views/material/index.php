@@ -35,7 +35,7 @@
   <div class="card-body py-2">
     <form method="get" class="form-inline justify-content-between">
       <div class="d-flex align-items-center flex-wrap">
-        <div class="input-group input-group-sm mr-2" style="width:220px">
+        <div class="input-group input-group-sm mr-2 w-220">
           <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search text-muted"></i></span></div>
           <input type="text" name="search" class="form-control" placeholder="搜索编号/名称" value="<?=h($_GET['search'] ?? '')?>">
         </div>
@@ -63,14 +63,14 @@
 <div class="card mt-0">
   <div class="card-body p-0">
     <div class="table-responsive">
-    <table class="table table-hover datatable mb-0" data-options='{"order":[[0,"desc"]]}'>
+    <table class="table table-hover datatable mb-0" data-options='{"order":[[0,"desc"]],"language":{"emptyTable":"暂无物料数据"}}'>
       <thead class="thead-light">
         <tr>
           <?php if (isSupplier()): ?><th width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th><?php endif; ?>
           <th width="50">ID</th>
           <th width="150"><?php $cs=''; foreach($configs as $c){if($c['config_key']==='company_short_name'){$cs=$c['config_value'];break;}} echo h($cs.'物料编号'); ?></th>
           <th>名称</th>
-          <th>供应商</th>
+          <?php if (!isSupplier()): ?><th width="80">供应商</th><?php endif; ?>
           <th width="80">单重(g)</th>
           <th width="100">环保状态</th>
           <th width="100">审核</th>
@@ -86,7 +86,7 @@
           <td>
             <a href="/material?action=detail&id=<?=$m['id']?>" class="font-weight-bold"><?=h($m['material_name'])?></a>
           </td>
-          <td><small><?=h($m['supplier_name'] ? ($m['supplier_name_short'] ?? $m['supplier_name']) : '-')?></small></td>
+          <?php if (!isSupplier()): ?><td><small><?=h($m['supplier_name'] ? ($m['supplier_name_short'] ?? $m['supplier_name']) : '-')?></small></td><?php endif; ?>
           <td><?=h($m['unit_weight'] ?? 0)?> g</td>
           <td><?=statusBadge($m['env_status'])?></td>
           <td class="text-center"><?=statusBadge($m['audit_status'])?></td>
@@ -106,9 +106,6 @@
           </td>
         </tr>
         <?php endforeach; ?>
-        <?php if (empty($materials)): ?>
-        <tr><td colspan="7" class="text-center text-muted py-5"><i class="fas fa-inbox fa-3x mb-3 d-block"></i>暂无物料数据</td></tr>
-        <?php endif; ?>
       </tbody>
     </table>
     </div>

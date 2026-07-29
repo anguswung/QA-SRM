@@ -8,7 +8,7 @@
   <div class="card-body">
     <div class="form-group">
       <label>选择供应商</label>
-      <select id="supplierSelect" class="form-control" style="max-width:400px">
+      <select id="supplierSelect" class="form-control select-max-400">
         <option value="0">我的物料</option>
         <?php foreach ($suppliers as $s): ?>
         <option value="<?=$s['id']?>"><?=h($s['code'])?> - <?=h($s['name'])?></option>

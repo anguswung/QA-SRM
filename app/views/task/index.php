@@ -11,13 +11,13 @@
   <div class="col">
     <div class="card stat-card py-2 px-2 text-center">
       <div class="stat-value h5 mb-0 text-warning"><?=count($pendingTasks)?></div>
-      <div class="stat-label text-muted" style="font-size:11px">待处理</div>
+      <div class="stat-label text-muted fs-11">待处理</div>
     </div>
   </div>
   <div class="col">
     <div class="card stat-card py-2 px-2 text-center">
       <div class="stat-value h5 mb-0 text-success"><?=count($instances)?></div>
-      <div class="stat-label text-muted" style="font-size:11px">所有任务</div>
+      <div class="stat-label text-muted fs-11">所有任务</div>
     </div>
   </div>
 </div>
@@ -70,7 +70,7 @@
   <div class="card-header"><i class="fas fa-list"></i> 任务列表</div>
   <div class="card-body p-0">
     <table class="table table-hover datatable">
-      <thead><tr><th>优先</th><th>标题</th><th>模板</th><?php if (isAdmin()): ?><th>供应商</th><?php endif; ?><th>状态</th><th>截止日期</th><th>创建时间</th><th>操作</th></tr></thead>
+      <thead><tr><th width="50">优先</th><th>标题</th><th width="90">模板</th><?php if (isAdmin()): ?><th width="100">供应商</th><?php endif; ?><th width="60">状态</th><th width="100">截止日期</th><th width="140">创建时间</th><th width="60">操作</th></tr></thead>
       <tbody>
         <?php foreach ($instances as $i): ?>
         <tr class="<?=$i['priority'] >= 1 ? 'table-warning' : ''?>">

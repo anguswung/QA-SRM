@@ -28,7 +28,7 @@
         <div class="col-sm-10">
           <input type="file" name="company_logo" class="form-control-file" accept="image/*">
           <?php if ($logoVal): ?>
-          <div class="mt-2"><img src="<?=h($logoVal)?>" style="max-height:60px;border:1px solid #ddd;padding:4px;border-radius:4px;"></div>
+          <div class="mt-2"><img src="<?=h($logoVal)?>" class="summary-img"></div>
           <small class="text-muted">当前Logo，上传新图将替换</small>
           <?php else: ?>
           <small class="text-muted">默认使用 /assets/images/logo.png</small>

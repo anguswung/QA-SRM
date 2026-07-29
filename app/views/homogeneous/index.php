@@ -34,7 +34,7 @@
 <div class="card">
   <div class="card-body py-2">
     <form method="get" class="form-inline">
-      <div class="input-group input-group-sm mr-2" style="width:260px">
+      <div class="input-group input-group-sm mr-2 w-260">
         <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search text-muted"></i></span></div>
         <input type="text" name="search" class="form-control" placeholder="搜索名称..." value="<?=h($_GET['search'] ?? '')?>">
       </div>

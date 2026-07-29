@@ -20,7 +20,7 @@
           <td><span class="text-danger"><?=(int)$s['non_compliant_count']?></span></td>
           <td>
             <div class="d-flex align-items-center">
-              <div class="progress flex-grow-1 mr-2" style="height:8px">
+              <div class="progress flex-grow-1 mr-2 h-8">
                 <div class="progress-bar bg-<?=$rate >= 90 ? 'success' : ($rate >= 70 ? 'warning' : 'danger')?>" style="width:<?=min($rate, 100)?>%"></div>
               </div>
               <small class="font-weight-bold"><?=$rate?>%</small>

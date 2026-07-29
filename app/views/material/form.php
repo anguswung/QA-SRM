@@ -124,7 +124,7 @@
                   <small class="text-muted">累计占比: </small>
                   <strong id="totalQuantity" class="<?=abs(0) < 0.01 ? '' : 'text-danger'?>">0%</strong>
                   <small class="text-muted"> / 100%</small>
-                  <div class="progress" style="height:4px;width:120px;display:inline-block;vertical-align:middle;margin-left:8px">
+                  <div class="progress inline-progress">
                     <div class="progress-bar" id="quantityProgress" role="progressbar" style="width:0%"></div>
                   </div>
                 </div>
@@ -139,13 +139,13 @@
           <!-- 步骤3: 完成 -->
           <div class="step-panel <?=($currentStep ?? 1) !== 3 ? 'd-none' : ''?>" id="step3">
             <div class="text-center py-4">
-              <div style="width:80px;height:80px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+              <div class="circle-success">
                 <i class="fas fa-check-circle fa-3x text-success"></i>
               </div>
               <h5>确认提交</h5>
               <p class="text-muted mb-4">请确认以下信息无误后提交</p>
               <table class="table table-sm text-left" id="summaryTable">
-                <tr><td style="width:100px">名称</td><td id="s_name"></td></tr>
+                <tr><td class="td-label">名称</td><td id="s_name"></td></tr>
                 <tr><td>编号</td><td id="s_no"></td></tr>
                 <tr><td>性质</td><td id="s_spec"></td></tr>
                 <tr><td>供应商</td><td><?=h($supplierName ?? '-')?></td></tr>

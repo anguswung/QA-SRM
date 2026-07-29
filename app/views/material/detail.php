@@ -10,7 +10,7 @@
   <div class="card-body py-3">
     <div class="row">
       <div class="col-md-2 text-center">
-        <div style="width:64px;height:64px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
+        <div class="circle-icon-wrap">
           <i class="fas fa-box fa-2x text-primary"></i>
         </div>
         <span class="status-tag <?=$item['env_status'] === 'compliant' ? 'success' : ($item['env_status'] === 'non_compliant' ? 'danger' : 'warning')?>"><?=$item['env_status'] === 'compliant' ? '合规' : ($item['env_status'] === 'non_compliant' ? '不合规' : '待评估')?></span>
@@ -18,9 +18,9 @@
       <div class="col-md-7">
         <table class="table table-sm mb-0" style="table-layout:fixed">
           <tr>
-            <td style="width:100px;color:#64748b">编号</td>
-            <td style="width:200px"><?=h($item['material_no'])?></td>
-            <td style="width:100px;color:#64748b">供应商</td>
+            <td class="td-label">编号</td>
+            <td class="w-200"><?=h($item['material_no'])?></td>
+            <td class="td-label">供应商</td>
             <td><?=h($item['supplier_name'] ?? '-')?></td>
           </tr>
           <tr>
@@ -85,7 +85,7 @@
   $wt = round(($item['unit_weight'] ?? 0) * ($c['min_percentage'] ?? 0) / 100, 4);
 ?>
               <tr class="comp-row" data-substance="<?=h($c['substance_name'])?>" data-hm-id="<?=$c['substance_id'] ?: 0?>">
-                <td class="font-weight-bold" style="word-break:break-word;white-space:normal"><a href="javascript:void(0)" class="text-primary" onclick="toggleHmDetail(<?=$c['substance_id'] ?: 0?>, this)"><?=h($c['substance_name'])?></a></td>
+                <td class="font-weight-bold word-break"><a href="javascript:void(0)" class="text-primary" onclick="toggleHmDetail(<?=$c['substance_id'] ?: 0?>, this)"><?=h($c['substance_name'])?></a></td>
                 <?php foreach (['RoHS','REACH','HF','MSDS'] as $rt):
                   $hasId = $c[strtolower($rt).'_id'] ?? '';
                   $expiry = $c[strtolower($rt).'_expiry'] ?? '';
@@ -101,7 +101,7 @@
                 <?php endforeach; ?>
                 <td>
                   <input type="hidden" name="comp_id[]" value="<?=$c['id']?>">
-                  <input type="number" name="comp_pct[]" class="form-control form-control-sm" step="0.01" value="<?=$c['min_percentage']?>" style="width:80px">
+                  <input type="number" name="comp_pct[]" class="form-control form-control-sm comp-input" step="0.01" value="<?=$c['min_percentage']?>">
                 </td>
                 <td class="comp-weight"><?=$wt?></td>
                 <td><?=h($c['min_percentage'])?></td>
@@ -314,7 +314,7 @@
           <input type="hidden" name="hm_id" id="pickHmId" value="">
           <input type="text" class="form-control mb-3" id="hmFilter" placeholder="搜索均质材料名称..." onkeyup="filterHM(this.value)">
           <table class="table table-hover table-sm mb-0" id="hmPickerTable">
-            <thead><tr><th>名称</th><th>供应商</th><th style="width:80px">操作</th></tr></thead>
+            <thead><tr><th>名称</th><th>供应商</th><th class="w-80">操作</th></tr></thead>
             <tbody>
               <?php foreach ($hmMaterials as $hm): $spName = $hm['supplier_name'] ?: (DB::getInstance()->single("SELECT name FROM supplier WHERE id=?", [$hm['supplier_id']]) ?: '第三方'); ?>
               <tr data-hmid="<?=$hm['id']?>" data-name="<?=h($hm['material_name'])?>" data-supplier="<?=h($spName)?>">

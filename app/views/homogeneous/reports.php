@@ -34,7 +34,7 @@
               <div class="card-header">报告信息</div>
               <div class="card-body p-0">
                 <table class="table table-sm table-bordered mb-0">
-                  <colgroup><col style="width:100px"><col></colgroup>
+                  <colgroup><col class="w-100"><col></colgroup>
                 <tr><th>报告编号</th><td><?=h($r['report_no'] ?: '-')?></td></tr>
                 <tr><th>报告版本</th><td>v<?=(int)($r['version'] ?? 1)?></td></tr>
                 <tr><th>检测机构</th><td><?=h($r['test_agency'] ?: '-')?></td></tr>
@@ -60,7 +60,7 @@
             <div class="card-body p-0">
               <?php if (in_array($r['report_type'], ['RoHS', 'REACH', 'HF'])): ?>
               <table class="table table-hover table-sm mb-0">
-                <thead><tr><th style="width:60px;white-space:nowrap">序号</th><th>物质名称</th><th>CAS</th><th>检测值(mg/kg)</th><th>限值(mg/kg)</th></tr></thead>
+                <thead><tr><th class="w-60 nowrap">序号</th><th>物质名称</th><th>CAS</th><th>检测值(mg/kg)</th><th>限值(mg/kg)</th></tr></thead>
                 <tbody>
                   <?php if ($elems): ?>
                   <?php foreach ($elems as $j => $e): ?>
@@ -73,7 +73,7 @@
               </table>
               <?php else: ?>
               <table class="table table-hover table-sm mb-0">
-                <thead><tr><th style="width:60px;white-space:nowrap">序号</th><th>物质中文</th><th>物质名称</th><th>CAS</th><th>含量(%)</th></tr></thead>
+                <thead><tr><th class="w-60 nowrap">序号</th><th>物质中文</th><th>物质名称</th><th>CAS</th><th>含量(%)</th></tr></thead>
                 <tbody>
                   <?php if ($composition): ?>
                   <?php foreach ($composition as $j => $c): ?>
@@ -103,7 +103,7 @@
               <table class="table table-bordered table-sm mb-0" id="elemTable-<?=$r['id']?>">
                 <thead>
                   <tr>
-                    <th style="width:80px;white-space:nowrap"></th>
+                    <th class="w-80 nowrap"></th>
                     <?php foreach ($elems as $j => $e): ?>
                     <th style="width:110px;text-align:center;vertical-align:top">
                       <?=h($e['substance_name'])?>
@@ -118,21 +118,21 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <th class="text-muted" style="width:80px;vertical-align:middle">检测值</th>
+                    <th class="text-muted w-80 va-middle">检测值</th>
                     <?php foreach ($elems as $j => $e): ?>
                     <td><input type="number" step="any" name="content_value[<?=$j?>]" value="<?=h($e['content_value'] ?? '')?>" class="form-control form-control-sm text-center" placeholder="0"></td>
                     <?php endforeach; ?>
                   </tr>
                   <tr>
-                    <th class="text-muted" style="width:80px;vertical-align:middle">限值</th>
+                    <th class="text-muted w-80 va-middle">限值</th>
                     <?php foreach ($elems as $j => $e): ?>
                     <td class="text-center text-muted small" style="vertical-align:middle"><?=h($e['limit_value'])?></td>
                     <?php endforeach; ?>
                   </tr>
                   <tr>
-                    <th class="text-muted" style="width:80px;vertical-align:middle">单位</th>
+                    <th class="text-muted w-80 va-middle">单位</th>
                     <?php foreach ($elems as $j => $e): ?>
-                    <td class="text-center text-muted small" style="vertical-align:middle">mg/kg</td>
+                    <td class="text-center text-muted small va-middle">mg/kg</td>
                     <?php endforeach; ?>
                   </tr>
                 </tbody>

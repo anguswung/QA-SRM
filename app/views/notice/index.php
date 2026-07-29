@@ -47,10 +47,10 @@
         <button class="close" data-dismiss="modal">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="text-right text-muted mb-3 pb-2 border-bottom" style="font-size:13px">
+        <div class="text-right text-muted mb-3 pb-2 border-bottom fs-13">
           <span id="viewPubInfo"></span>
         </div>
-        <div id="viewContent" class="ql-editor" style="padding:0"></div>
+        <div id="viewContent" class="ql-editor p-0-force"></div>
         <div id="viewAttachments" class="mt-3 pt-2 border-top"></div>
       </div>
     </div>

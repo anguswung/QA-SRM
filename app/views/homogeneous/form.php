@@ -75,9 +75,9 @@
                       <td><?=h($c['cas_no'] === '__others__' ? '-' : $c['cas_no'])?><input type="hidden" name="comp_cas[]" value="<?=h($c['cas_no'])?>"></td>
                       <td><?=h($c['name_cn'] ?? '')?><input type="hidden" name="comp_name_cn[]" value="<?=h($c['name_cn'] ?? '')?>"></td>
                       <td><?=h($c['name_en'] ?: $c['substance_name'])?><input type="hidden" name="comp_name[]" value="<?=h($c['substance_name'])?>"></td>
-                    <td><input type="number" name="comp_pct[]" class="form-control form-control-sm" step="0.01" value="<?=h($c['percentage'] ?? $c['min_percentage'] ?? '')?>" style="width:80px"></td>
-                    <td><input type="number" name="comp_min[]" class="form-control form-control-sm" step="0.01" value="<?=h($c['min_pct'] ?? '')?>" style="width:80px"></td>
-                    <td><input type="number" name="comp_max[]" class="form-control form-control-sm" step="0.01" value="<?=h($c['max_pct'] ?? '')?>" style="width:80px"></td>
+                    <td><input type="number" name="comp_pct[]" class="form-control form-control-sm comp-input" step="0.01" value="<?=h($c['percentage'] ?? $c['min_percentage'] ?? '')?>"></td>
+                    <td><input type="number" name="comp_min[]" class="form-control form-control-sm comp-input" step="0.01" value="<?=h($c['min_pct'] ?? '')?>"></td>
+                    <td><input type="number" name="comp_max[]" class="form-control form-control-sm comp-input" step="0.01" value="<?=h($c['max_pct'] ?? '')?>"></td>
                     <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove();calcTotal()"><i class="fas fa-trash"></i></button></td>
                   </tr>
                   <?php endforeach; endif; ?>
@@ -127,8 +127,8 @@
                     <td><span class="badge badge-soft-info"><?=h($r['report_type'])?></span></td>
                     <td>
                       v<?=(int)$r['version']?>
-                      <?php if ($r['status'] === 'current'): ?><span class="badge badge-success" style="font-size:10px">当前</span><?php endif; ?>
-                      <?php if ($r['status'] === 'superseded'): ?><span class="badge badge-secondary" style="font-size:10px">旧版</span><?php endif; ?>
+                      <?php if ($r['status'] === 'current'): ?><span class="badge badge-success badge-compact">当前</span><?php endif; ?>
+                      <?php if ($r['status'] === 'superseded'): ?><span class="badge badge-secondary badge-compact">旧版</span><?php endif; ?>
                     </td>
                     <td><?=h($r['test_agency'] ?: '-')?></td>
                     <td><?=h($r['test_date'] ?: '-')?></td>
@@ -165,7 +165,7 @@
                 <div class="col-md-3 mb-3">
                   <div class="border rounded p-2 bg-white h-100">
                     <div class="text-center mb-2">
-                      <span class="badge badge-primary" style="font-size:15px;padding:6px 20px"><?=h($rt)?></span>
+                      <span class="badge badge-primary badge-lg"><?=h($rt)?></span>
                       <?php if ($cur): ?>
                       <br><small class="text-muted">当前v<?=(int)$cur['version']?> → v<?=$nextVer?></small>
                       <?php endif; ?>
@@ -190,7 +190,7 @@
                       <label class="small mb-0">报告文件</label>
                       <div class="custom-file">
                         <input type="file" name="hm_report_file[<?=h($rt)?>]" class="custom-file-input hm-report-file" accept=".pdf,.xls,.xlsx" data-type="<?=h($rt)?>">
-                        <label class="custom-file-label" style="font-size:13px">选择文件</label>
+                        <label class="custom-file-label custom-file-label-sm">选择文件</label>
                       </div>
                     </div>
                     <small class="text-muted hm-ocr-status d-block mt-1"></small>
@@ -248,21 +248,21 @@
           <!-- 步骤4: 确认提交 -->
           <div class="step-panel <?=($currentStep ?? 1) !== 4 ? 'd-none' : ''?>" id="step4">
             <div class="py-4">
-              <div style="width:80px;height:80px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+              <div class="circle-success">
                 <i class="fas fa-check-circle fa-3x text-success"></i>
               </div>
               <h5 class="text-center">确认提交</h5>
               <p class="text-muted text-center mb-4">请确认以下信息无误后提交</p>
               <table class="table table-sm text-left">
-                <tr><td style="width:100px">名称</td><td><?=h($item['material_name'] ?? '-')?></td></tr>
+                <tr><td class="td-label">名称</td><td><?=h($item['material_name'] ?? '-')?></td></tr>
                 <tr><td>供应商</td><td><?=h($item['supplier_name'] ?? '-')?></td></tr>
                 <tr><td>用量</td><td><?=h($item['weight_mg'] ?? '0')?> <?=h($item['weight_unit'] ?? 'g')?></td></tr>
-                <tr><td style="vertical-align:top">成分</td><td>
+                <tr><td class="align-top">成分</td><td>
                   <?php if (empty($composition)): ?>
                     <span class="text-muted">-</span>
                   <?php else: ?>
                     <?php foreach ($composition as $c): ?>
-                    <span class="badge badge-soft-secondary mr-1 mb-1" style="font-size:13px;padding:4px 12px">
+                    <span class="badge badge-soft-secondary mr-1 mb-1 badge-label">
                       <?=h($c['name_cn'] ?: $c['substance_name'])?>
                       <?php if ($c['name_en'] ?? $c['substance_name']): ?><small class="text-muted"><?=h($c['name_en'] ?: $c['substance_name'])?></small><?php endif; ?>
                       <small class="text-muted ml-2"><?=h($c['cas_no'] === '__others__' ? '-' : ($c['cas_no'] ?? ''))?></small>
@@ -271,7 +271,7 @@
                     <?php endforeach; ?>
                   <?php endif; ?>
                 </td></tr>
-                <tr><td style="vertical-align:top">环保报告</td><td>
+                <tr><td class="align-top">环保报告</td><td>
                   <?php
                   $currentReports = array_filter($reports, fn($r) => $r['status'] === 'current');
                   if (empty($currentReports)): ?>

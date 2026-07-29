@@ -6,7 +6,7 @@
 </div>
 <div class="search-bar mb-3">
   <form method="get" class="form-inline">
-    <div class="input-group input-group-sm mr-2" style="width:220px">
+    <div class="input-group input-group-sm mr-2 w-220">
       <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search text-muted"></i></span></div>
       <input type="text" name="search" class="form-control" placeholder="搜索报告编号/文件名..." value="<?=h($_GET['search'] ?? '')?>">
     </div>

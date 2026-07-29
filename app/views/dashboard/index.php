@@ -167,10 +167,10 @@
         <button class="close" data-dismiss="modal">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="text-right text-muted mb-3 pb-2 border-bottom" style="font-size:13px">
+        <div class="text-right text-muted mb-3 pb-2 border-bottom fs-13">
           <span id="dashboardNoticePubInfo"></span>
         </div>
-        <div id="dashboardNoticeContent" class="ql-editor" style="padding:0"></div>
+        <div id="dashboardNoticeContent" class="ql-editor p-0-force"></div>
       </div>
     </div>
   </div>

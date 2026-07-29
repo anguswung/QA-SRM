@@ -5,7 +5,7 @@
     <a href="/compliance/analyze" class="btn btn-sm btn-outline-primary">合规评估</a>
   </div>
 </div>
-<div class="card"><div class="card-body p-0" style="overflow-x:auto">
+<div class="card"><div class="card-body p-0 overflow-x-auto">
   <table class="table table-sm table-bordered">
     <thead>
       <tr>

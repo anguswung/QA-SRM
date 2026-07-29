@@ -15,10 +15,12 @@ $logoPath ??= '/assets/images/logo.png';
 <link href="/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
 <link href="/assets/vendor/datatables/css/dataTables.bootstrap4.min.css" rel="stylesheet">
 <link href="/assets/vendor/toastr/toastr.min.css" rel="stylesheet">
-<link href="/assets/css/app.css" rel="stylesheet">
+<link href="/assets/css/app.css?v=3" rel="stylesheet">
 <link href="/assets/css/icomoon.css" rel="stylesheet">
-<link href="/assets/vendor/quill/quill.snow.css" rel="stylesheet">
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link href="/assets/vendor/quill/quill.snow.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script src="/assets/vendor/chartjs/chart.umd.min.js"></script>
+  <script>if(typeof Chart==='undefined')document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>');</script>
 </head>
 <body class="app-body">
   <div class="app-wrapper">
@@ -68,8 +70,6 @@ toastr.options.newestOnTop=true;
     toastr.info=function(m,t,o){max3('info',m,t,o)};
 })();
 </script>
-<script src="/assets/vendor/chartjs/chart.umd.min.js"></script>
-<script>if(typeof Chart==='undefined')document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>');</script>
 <script src="/assets/js/app.js"></script>
 <script src="/assets/vendor/quill/quill.min.js"></script>
 <div class="app-watermark"><img src="<?=h($logoPath)?>" alt="logo"></div>

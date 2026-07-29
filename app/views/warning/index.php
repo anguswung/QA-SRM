@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-exclamation-triangle"></i> 预警中心</h5>
   <div>
-    <form method="post" style="display:inline">
+    <form method="post" class="inline-form">
       <input type="hidden" name="action" value="generate">
       <button class="btn btn-sm btn-warning"><i class="fas fa-sync"></i> 生成预警</button>
     </form>

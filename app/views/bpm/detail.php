@@ -10,7 +10,7 @@
       <div class="card-header">流程信息</div>
       <div class="card-body">
         <table class="table table-sm">
-          <tr><td style="width:80px">模板</td><td><?=h($instance['template_name'])?></td></tr>
+          <tr><td class="td-label">模板</td><td><?=h($instance['template_name'])?></td></tr>
           <tr><td>状态</td><td><?=statusBadge($instance['status'])?></td></tr>
           <tr><td>发起人</td><td><?=h($instance['initiator_name'] ?? '-')?></td></tr>
           <tr><td>引用类型</td><td><?=h($instance['ref_type'] ?? '-')?></td></tr>
@@ -39,7 +39,7 @@
             $isEnd = $n['node_type'] === 'end';
           ?>
           <div class="flow-step d-flex <?=$isCurrent ? 'flow-current' : ''?>">
-            <div class="flow-dot mr-3 text-center" style="width:32px">
+            <div class="flow-dot mr-3 text-center">
               <?php if ($isEnd && $instance['status'] === 'completed'): ?>
               <i class="fas fa-check-circle text-success"></i>
               <?php elseif ($isProcessed): ?>

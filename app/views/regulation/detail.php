@@ -11,7 +11,7 @@
       <div class="card-header">基本信息</div>
       <div class="card-body">
         <table class="table table-sm">
-          <tr><td style="width:80px">编号</td><td><?=h($item['regulation_no'])?></td></tr>
+          <tr><td class="td-label">编号</td><td><?=h($item['regulation_no'])?></td></tr>
           <tr><td>英文名</td><td><?=h($item['name_en'] ?? '-')?></td></tr>
           <tr><td>分类</td><td><span class="badge badge-soft-info"><?=h($item['category'])?></span></td></tr>
           <tr><td>发布机构</td><td><?=h($item['issuing_body'] ?? '-')?></td></tr>

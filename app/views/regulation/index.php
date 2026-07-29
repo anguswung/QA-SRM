@@ -45,7 +45,7 @@
           <td>
             <?php if (can('regulation.edit')): ?><a href="/regulation?action=edit&id=<?=$r['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
             <?php if ($r['status'] === 'draft'): ?>
-            <form method="post" style="display:inline" class="d-inline">
+            <form method="post" class="d-inline inline-form">
               <input type="hidden" name="action" value="publish">
               <input type="hidden" name="id" value="<?=$r['id']?>">
               <input type="hidden" name="status" value="published">
@@ -53,7 +53,7 @@
             </form>
             <?php endif; ?>
             <?php if (can('regulation.delete')): ?>
-            <form method="post" style="display:inline" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline inline-form" onsubmit="return confirm('确定删除？')">
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="id" value="<?=$r['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>

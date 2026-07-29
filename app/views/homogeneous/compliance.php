@@ -50,7 +50,7 @@
       <div class="card-header">
         合规判定
         <div class="card-actions">
-          <form method="post" style="display:inline">
+          <form method="post" class="inline-form">
             <input type="hidden" name="action" value="analyze_hm">
             <input type="hidden" name="hm_id" value="<?=$item['id']?>">
             <button class="btn btn-sm btn-primary"><i class="fas fa-play"></i> 执行分析</button>
@@ -59,7 +59,7 @@
       </div>
       <div class="card-body p-0">
         <table class="table table-hover">
-          <thead><tr><th style="width:60px;white-space:nowrap">序号</th><th>物质中文</th><th>物质英文</th><th>CAS</th><th>检测值(mg/kg)</th><th>法规限值</th><th>判定</th><th>时间</th></tr></thead>
+          <thead><tr><th class="w-60 nowrap">序号</th><th>物质中文</th><th>物质英文</th><th>CAS</th><th>检测值(mg/kg)</th><th>法规限值</th><th>判定</th><th>时间</th></tr></thead>
           <tbody>
             <?php foreach ($results as $i => $r): ?>
             <tr class="<?=$r['result'] == 2 ? 'table-danger' : ($r['result'] == 1 ? 'table-success' : 'table-info')?>">

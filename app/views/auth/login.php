@@ -23,7 +23,7 @@
         </div>
         <button type="submit" class="btn btn-primary btn-block btn-lg">登 录</button>
       </form>
-      <div class="text-center mt-3" style="color:#94a3b8">
+      <div class="text-center mt-3 text-muted-light">
         <p class="mb-0">默认管理员 admin / 123456</p>
         <p class="mb-0">供应商登录 使用三位编码作为账号和密码</p>
       </div>

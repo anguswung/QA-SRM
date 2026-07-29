@@ -48,13 +48,13 @@
           <div class="form-group col-md-6"><label>描述</label><input type="text" name="description" class="form-control"></div>
         </div>
         <div class="form-group"><label class="font-weight-bold">权限设置</label>
-          <div class="border rounded p-3" style="max-height:400px;overflow-y:auto">
+          <div class="border rounded p-3 scrollbox">
             <?php foreach ($allPerms as $group => $g): ?>
             <div class="mb-2">
               <label class="font-weight-bold text-primary small"><?=h($g['label'])?></label>
               <div class="ml-2">
                 <?php foreach ($g['perms'] as $key => $label): ?>
-                <label class="mr-3 mb-1" style="font-weight:400;cursor:pointer">
+                <label class="mr-3 mb-1 fw-normal" style="cursor:pointer">
                   <input type="checkbox" name="perms[]" value="<?=$key?>" class="mr-1"> <?=h($label)?>
                 </label>
                 <?php endforeach; ?>
@@ -82,13 +82,13 @@
           <div class="form-group col-md-6"><label>描述</label><input type="text" name="description" id="editDesc" class="form-control"></div>
         </div>
         <div class="form-group"><label class="font-weight-bold">权限设置</label>
-          <div class="border rounded p-3" style="max-height:400px;overflow-y:auto">
+          <div class="border rounded p-3 scrollbox">
             <?php foreach ($allPerms as $group => $g): ?>
             <div class="mb-2">
               <label class="font-weight-bold text-primary small"><?=h($g['label'])?></label>
               <div class="ml-2">
                 <?php foreach ($g['perms'] as $key => $label): ?>
-                <label class="mr-3 mb-1" style="font-weight:400;cursor:pointer">
+                <label class="mr-3 mb-1 fw-normal" style="cursor:pointer">
                   <input type="checkbox" name="perms[]" value="<?=$key?>" class="perm-check mr-1"> <?=h($label)?>
                 </label>
                 <?php endforeach; ?>
