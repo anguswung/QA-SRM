@@ -137,7 +137,7 @@ class Borders extends Supervisor
     /**
      * Apply styles from array.
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->getBorders()->applyFromArray(
      *         [
      *             'bottom' => [
@@ -154,9 +154,9 @@ class Borders extends Supervisor
      *             ]
      *         ]
      * );
-     * 
+     * </code>
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->getBorders()->applyFromArray(
      *         [
      *             'allBorders' => [
@@ -167,7 +167,7 @@ class Borders extends Supervisor
      *             ]
      *         ]
      * );
-     * 
+     * </code>
      *
      * @param mixed[] $styleArray Array containing style information
      *

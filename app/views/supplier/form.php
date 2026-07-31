@@ -6,6 +6,16 @@
         <form method="post">
           <input type="hidden" name="action" value="<?=$id ? 'update' : 'create'?>">
           <?php if ($id): ?><input type="hidden" name="id" value="<?=$id?>"><?php endif; ?>
+          <?php if (isSupplier() && (int)$item['id'] === userSupplierId()): ?>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group"><label>供应商编码</label><input type="text" class="form-control" value="<?=h($item['code'] ?? '')?>" readonly></div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group"><label>供应商名称</label><input type="text" class="form-control" value="<?=h($item['name'] ?? '')?>" readonly></div>
+            </div>
+          </div>
+          <?php else: ?>
           <div class="row">
             <div class="col-md-6">
               <div class="form-group">
@@ -20,9 +30,6 @@
           </div>
           <div class="row">
             <div class="col-md-4">
-              <div class="form-group"><label>简称</label><input type="text" name="name_short" class="form-control" value="<?=h($item['name_short'] ?? '')?>"></div>
-            </div>
-            <div class="col-md-4">
               <div class="form-group"><label>统一信用代码</label><input type="text" name="credit_code" class="form-control" value="<?=h($item['credit_code'] ?? '')?>"></div>
             </div>
             <div class="col-md-4">
@@ -35,7 +42,11 @@
               </div>
             </div>
           </div>
+          <?php endif; ?>
           <div class="row">
+            <div class="col-md-4">
+              <div class="form-group"><label>简称</label><input type="text" name="name_short" class="form-control" value="<?=h($item['name_short'] ?? '')?>"></div>
+            </div>
             <div class="col-md-4">
               <div class="form-group"><label>联系人</label><input type="text" name="contact_person" class="form-control" value="<?=h($item['contact_person'] ?? '')?>"></div>
             </div>
@@ -43,7 +54,14 @@
               <div class="form-group"><label>联系电话</label><input type="text" name="contact_phone" class="form-control" value="<?=h($item['contact_phone'] ?? '')?>"></div>
             </div>
           </div>
-          <div class="form-group"><label>地址</label><textarea name="address" class="form-control" rows="2"><?=h($item['address'] ?? '')?></textarea></div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group"><label>邮箱</label><input type="email" name="email" class="form-control" value="<?=h($item['email'] ?? '')?>"></div>
+            </div>
+            <div class="col-md-8">
+              <div class="form-group"><label>地址</label><input type="text" name="address" class="form-control" value="<?=h($item['address'] ?? '')?>"></div>
+            </div>
+          </div>
           <?php if (!$id): ?>
           <div class="alert alert-info py-2">供应商登录账号和初始密码为分配的三位编码</div>
           <?php endif; ?>

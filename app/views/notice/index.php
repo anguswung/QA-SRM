@@ -9,7 +9,7 @@
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover datatable">
-      <thead><tr><th>#</th><th>标题</th><th>发布人</th><th>发布时间</th><?php if (isSupplier()): ?><th>已读</th><?php endif; ?><?php if (isAdmin()): ?><th>操作</th><?php endif; ?></tr></thead>
+      <thead><tr><th style="width:50px">#</th><th>标题</th><th style="width:100px">发布人</th><th style="width:160px">发布时间</th><?php if (isSupplier()): ?><th style="width:80px">已读</th><?php endif; ?><?php if (isAdmin()): ?><th style="width:110px">操作</th><?php endif; ?></tr></thead>
       <tbody>
         <?php $seq = 0; foreach ($notices as $n):
           $attachments = DB::getInstance()->query("SELECT * FROM notice_attachment WHERE notice_id=?", [$n['id']]);

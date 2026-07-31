@@ -6,7 +6,7 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Exception as PhpSpreadsheetException;
 
 /**
- * 
+ * <code>
  * Paper size taken from Office Open XML Part 4 - Markup Language Reference, page 1988:.
  *
  * 1 = Letter paper (8.5 in. by 11 in.)
@@ -75,7 +75,7 @@ use PhpOffice\PhpSpreadsheet\Exception as PhpSpreadsheetException;
  * 66 = A2 paper (420 mm by 594 mm)
  * 67 = A3 transverse paper (297 mm by 420 mm)
  * 68 = A3 extra transverse paper (322 mm by 445 mm)
- * 
+ * </code>
  */
 class PageSetup
 {

@@ -109,7 +109,7 @@ class Fill extends Supervisor
     /**
      * Apply styles from array.
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->getFill()->applyFromArray(
      *     [
      *         'fillType' => Fill::FILL_GRADIENT_LINEAR,
@@ -122,7 +122,7 @@ class Fill extends Supervisor
      *         ]
      *     ]
      * );
-     * 
+     * </code>
      *
      * @param array{fillType?: string, rotation?: float, startColor?: array{rgb?: string, argb?: string, theme?: int}, endColor?: array{rgb?: string, argb?: string, theme?: int}, color?: array{rgb?: string, argb?: string, theme?: int}} $styleArray Array containing style information
      *

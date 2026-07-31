@@ -3,7 +3,7 @@
 namespace PhpOffice\PhpSpreadsheet\Worksheet;
 
 /**
- * 
+ * <code>
  * Header/Footer Formatting Syntax taken from Office Open XML Part 4 - Markup Language Reference, page 1970:.
  *
  * There are a number of formatting codes that can be written inline with the actual header / footer text, which
@@ -61,7 +61,7 @@ namespace PhpOffice\PhpSpreadsheet\Worksheet;
  * &"-,Bold Italic" code for "bold italic font style"
  * &O - code for "outline style"
  * &H - code for "shadow style"
- * 
+ * </code>
  */
 class HeaderFooter
 {

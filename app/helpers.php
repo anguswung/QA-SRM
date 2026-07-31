@@ -1,4 +1,6 @@
-<?php if (function_exists('h')) return;
+<?php
+if (!defined('HELPERS_LOADED')) {
+define('HELPERS_LOADED', 1);
 function h($str, $flags = ENT_QUOTES, $encoding = 'UTF-8'): string {
     return htmlspecialchars($str ?? '', $flags, $encoding);
 }
@@ -76,19 +78,15 @@ function statusBadge($status): string {
     $m = $map[$status] ?? ['secondary', $status];
     return '<span class="status-tag ' . $m[0] . '">' . h($m[1]) . '</span>';
 }
-
-
 function csrf_token(): string {
     if (empty($_SESSION['_csrf_token'])) {
         $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
     }
     return $_SESSION['_csrf_token'];
 }
-
 function csrf_field(): string {
     return '<input type="hidden" name="_csrf_token" value="' . csrf_token() . '">';
 }
-
 function verify_csrf(): void {
     $token = $_POST['_csrf_token'] ?? '';
     $expected = $_SESSION['_csrf_token'] ?? '';
@@ -96,4 +94,5 @@ function verify_csrf(): void {
         http_response_code(419);
         die('CSRF token validation failed');
     }
+}
 }

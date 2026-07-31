@@ -19,7 +19,7 @@
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover datatable">
-      <thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>模块</th><th>详情</th><th>IP</th></tr></thead>
+      <thead><tr><th style="width:160px">时间</th><th style="width:240px">操作人</th><th style="width:80px">操作</th><th style="width:100px">模块</th><th>详情</th><th style="width:140px">IP</th></tr></thead>
       <tbody>
         <?php foreach ($logs as $l): ?>
         <tr>

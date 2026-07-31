@@ -26,7 +26,7 @@
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover datatable">
-      <thead><tr><th>编码</th><th>名称</th><th>联系人</th><th>电话</th><th>等级</th><th>黑名单</th><th>物料数</th><th>操作</th></tr></thead>
+      <thead><tr><th style="width:80px">编码</th><th>名称</th><th style="width:80px">联系人</th><th style="width:120px">电话</th><th style="width:160px">邮箱</th><th style="width:70px">等级</th><th style="width:80px">黑名单</th><th style="width:70px">物料数</th><th style="width:180px">操作</th></tr></thead>
       <tbody>
         <?php foreach ($suppliers as $s): ?>
         <tr>
@@ -34,6 +34,7 @@
           <td><a href="/supplier?action=detail&id=<?=$s['id']?>"><?=h($s['name'])?></a></td>
           <td><?=h($s['contact_person'])?></td>
           <td><?=h($s['contact_phone'])?></td>
+          <td><small><?=h($s['email'] ?: '-')?></small></td>
           <td><?=statusBadge($s['level'] . '_')?></td>
           <td><?=$s['blacklist'] ? '<span class="status-tag danger">黑名单</span>' : '<span class="status-tag success">正常</span>'?></td>
           <td><span class="badge badge-soft-info"><?=(int)$s['material_count']?></span></td>

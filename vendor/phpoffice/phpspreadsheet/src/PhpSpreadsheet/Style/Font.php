@@ -162,7 +162,7 @@ class Font extends Supervisor
     /**
      * Apply styles from array.
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->getFont()->applyFromArray(
      *     [
      *         'name' => 'Arial',
@@ -175,7 +175,7 @@ class Font extends Supervisor
      *         ]
      *     ]
      * );
-     * 
+     * </code>
      *
      * @param array{
      *   autoColor?: bool,

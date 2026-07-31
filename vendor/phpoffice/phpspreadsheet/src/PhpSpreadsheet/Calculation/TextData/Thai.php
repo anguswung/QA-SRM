@@ -10,33 +10,33 @@ class Thai
     use ArrayEnabled;
 
     private const THAI_DIGITS = [
-        0 => '喔ㄠ腹喔權涪喙?,
-        1 => '喔笝喔多箞喔?,
-        2 => '喔腑喔?,
-        3 => '喔覆喔?,
-        4 => '喔傅喙?,
-        5 => '喔箟喔?,
-        6 => '喔竵',
-        7 => '喙€喔堗箛喔?,
-        8 => '喙佮笡喔?,
-        9 => '喙€喔佮箟喔?,
+        0 => 'ศูนย์',
+        1 => 'หนึ่ง',
+        2 => 'สอง',
+        3 => 'สาม',
+        4 => 'สี่',
+        5 => 'ห้า',
+        6 => 'หก',
+        7 => 'เจ็ด',
+        8 => 'แปด',
+        9 => 'เก้า',
     ];
 
     private const THAI_UNITS = [
-        1 => '喔复喔?,
-        2 => '喔｀箟喔涪',
-        3 => '喔炧副喔?,
-        4 => '喔浮喔粪箞喔?,
-        5 => '喙佮釜喔?,
-        6 => '喔ム箟喔侧笝',
+        1 => 'สิบ',
+        2 => 'ร้อย',
+        3 => 'พัน',
+        4 => 'หมื่น',
+        5 => 'แสน',
+        6 => 'ล้าน',
     ];
 
-    private const THAI_COMPOUND_ONE = '喙€喔箛喔?;
-    private const THAI_COMPOUND_TWO = '喔⑧傅喙?;
-    private const THAI_INTEGER = '喔栢箟喔о笝';
-    private const THAI_MINUS = '喔ム笟';
-    private const THAI_BAHT = '喔氞覆喔?;
-    private const THAI_SATANG = '喔笗喔侧竾喔勦箤';
+    private const THAI_COMPOUND_ONE = 'เอ็ด';
+    private const THAI_COMPOUND_TWO = 'ยี่';
+    private const THAI_INTEGER = 'ถ้วน';
+    private const THAI_MINUS = 'ลบ';
+    private const THAI_BAHT = 'บาท';
+    private const THAI_SATANG = 'สตางค์';
 
     /**
      * BAHTTEXT.

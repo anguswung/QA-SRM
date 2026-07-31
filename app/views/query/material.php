@@ -32,7 +32,7 @@
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover datatable">
-      <thead><tr><th>编号</th><th>名称</th><th>供应商</th><th>环保状态</th><th>审核</th><th>有效</th><th>报告数</th></tr></thead>
+      <thead><tr><th style="width:120px">编号</th><th>名称</th><th style="width:140px">供应商</th><th style="width:80px">环保状态</th><th style="width:80px">审核</th><th style="width:60px">有效</th><th style="width:70px">报告数</th></tr></thead>
       <tbody>
         <?php foreach ($materials as $m): ?>
         <tr>

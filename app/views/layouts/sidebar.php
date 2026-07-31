@@ -79,10 +79,10 @@ unset($m);
   <nav class="sidebar-nav">
     <?php foreach ($menu as $k => $m): ?>
     <?php $hasChildren = !empty($m['children']); ?>
-    <?php $isOpen = $hasChildren && (menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'document' && menuOpen('/document')) || ($k === 'task' && menuOpen('/bpm'))); ?>
+    <?php $isOpen = $hasChildren && (menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'document' && menuOpen('/document')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query'))); ?>
     <div class="nav-item <?=$isOpen ? 'menu-open' : ''?>">
       <?php if ($hasChildren): ?>
-      <span class="nav-link <?=menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) ? 'active' : ''?> has-children">
+      <span class="nav-link <?=menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query')) ? 'active' : ''?> has-children">
         <i class="fas <?=h($m['icon'])?>"></i>
         <span><?=h($m['label'])?></span>
         <i class="fas fa-chevron-down arrow"></i>

@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-truck"></i> <?=h($item['name'])?> <small class="text-muted">[<?=h($item['code'])?>]</small></h5>
   <div>
-    <?php if (can('supplier.edit')): ?><a href="/supplier?action=edit&id=<?=$item['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
+    <?php if (can('supplier.edit') || (isSupplier() && userSupplierId() === (int)$item['id'])): ?><a href="/supplier?action=edit&id=<?=$item['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
     <a href="/supplier" class="btn btn-sm btn-outline-secondary">返回</a>
   </div>
 </div>
@@ -15,6 +15,7 @@
           <tr><td>名称</td><td><?=h($item['name'])?></td></tr>
           <tr><td>联系人</td><td><?=h($item['contact_person'] ?: '-')?></td></tr>
           <tr><td>联系电话</td><td><?=h($item['contact_phone'] ?: '-')?></td></tr>
+          <tr><td>邮箱</td><td><?=h($item['email'] ?: '-')?></td></tr>
           <tr><td>地址</td><td><small><?=h($item['address'] ?: '-')?></small></td></tr>
           <tr><td>等级</td><td><?=statusBadge($item['level'] . '_')?></td></tr>
           <tr><td>状态</td><td><?=$item['blacklist'] ? '<span class="status-tag danger">黑名单</span>' : '<span class="status-tag success">正常</span>'?></td></tr>

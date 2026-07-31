@@ -65,7 +65,7 @@ Some earlier branches remain supported and security fixes are applied to them; i
 
 ### Security Note
 
-- File::prohibitWrappers and Drawing::setPath now reject phar paths with extra leading slashes (e.g. phar:///鈥? that escaped the prior parse_url-based filter. No security exploit was possible even with the extra slashes. [PR #4876](https://github.com/PHPOffice/PhpSpreadsheet/pull/4876)
+- File::prohibitWrappers and Drawing::setPath now reject phar paths with extra leading slashes (e.g. phar:///…) that escaped the prior parse_url-based filter. No security exploit was possible even with the extra slashes. [PR #4876](https://github.com/PHPOffice/PhpSpreadsheet/pull/4876)
 
 ### Added
 
@@ -1331,7 +1331,7 @@ Note that this will be the last 1.x branch release before the 2.x release. We wi
 
 ### Changed
 
-- Use of `nb` rather than `no` as the locale code for Norsk Bokm氓l.
+- Use of `nb` rather than `no` as the locale code for Norsk Bokmål.
 
 ### Deprecated
 
@@ -1339,7 +1339,7 @@ Note that this will be the last 1.x branch release before the 2.x release. We wi
 
 ### Removed
 
-- Use of `nb` rather than `no` as the locale language code for Norsk Bokm氓l.
+- Use of `nb` rather than `no` as the locale language code for Norsk Bokmål.
 
 ### Fixed
 
@@ -1890,7 +1890,7 @@ Note that this will be the last 1.x branch release before the 2.x release. We wi
 
 - Avoid potentially unsupported PSR-16 cache keys [#354](https://github.com/PHPOffice/PhpSpreadsheet/issues/354)
 - Check for MIME type to know if CSV reader can read a file [#167](https://github.com/PHPOffice/PhpSpreadsheet/issues/167)
-- Use proper 鈧?symbol for currency format [#379](https://github.com/PHPOffice/PhpSpreadsheet/pull/379)
+- Use proper € symbol for currency format [#379](https://github.com/PHPOffice/PhpSpreadsheet/pull/379)
 - Read printing area correctly when skipping some sheets [#371](https://github.com/PHPOffice/PhpSpreadsheet/issues/371)
 - Avoid incorrectly overwriting calculated value type [#394](https://github.com/PHPOffice/PhpSpreadsheet/issues/394)
 - Select correct cell when calling freezePane [#389](https://github.com/PHPOffice/PhpSpreadsheet/issues/389)

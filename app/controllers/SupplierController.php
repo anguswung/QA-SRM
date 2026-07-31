@@ -1,25 +1,41 @@
 <?php
 class SupplierController extends Controller {
     public function index() {
+        $action = $_GET['action'] ?? '';
+        $id = (int)($_GET['id'] ?? 0);
+        $isOwn = isSupplier() && $id === userSupplierId();
+
+        // Supplier-specific routing
+        if (isSupplier()) {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $pa = $_POST['action'] ?? '';
+                if ($pa === 'update' && (int)($_POST['id'] ?? 0) === userSupplierId()) { $this->doUpdate(); return; }
+                if ($pa === 'contact_create' && (int)($_POST['supplier_id'] ?? 0) === userSupplierId()) { $this->contactCreate(); return; }
+                if ($pa === 'contact_delete') { $this->contactDelete(); return; }
+                header('Location: /supplier/rating'); exit;
+            }
+            if ($action === 'detail' && $isOwn) { $this->detail($id); return; }
+            if ($action === 'edit' && $isOwn) { $this->showForm($id); return; }
+            // No valid supplier action -> redirect to rating
+            header('Location: /supplier/rating'); exit;
+        }
+
         $this->requirePermission('supplier.view');
-        $blockedActions = ['create', 'edit', 'delete', 'blacklist', 'contact_create', 'contact_delete', 'import'];
-        if (isSupplier() && (in_array($_GET['action'] ?? '', $blockedActions) || $_SERVER['REQUEST_METHOD'] === 'POST')) { header('Location: /supplier/rating'); exit; }
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $action = $_POST['action'] ?? '';
-            if ($action === 'create') { $this->doCreate(); return; }
-            if ($action === 'update') { $this->doUpdate(); return; }
-            if ($action === 'delete') { $this->doDelete(); return; }
-            if ($action === 'blacklist') { $this->toggleBlacklist(); return; }
-            if ($action === 'contact_create') { $this->contactCreate(); return; }
-            if ($action === 'contact_delete') { $this->contactDelete(); return; }
-            if ($action === 'rating_create') { $this->ratingCreate(); return; }
-            if ($action === 'import') { $this->doImport(); return; }
+            $pa = $_POST['action'] ?? '';
+            if ($pa === 'create') { $this->doCreate(); return; }
+            if ($pa === 'update') { $this->doUpdate(); return; }
+            if ($pa === 'delete') { $this->doDelete(); return; }
+            if ($pa === 'blacklist') { $this->toggleBlacklist(); return; }
+            if ($pa === 'contact_create') { $this->contactCreate(); return; }
+            if ($pa === 'contact_delete') { $this->contactDelete(); return; }
+            if ($pa === 'rating_create') { $this->ratingCreate(); return; }
+            if ($pa === 'import') { $this->doImport(); return; }
         }
-        $action = $_GET['action'] ?? '';
         if ($action === 'create') { $this->showForm(); return; }
-        if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
-        if ($action === 'detail') { $this->detail((int)($_GET['id'] ?? 0)); return; }
+        if ($action === 'edit') { $this->showForm($id); return; }
+        if ($action === 'detail') { $this->detail($id); return; }
         if ($action === 'import_template') { $this->importTemplate(); return; }
         $this->showList();
     }
@@ -57,8 +73,8 @@ class SupplierController extends Controller {
         $this->render('supplier/form', get_defined_vars());
     }
     private function detail($id) {
-        $this->requirePermission('supplier.view');
         $db = DB::getInstance();
+        if (!isSupplier()) { $this->requirePermission('supplier.view'); }
         if (isSupplier() && (int)$id !== userSupplierId()) { header('Location: /supplier/rating'); exit; }
         $item = $db->single("SELECT * FROM supplier WHERE id=?", [$id], true);
         if (!$item) { header('Location: /supplier'); exit; }
@@ -85,11 +101,12 @@ class SupplierController extends Controller {
         $sheet->setCellValue('C1', '简称');
         $sheet->setCellValue('D1', '联系人');
         $sheet->setCellValue('E1', '联系电话');
-        $sheet->setCellValue('F1', '地址');
-        $sheet->getStyle('A1:F1')->getFont()->setBold(true);
+        $sheet->setCellValue('F1', '邮箱');
+        $sheet->setCellValue('G1', '地址');
+        $sheet->getStyle('A1:G1')->getFont()->setBold(true);
         $sheet->setCellValue('A2', '001');
         $sheet->setCellValue('B2', '示例供应商');
-        foreach (range('A','F') as $c) $sheet->getColumnDimension($c)->setAutoSize(true);
+        foreach (range('A','G') as $c) $sheet->getColumnDimension($c)->setAutoSize(true);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="供应商导入模板.xlsx"');
         ob_clean();
@@ -106,7 +123,7 @@ class SupplierController extends Controller {
             $reader = $ext === 'xlsx' ? new \PhpOffice\PhpSpreadsheet\Reader\Xlsx() : new \PhpOffice\PhpSpreadsheet\Reader\Xls();
             $rows = $reader->load($f['tmp_name'])->getActiveSheet()->toArray();
         } catch (Exception $e) { flash('error', '文件解析失败'); header('Location: /supplier'); exit; }
-        if (empty($rows) || !str_contains($rows[0][0] ?? '', '编码') || !str_contains($rows[0][1] ?? '', '供应商名称')) {
+        if (empty($rows) || !str_contains($rows[0][0] ?? '', '编码') || !str_contains($rows[0][1] ?? '', '供应商名称') || !str_contains($rows[0][6] ?? '', '地址')) {
             flash('error', '模板不匹配，请使用供应商导入模板'); header('Location: /supplier'); exit;
         }
         $db = DB::getInstance();
@@ -120,6 +137,7 @@ class SupplierController extends Controller {
             $contact = trim($row[3] ?? '');
             $phone = trim($row[4] ?? '');
             $address = trim($row[5] ?? '');
+            $email = trim($row[6] ?? '');
             $existing = $db->single("SELECT id, code FROM supplier WHERE name=?", [$name], true);
             if ($existing) { $errors[] = "第".($i+1)."行 供应商名称".$name."'已存在"; continue; }
             if ($codeInput && preg_match('/^\d+$/', $codeInput)) {
@@ -131,8 +149,8 @@ class SupplierController extends Controller {
                 $code = str_pad(($maxCode ?: 0) + 1, 3, '0', STR_PAD_LEFT);
             }
             try {
-                $db->execute("INSERT INTO supplier (code, name, name_short, contact_person, contact_phone, address) VALUES (?,?,?,?,?,?)",
-                    [$code, $name, $short, $contact, $phone, $address]);
+                $db->execute("INSERT INTO supplier (code, name, name_short, contact_person, contact_phone, email, address) VALUES (?,?,?,?,?,?,?)",
+                    [$code, $name, $short, $contact, $phone, $email, $address]);
                 $sid = $db->lastInsertId();
                 $existingUser = $db->single("SELECT id FROM users WHERE username=?", [$code]);
                 if ($existingUser) {
@@ -157,10 +175,10 @@ class SupplierController extends Controller {
         if (!$code) { flash('error', '供应商编码不能为空'); header('Location: /supplier?action=create'); exit; }
         $existing = $db->single("SELECT id FROM supplier WHERE code=?", [$code]);
         if ($existing) { flash('error', '编码已存在'); header('Location: /supplier?action=create'); exit; }
-        $db->execute("INSERT INTO supplier (code, name, name_short, credit_code, contact_person, contact_phone, address, level) VALUES (?,?,?,?,?,?,?,?)",
+        $db->execute("INSERT INTO supplier (code, name, name_short, credit_code, contact_person, contact_phone, email, address, level) VALUES (?,?,?,?,?,?,?,?,?)",
             [$code, $_POST['name'] ?? '', $_POST['name_short'] ?? '', $_POST['credit_code'] ?? '',
-             $_POST['contact_person'] ?? '', $_POST['contact_phone'] ?? '', $_POST['address'] ?? '',
-             $_POST['level'] ?? 'C']);
+             $_POST['contact_person'] ?? '', $_POST['contact_phone'] ?? '', $_POST['email'] ?? '',
+             $_POST['address'] ?? '', $_POST['level'] ?? 'C']);
         $sid = $db->lastInsertId();
         $existingUser = $db->single("SELECT id FROM users WHERE username=?", [$code]);
         if ($existingUser) {
@@ -178,10 +196,19 @@ class SupplierController extends Controller {
         $id = (int)($_POST['id'] ?? 0);
         if (!$id) { header('Location: /supplier'); exit; }
         $db = DB::getInstance();
-        $db->execute("UPDATE supplier SET code=?, name=?, name_short=?, credit_code=?, contact_person=?, contact_phone=?, address=?, level=?, updated_at=datetime('now','localtime') WHERE id=?",
+        if (isSupplier() && $id === userSupplierId()) {
+            // Supplier self-update: only contact info fields
+            $db->execute("UPDATE supplier SET name_short=?, contact_person=?, contact_phone=?, email=?, address=?, updated_at=datetime('now','localtime') WHERE id=?",
+                [$_POST['name_short'] ?? '', $_POST['contact_person'] ?? '', $_POST['contact_phone'] ?? '', $_POST['email'] ?? '', $_POST['address'] ?? '', $id]);
+            logOp('update', 'supplier', $id, '供应商自行更新联系信息');
+            flash('success', '联系信息更新成功');
+            header('Location: /supplier?action=detail&id=' . $id); exit;
+        }
+        $db->execute("UPDATE supplier SET code=?, name=?, name_short=?, credit_code=?, contact_person=?, contact_phone=?, email=?, address=?, level=?, updated_at=datetime('now','localtime') WHERE id=?",
             [$_POST['code'] ?? '', $_POST['name'] ?? '', $_POST['name_short'] ?? '', $_POST['credit_code'] ?? '',
-             $_POST['contact_person'] ?? '', $_POST['contact_phone'] ?? '', $_POST['address'] ?? '',
-             $_POST['level'] ?? 'C', $id]);
+             $_POST['contact_person'] ?? '', $_POST['contact_phone'] ?? '', $_POST['email'] ?? '',
+             $_POST['address'] ?? '', $_POST['level'] ?? 'C', $id]);
+        $db->execute("UPDATE users SET realname=? WHERE supplier_id=? AND role='supplier'", [$_POST['name'] ?? '', $id]);
         logOp('update', 'supplier', $id, '更新供应商' . ($_POST['name'] ?? ''));
         flash('success', '供应商更新成功');
         header('Location: /supplier'); exit;

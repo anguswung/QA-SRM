@@ -99,7 +99,7 @@ class Border extends Supervisor
     /**
      * Apply styles from array.
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->getBorders()->getTop()->applyFromArray(
      *        [
      *            'borderStyle' => Border::BORDER_DASHDOT,
@@ -108,7 +108,7 @@ class Border extends Supervisor
      *            ]
      *        ]
      * );
-     * 
+     * </code>
      *
      * @param mixed[] $styleArray Array containing style information
      *

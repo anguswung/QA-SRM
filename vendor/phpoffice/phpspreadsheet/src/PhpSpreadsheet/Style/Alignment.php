@@ -183,7 +183,7 @@ class Alignment extends Supervisor
     /**
      * Apply styles from array.
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->getAlignment()->applyFromArray(
      *        [
      *            'horizontal'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -192,7 +192,7 @@ class Alignment extends Supervisor
      *            'wrapText'     => TRUE
      *        ]
      * );
-     * 
+     * </code>
      *
      * @param mixed[] $styleArray Array containing style information
      *

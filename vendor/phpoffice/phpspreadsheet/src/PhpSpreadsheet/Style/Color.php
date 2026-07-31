@@ -176,9 +176,9 @@ class Color extends Supervisor
     /**
      * Apply styles from array.
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->getFont()->getColor()->applyFromArray(['rgb' => '808080']);
-     * 
+     * </code>
      *
      * @param array{rgb?: string, argb?: string, theme?: int} $styleArray Array containing style information
      *

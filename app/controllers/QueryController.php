@@ -45,12 +45,14 @@ class QueryController extends Controller {
         $module = $_GET['module'] ?? '';
         $action = $_GET['action'] ?? '';
         $where = []; $params = [];
+        if (!isAdmin()) { $where[] = "ol.user_id=?"; $params[] = userId(); }
         if ($startDate) { $where[] = "ol.created_at >= ?"; $params[] = $startDate; }
         if ($endDate) { $where[] = "ol.created_at <= ?"; $params[] = $endDate . ' 23:59:59'; }
         if ($module) { $where[] = "ol.module=?"; $params[] = $module; }
         if ($action) { $where[] = "ol.action=?"; $params[] = $action; }
         $logs = $db->query("SELECT ol.*, u.realname FROM operation_log ol LEFT JOIN users u ON ol.user_id=u.id" . ($where ? " WHERE " . implode(' AND ', $where) : "") . " ORDER BY ol.created_at DESC LIMIT 200", $params);
-        $modules = $db->query("SELECT DISTINCT module FROM operation_log WHERE module IS NOT NULL ORDER BY module");
+        $mWhere = !isAdmin() ? " WHERE user_id=" . userId() . " AND module IS NOT NULL" : " WHERE module IS NOT NULL";
+        $modules = $db->query("SELECT DISTINCT module FROM operation_log" . $mWhere . " ORDER BY module");
         $title = '变更历史';
         $this->render('query/history', get_defined_vars());
     }

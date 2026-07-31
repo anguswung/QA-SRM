@@ -291,7 +291,7 @@ class Sample
         $reflection = new ReflectionClass($writer);
         $format = $reflection->getShortName();
 
-        $codePath = $this->isCli() ? $path : "$path";
+        $codePath = $this->isCli() ? $path : "<code>$path</code>";
         $message = "Write {$format} format to {$codePath}  in " . sprintf('%.4f', $callTime) . ' seconds';
 
         $this->log($message);
@@ -304,7 +304,7 @@ class Sample
     {
         $callEndTime = microtime(true);
         $callTime = $callEndTime - $callStartTime;
-        $message = "Read {$format} format from {$path}  in " . sprintf('%.4f', $callTime) . ' seconds';
+        $message = "Read {$format} format from <code>{$path}</code>  in " . sprintf('%.4f', $callTime) . ' seconds';
 
         $this->log($message);
     }

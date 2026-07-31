@@ -155,7 +155,7 @@ class Style extends Supervisor
     /**
      * Apply styles from array.
      *
-     * 
+     * <code>
      * $spreadsheet->getActiveSheet()->getStyle('B2')->applyFromArray(
      *     [
      *         'font' => [
@@ -190,7 +190,7 @@ class Style extends Supervisor
      *         'quotePrefix'    => true
      *     ]
      * );
-     * 
+     * </code>
      *
      * @param mixed[] $styleArray Array containing style information
      * @param bool $advancedBorders advanced mode for setting borders
