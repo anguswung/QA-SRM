@@ -20,7 +20,7 @@ class ComplianceController extends Controller {
             flash('success', '分析完成，共 ' . count($results) . ' 条');
             header('Location: /compliance/analyze?material_id=' . $materialId); exit;
         }
-        $materials = $db->query("SELECT id, material_name, material_no, env_status FROM material WHERE valid_status='Valid' ORDER BY material_name");
+        $materials = QueryRegistry::validMaterials();
         $results = [];
         if ($materialId) {
             $results = $db->query("SELECT ar.*, rl.name AS regulation_name, rl.regulation_no FROM analysis_record ar JOIN regulation_lib rl ON ar.regulation_id=rl.id WHERE ar.material_id=? ORDER BY ar.analyzed_at DESC LIMIT 50", [$materialId]);
@@ -75,14 +75,20 @@ class ComplianceController extends Controller {
     }
     public function matrix() {
         $db = DB::getInstance();
-        $materials = $db->query("SELECT id, material_name, material_no, env_status FROM material WHERE valid_status='Valid' ORDER BY material_name");
+        $materials = QueryRegistry::validMaterials();
         $regulations = $db->query("SELECT id, regulation_no, name FROM regulation_lib WHERE status='published' ORDER BY regulation_no");
+        $allRecords = $db->query("SELECT material_id, regulation_id, analyze_result, is_manual, manual_result, analyzed_at FROM analysis_record ORDER BY analyzed_at DESC");
+        $recordMap = [];
+        foreach ($allRecords as $r) {
+            $mk = $r['material_id'] . '_' . $r['regulation_id'];
+            if (!isset($recordMap[$mk])) $recordMap[$mk] = $r;
+        }
         $matrix = [];
         foreach ($materials as $m) {
             $row = ['material' => $m, 'results' => []];
             foreach ($regulations as $r) {
-                $rec = $db->single("SELECT analyze_result, is_manual, manual_result, analyzed_at FROM analysis_record WHERE material_id=? AND regulation_id=? ORDER BY analyzed_at DESC LIMIT 1", [$m['id'], $r['id']], true);
-                $row['results'][$r['id']] = $rec;
+                $mk = $m['id'] . '_' . $r['id'];
+                $row['results'][$r['id']] = $recordMap[$mk] ?? null;
             }
             $matrix[] = $row;
         }

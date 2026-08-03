@@ -79,8 +79,9 @@
             $expiry = $m[strtolower($rt).'_expiry'] ?? '';
           ?>
           <td class="text-center small px-1"><?php
-            if (!$hasId || !$expiry): ?><span class="text-muted">无</span><?php
+            if (!$hasId): ?><span class="text-muted">无</span><?php
             elseif ($rt === 'MSDS'): ?><span class="text-success" title="有MSDS">✓</span><?php
+            elseif (!$expiry): ?><span class="text-muted" title="无有效期">-</span><?php
             elseif (strtotime($expiry) < time()): ?><a href="/homogeneous?action=edit&id=<?=$m['id']?>&step=3" class="badge badge-danger text-white" title="点击重新上传">过期</a><?php
             elseif (strtotime($expiry) <= strtotime('+30 days')): ?><a href="/homogeneous?action=edit&id=<?=$m['id']?>&step=3" class="badge badge-warning text-white" title="点击更新">将到期</a><?php
             else: ?><span class="badge badge-success" title="<?=h($expiry)?>"><?=h(substr($expiry,5))?></span><?php

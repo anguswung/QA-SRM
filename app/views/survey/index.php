@@ -1,6 +1,6 @@
 <div class="page-header">
   <h5><i class="fas fa-poll"></i> 问卷调查</h5>
-  <?php if (isAdmin() && can('survey.create')): ?>
+  <?php if (canManage('survey.create')): ?>
   <div>
     <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#surveyModal"><i class="fas fa-plus"></i> 创建问卷</button>
   </div>

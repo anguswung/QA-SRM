@@ -19,7 +19,7 @@ class HomogeneousController extends Controller {
         if ($action === 'create') { $this->showForm(); return; }
         if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
         if ($action === 'compliance') { $this->showCompliance((int)($_GET['id'] ?? 0)); return; }
-        if ($action === 'reports') { $this->showReports((int)($_GET['id'] ?? 0)); return; }
+        if ($action === 'reports') { $this->showReports((int)($_GET['id'] ?? 0), (int)($_GET['report_id'] ?? 0)); return; }
         if ($action === 'delete_report') { $this->doDeleteReport(); return; }
         $this->showList();
     }
@@ -56,8 +56,8 @@ class HomogeneousController extends Controller {
         $db = DB::getInstance();
         $item = $id ? $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$id], true) : [];
         if ($id && !$item) { header('Location: /homogeneous'); exit; }
-        if ($id && ($item['audit_status'] ?? 'N') === 'A' && !isAdmin()) { flash('error', '已批准的材料无法编辑'); header('Location: /homogeneous'); exit; }
-        if ($id && isSupplier() && (int)($item['created_by'] ?? 0) !== userId()) { flash('error', '无权操作其他账号的均质材料'); header('Location: /homogeneous'); exit; }
+        if ($id) $this->requireNotApproved($item['audit_status'] ?? 'N', '/homogeneous');
+        if ($id) $this->requireOwnership($item['created_by'] ?? 0, '/homogeneous');
         $composition = $id ? $db->query("SELECT hc.*, s.name_en FROM hm_composition hc LEFT JOIN substance s ON hc.cas_no=s.cas_no WHERE hc.hm_id=? ORDER BY hc.id", [$id]) : [];
         $reports = $id ? $db->query("SELECT * FROM hm_report WHERE hm_id=? ORDER BY version_group, version DESC", [$id]) : [];
         $currentStep = (int)($_GET['step'] ?? 1);
@@ -112,14 +112,12 @@ class HomogeneousController extends Controller {
     private function saveReports($hmId) {
         $db = DB::getInstance();
         $files = $_FILES['hm_report_file'] ?? [];
+        $missing = [];
         $required = ['RoHS', 'MSDS'];
         foreach ($required as $rt) {
             if (!empty($files['name'][$rt])) continue;
             $existing = $db->single("SELECT id FROM hm_report WHERE hm_id=? AND report_type=? AND status='current'", [$hmId, $rt]);
-            if (!$existing) {
-                flash('error', $rt . ' 报告文件为必填项');
-                return;
-            }
+            if (!$existing) $missing[] = $rt;
         }
         $saved = 0;
         $nos = $_POST['hm_report_no'] ?? [];
@@ -152,6 +150,9 @@ class HomogeneousController extends Controller {
             $db->execute("UPDATE homogeneous_material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$hmId]);
             // auto-analyze
             (new ComplianceEngine())->analyzeHm($hmId);
+        }
+        if (!empty($missing)) {
+            flash('warning', implode('、', $missing) . ' 报告未上传，请尽快补充');
         }
     }
     private function doCreate() {
@@ -188,8 +189,9 @@ class HomogeneousController extends Controller {
         if (!$id) return;
         $db = DB::getInstance();
         $hm = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$id], true);
-        if (!$hm || ($hm['audit_status'] === 'A' && !isAdmin())) { flash('error', '已批准的材料无法编辑'); header('Location: /homogeneous'); exit; }
-        if (isSupplier() && (int)($hm['created_by'] ?? 0) !== userId()) { flash('error', '无权操作其他账号的均质材料'); header('Location: /homogeneous'); exit; }
+        if (!$hm) { flash('error', '记录不存在'); header('Location: /homogeneous'); exit; }
+        $this->requireNotApproved($hm['audit_status'] ?? 'N', '/homogeneous');
+        $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous');
         $step = (int)($_POST['step'] ?? 1);
         if ($step == 2) {
             $supplierId = isSupplier() ? userSupplierId() : 0;
@@ -226,8 +228,8 @@ class HomogeneousController extends Controller {
             $db = DB::getInstance();
             $hm = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
             if (!$hm) { flash('error', '均质材料不存在'); header('Location: /homogeneous?action=reports&id=' . $hmId); exit; }
-            if ($hm['audit_status'] === 'A' && !isAdmin()) { flash('error', '已批准的材料无法操作'); header('Location: /homogeneous?action=reports&id=' . $hmId); exit; }
-            if (isSupplier() && (int)($hm['created_by'] ?? 0) !== userId()) { flash('error', '无权操作其他账号的均质材料'); header('Location: /homogeneous?action=reports&id=' . $hmId); exit; }
+            $this->requireNotApproved($hm['audit_status'] ?? 'N', '/homogeneous?action=reports&id=' . $hmId);
+            $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous?action=reports&id=' . $hmId);
             $r = $db->single("SELECT * FROM hm_report WHERE id=?", [$rid], true);
             if ($r && $r['file_path'] && file_exists($r['file_path'])) unlink($r['file_path']);
             $db->execute("DELETE FROM hm_report WHERE id=?", [$rid]);
@@ -242,7 +244,7 @@ class HomogeneousController extends Controller {
             $db = DB::getInstance();
             $hm = $db->single("SELECT created_by FROM homogeneous_material WHERE id=?", [$id], true);
             if (!$hm) { flash('error', '均质材料不存在'); header('Location: /homogeneous'); exit; }
-            if (isSupplier() && (int)($hm['created_by'] ?? 0) !== userId()) { flash('error', '无权操作其他账号的均质材料'); header('Location: /homogeneous'); exit; }
+            $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous');
             $reports = $db->query("SELECT * FROM hm_report WHERE hm_id=?", [$id]);
             foreach ($reports as $r) {
                 if ($r['file_path'] && file_exists($r['file_path'])) unlink($r['file_path']);
@@ -262,7 +264,7 @@ class HomogeneousController extends Controller {
         if ($id) {
             $hm = DB::getInstance()->single("SELECT * FROM homogeneous_material WHERE id=?", [$id], true);
             if (!$hm) { flash('error', '均质材料不存在'); header('Location: /homogeneous'); exit; }
-            if (isSupplier() && (int)($hm['created_by'] ?? 0) !== userId()) { flash('error', '无权操作其他账号的均质材料'); header('Location: /homogeneous'); exit; }
+            $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous');
             if (in_array($hm['audit_status'], ['N', 'R'])) {
                 DB::getInstance()->execute("UPDATE homogeneous_material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$id]);
                 logOp('submit', 'homogeneous', $id, '提交审核');
@@ -295,8 +297,8 @@ class HomogeneousController extends Controller {
         $db = DB::getInstance();
         $hm = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
         if (!$hm) { flash('error', '均质材料不存在'); header('Location: /homogeneous'); exit; }
-        if ($hm['audit_status'] === 'A' && !isAdmin()) { flash('error', '已批准的材料无法操作'); header('Location: /homogeneous?action=reports&id=' . $hmId); exit; }
-        if (isSupplier() && (int)($hm['created_by'] ?? 0) !== userId()) { flash('error', '无权操作其他账号的均质材料'); header('Location: /homogeneous?action=reports&id=' . $hmId); exit; }
+        $this->requireNotApproved($hm['audit_status'] ?? 'N', '/homogeneous?action=reports&id=' . $hmId);
+        $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous?action=reports&id=' . $hmId);
         $no = trim($_POST['report_no'] ?? '');
         $testDate = $_POST['test_date'] ?? '';
         $expiryDate = $_POST['expiry_date'] ?? ($testDate ? date('Y-m-d', strtotime($testDate . ' +1 year')) : '');
@@ -322,7 +324,7 @@ class HomogeneousController extends Controller {
         $db = DB::getInstance();
         $item = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
         if (!$item) { header('Location: /homogeneous'); exit; }
-        if (isSupplier() && (int)($item['created_by'] ?? 0) !== userId()) { flash('error', '无权查看其他账号的均质材料'); header('Location: /homogeneous'); exit; }
+        $this->requireOwnership($item['created_by'] ?? 0, '/homogeneous');
         $composition = $db->query("SELECT * FROM hm_composition WHERE hm_id=?", [$hmId]);
         // determine report-based env status
         $reportEnvStatus = 'pending';
@@ -375,7 +377,7 @@ class HomogeneousController extends Controller {
         )");
         $item = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
         if (!$item) { header('Location: /homogeneous'); exit; }
-        if (isSupplier() && (int)($item['created_by'] ?? 0) !== userId()) { flash('error', '无权查看其他账号的均质材料'); header('Location: /homogeneous'); exit; }
+        $this->requireOwnership($item['created_by'] ?? 0, '/homogeneous');
         $reports = $db->query("SELECT * FROM hm_report WHERE hm_id=? ORDER BY version_group, version DESC", [$hmId]);
         // sort so RoHS comes first
         usort($reports, function($a, $b) {
@@ -397,31 +399,13 @@ class HomogeneousController extends Controller {
                     $elems = $db->query("SELECT id AS __orig, substance_name, cas_no, limit_value, limit_unit, article_no, title, content_text, exemption_desc FROM regulation_content WHERE regulation_id=? ORDER BY sort_order, id", [$reg['id']]);
                 }
             }
-            if ($r['report_type'] === 'RoHS') {
-                $hasPBB = false;
-                foreach ($elems as $e) {
-                    if (strtoupper($e['substance_name']) === 'PBB' || mb_strpos($e['substance_name'] ?? '', '多溴联苯') !== false) {
-                        $hasPBB = true;
-                        break;
-                    }
-                }
-                if (!$hasPBB) {
-                    $elems[] = [
-                        'substance_name' => 'PBB',
-                        'cas_no' => '59536-65-1',
-                        'limit_value' => 1000,
-                        'limit_unit' => 'mg/kg',
-                        'title' => '多溴联苯(PBB)',
-                    ];
-                }
-            }
             if ($r['report_type'] === 'HF') {
                 $hfDefaults = [
-                    ['substance_name' => 'Fluorine', 'cas_no' => '7782-41-4', 'limit_value' => 900, 'title' => '氟(F)'],
-                    ['substance_name' => 'Chlorine', 'cas_no' => '7782-50-5', 'limit_value' => 900, 'title' => '氯(Cl)'],
-                    ['substance_name' => 'Bromine', 'cas_no' => '7726-95-6', 'limit_value' => 900, 'title' => '溴(Br)'],
-                    ['substance_name' => 'Iodine', 'cas_no' => '7553-56-2', 'limit_value' => 900, 'title' => '碘(I)'],
-                    ['substance_name' => 'Astatine', 'cas_no' => '7440-68-8', 'limit_value' => 0, 'title' => '砹(At)'],
+                    ['substance_name' => '氟（F）', 'cas_no' => '7782-41-4', 'limit_value' => 900, 'limit_unit' => 'mg/kg'],
+                    ['substance_name' => '氯（Cl）', 'cas_no' => '7782-50-5', 'limit_value' => 900, 'limit_unit' => 'mg/kg'],
+                    ['substance_name' => '溴（Br）', 'cas_no' => '7726-95-6', 'limit_value' => 900, 'limit_unit' => 'mg/kg'],
+                    ['substance_name' => '碘（I）', 'cas_no' => '7553-56-2', 'limit_value' => 900, 'limit_unit' => 'mg/kg'],
+                    ['substance_name' => '砹（At）', 'cas_no' => '7440-68-8', 'limit_value' => 0, 'limit_unit' => 'mg/kg'],
                 ];
                 $existingCas = [];
                 foreach ($elems as $e) {
@@ -431,7 +415,6 @@ class HomogeneousController extends Controller {
                 }
                 foreach ($hfDefaults as $def) {
                     if (!in_array($def['cas_no'], $existingCas)) {
-                        $def['limit_unit'] = 'mg/kg';
                         $elems[] = $def;
                     }
                 }
@@ -449,8 +432,8 @@ class HomogeneousController extends Controller {
             $db = DB::getInstance();
             $hm = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
             if (!$hm) { flash('error', '均质材料不存在'); header('Location: /homogeneous'); exit; }
-            if ($hm['audit_status'] === 'A' && !isAdmin()) { flash('error', '已批准的材料无法操作'); $this->showReports($hmId); return; }
-            if (isSupplier() && (int)($hm['created_by'] ?? 0) !== userId()) { flash('error', '无权操作其他账号的均质材料'); header('Location: /homogeneous'); exit; }
+            $this->requireNotApproved($hm['audit_status'] ?? 'N', '/homogeneous');
+            $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous');
             $db->execute("DELETE FROM hm_report_element WHERE hm_report_id=?", [$hmReportId]);
             $names = $_POST['substance_name'] ?? [];
             foreach ($names as $i => $name) {
@@ -462,7 +445,8 @@ class HomogeneousController extends Controller {
             }
             flash('success', '元素数据已保存');
         }
-        $this->showReports($hmId, $hmReportId);
+        header('Location: /homogeneous?action=reports&id=' . $hmId . '&report_id=' . $hmReportId);
+        exit;
     }
     private function doAnalyze() {
         $this->requirePermission('compliance.analyze');
@@ -519,13 +503,13 @@ class HomogeneousController extends Controller {
             }
             if ($hmId) {
                 $supplierId = 0;
-                if ($hmSupplier) { $s = $db->single("SELECT id FROM supplier WHERE name=? OR name_short=?", [$hmSupplier, $hmSupplier], true); if ($s) $supplierId = $s['id']; }
+                if ($hmSupplier) { $supplierId = QueryRegistry::supplierIdByName($hmSupplier) ?? 0; }
                 $db->execute("UPDATE homogeneous_material SET supplier_name=?, weight_mg=?, supplier_id=?, updated_at=datetime('now','localtime') WHERE id=?",
                     [$hmSupplier, $hmWeight, $supplierId, $hmId]);
                 $updated++;
             } else {
                 $supplierId = 0;
-                if ($hmSupplier) { $s = $db->single("SELECT id FROM supplier WHERE name=? OR name_short=?", [$hmSupplier, $hmSupplier], true); if ($s) $supplierId = $s['id']; }
+                if ($hmSupplier) { $supplierId = QueryRegistry::supplierIdByName($hmSupplier) ?? 0; }
                 $db->execute("INSERT INTO homogeneous_material (material_name, supplier_name, weight_mg, supplier_id, env_status, created_by) VALUES (?,?,?,?,?,?)",
                     [$hmName, $hmSupplier, $hmWeight, $supplierId, 'pending', userId()]);
                 $hmId = $db->lastInsertId();

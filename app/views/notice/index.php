@@ -1,6 +1,6 @@
 <div class="page-header">
   <h5><i class="fas fa-bullhorn"></i> 通知公告</h5>
-  <?php if (isAdmin() && can('notice.create')): ?>
+  <?php if (canManage('notice.create')): ?>
   <div>
     <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#noticeModal"><i class="fas fa-plus"></i> 发布通知</button>
   </div>
@@ -12,7 +12,7 @@
       <thead><tr><th style="width:50px">#</th><th>标题</th><th style="width:100px">发布人</th><th style="width:160px">发布时间</th><?php if (isSupplier()): ?><th style="width:80px">已读</th><?php endif; ?><?php if (isAdmin()): ?><th style="width:110px">操作</th><?php endif; ?></tr></thead>
       <tbody>
         <?php $seq = 0; foreach ($notices as $n):
-          $attachments = DB::getInstance()->query("SELECT * FROM notice_attachment WHERE notice_id=?", [$n['id']]);
+          $attachments = $attachmentsByNotice[$n['id']] ?? [];
         ?>
         <tr>
           <td class="text-muted"><?=++$seq?></td>
@@ -22,7 +22,7 @@
           <?php if (isSupplier()): ?>
           <td><?=$n['is_read'] ? '<span class="status-tag success">已读</span>' : '<span class="status-tag warning">未读</span>'?></td>
           <?php endif; ?>
-          <?php if (isAdmin() && can('notice.delete')): ?>
+          <?php if (canManage('notice.delete')): ?>
           <td>
             <button class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#editNoticeModal"
               data-id="<?=$n['id']?>" data-title="<?=h($n['title'])?>" data-content="<?=h($n['content'])?>"
@@ -56,7 +56,7 @@
     </div>
   </div>
 </div>
-<?php if (isAdmin() && can('notice.create')): ?>
+<?php if (canManage('notice.create')): ?>
 <div class="modal fade" id="noticeModal">
   <div class="modal-dialog modal-lg">
     <form method="post" enctype="multipart/form-data" class="modal-content">
@@ -76,7 +76,7 @@
   </div>
 </div>
 <?php endif; ?>
-<?php if (isAdmin() && can('notice.create')): ?>
+<?php if (canManage('notice.create')): ?>
 <div class="modal fade" id="editNoticeModal">
   <div class="modal-dialog modal-lg">
     <form method="post" enctype="multipart/form-data" class="modal-content">

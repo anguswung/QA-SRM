@@ -19,7 +19,7 @@
             </div>
           </div>
           <button type="submit" class="btn btn-primary">保存</button>
-          <a href="/document/categories" class="btn btn-secondary">取消</a>
+          <a href="/report/categories" class="btn btn-secondary">取消</a>
         </form>
       </div>
     </div>

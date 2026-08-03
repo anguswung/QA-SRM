@@ -45,6 +45,7 @@ $routes = [
     '/report'           => ['ReportController', 'index'],
     '/report/audit'     => ['ReportController', 'audit'],
     '/report/elements'  => ['ReportController', 'elements'],
+    '/report/categories' => ['ReportController', 'categories'],
     '/compliance'       => ['ComplianceController', 'index'],
     '/compliance/analyze'  => ['ComplianceController', 'analyze'],
     '/compliance/detail'   => ['ComplianceController', 'detail'],
@@ -56,7 +57,6 @@ $routes = [
     '/substance'        => ['SubstanceController', 'index'],
     '/substance/groups' => ['SubstanceController', 'groups'],
     '/substance/uses'   => ['SubstanceController', 'uses'],
-    '/document/categories' => ['DocumentController', 'categories'],
     '/supplier'         => ['SupplierController', 'index'],
     '/supplier/rating'  => ['SupplierController', 'rating'],
     '/bpm'              => ['BpmController', 'index'],
@@ -85,11 +85,6 @@ if ($uri !== '/login' && !isset($_SESSION['user_id'])) {
 // CSRF protection for POST requests (non-API)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($uri, '/api/') !== 0 && $uri !== '/login' && !empty($_POST['_csrf_token'])) {
     verify_csrf();
-}
-
-// Load permissions on every request
-if (isset($_SESSION['user_id'])) {
-    loadUserPermissions($_SESSION['role'] ?? '');
 }
 
 // Blacklist check

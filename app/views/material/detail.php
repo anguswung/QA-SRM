@@ -316,7 +316,7 @@
           <table class="table table-hover table-sm mb-0" id="hmPickerTable">
             <thead><tr><th>名称</th><th>供应商</th><th class="w-80">操作</th></tr></thead>
             <tbody>
-              <?php foreach ($hmMaterials as $hm): $spName = $hm['supplier_name'] ?: (DB::getInstance()->single("SELECT name FROM supplier WHERE id=?", [$hm['supplier_id']]) ?: '第三方'); ?>
+              <?php foreach ($hmMaterials as $hm): $spName = $hm['supplier_name'] ?: (QueryRegistry::supplierNameMap()[$hm['supplier_id']] ?? '第三方'); ?>
               <tr data-hmid="<?=$hm['id']?>" data-name="<?=h($hm['material_name'])?>" data-supplier="<?=h($spName)?>">
                 <td class="font-weight-bold"><?=h($hm['material_name'])?></td>
                 <td class="small"><?=h($spName)?></td>

@@ -1,6 +1,6 @@
 <div class="page-header">
   <h5><i class="fas fa-tasks"></i> 任务中心</h5>
-  <?php if (isAdmin() && can('task.create')): ?>
+  <?php if (canManage('task.create')): ?>
   <div>
     <a href="/task?action=create" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> 下发任务</a>
   </div>

@@ -66,16 +66,21 @@ class ComplianceEngine {
         $limits = $db->query($sql, $params);
         $db->execute("DELETE FROM analysis_record WHERE material_id=? AND (?=0 OR regulation_id=?)", [$materialId, $regulationId ?? 0, $regulationId ?? 0]);
         $results = [];
+        $exemptions = $db->query(
+            "SELECT er.*, s.cas_no AS ex_cas_no FROM exemption_record er
+             LEFT JOIN substance s ON er.substance_id=s.id
+             WHERE er.material_id=?", [$materialId]
+        );
+        $exemptionMap = [];
+        foreach ($exemptions as $ex) {
+            $k = strtoupper($ex['ex_cas_no'] ?? '') . '_' . $ex['regulation_id'];
+            $exemptionMap[$k] = $ex;
+        }
         foreach ($elements as $elem) {
             foreach ($limits as $limit) {
                 if (!$this->matchSubstance($elem, $limit)) continue;
-                $exemption = $db->single(
-                    "SELECT * FROM exemption_record
-                     WHERE material_id = ? AND substance_id = (
-                       SELECT id FROM substance WHERE cas_no = ?
-                     ) AND regulation_id = ?",
-                    [$materialId, $elem['cas_no'], $limit['regulation_id']], true
-                );
+                $exKey = strtoupper($elem['cas_no'] ?? '') . '_' . $limit['regulation_id'];
+                $exemption = $exemptionMap[$exKey] ?? null;
                 $result = $this->judge($elem, $limit, $exemption);
                 $db->execute(
                     "INSERT INTO analysis_record (material_id, regulation_id, analyze_result, substance_name, cas_no, detected_value, limit_value, analyzed_at)

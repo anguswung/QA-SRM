@@ -36,7 +36,7 @@ class SystemController extends Controller {
             header('Location: /system/users'); exit;
         }
         $users = $db->query("SELECT u.*, s.name AS supplier_name FROM users u LEFT JOIN supplier s ON u.supplier_id=s.id ORDER BY u.id");
-        $suppliers = $db->query("SELECT id, code, name FROM supplier WHERE status='active' ORDER BY code");
+        $suppliers = QueryRegistry::supplierDropdownActive();
         $roles = $db->query("SELECT DISTINCT role FROM users WHERE role IS NOT NULL ORDER BY role");
         $title = '用户管理';
         $this->render('system/users', get_defined_vars());

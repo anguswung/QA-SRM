@@ -26,7 +26,7 @@
   <div class="card-body p-0">
     <table class="table table-hover datatable">
       <thead>
-        <tr><th>编号</th><th>法规名称</th><th>分类</th><th>发布机构</th><th>生效日期</th><th>状态</th><th>重点</th><th>操作</th></tr>
+        <tr><th style="width:120px">编号</th><th>法规名称</th><th style="width:130px">分类</th><th style="width:160px">发布机构</th><th style="width:110px">生效日期</th><th style="width:80px">状态</th><th style="width:70px">重点</th><th style="width:150px">操作</th></tr>
       </thead>
       <tbody>
         <?php foreach ($regs as $r): ?>

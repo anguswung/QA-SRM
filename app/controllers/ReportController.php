@@ -50,41 +50,86 @@ class ReportController extends Controller {
         $title = '物质含量管理';
         $this->render('report/elements', get_defined_vars());
     }
+    public function categories() {
+        $this->requirePermission('document.view');
+        $db = DB::getInstance();
+        $isSupplier = isSupplier();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if ($isSupplier) { flash('error', '无操作权限'); header('Location: /report/categories'); exit; }
+            $action = $_POST['action'] ?? '';
+            if ($action === 'create') {
+                $db->execute("INSERT INTO document_category (code, name, parent_id, validity_days, is_required, sort_order) VALUES (?,?,?,?,?,?)",
+                    [$_POST['code'] ?? '', $_POST['name'] ?? '', (int)($_POST['parent_id'] ?? 0) ?: null, (int)($_POST['validity_days'] ?? 365), (int)($_POST['is_required'] ?? 1), (int)($_POST['sort_order'] ?? 0)]);
+                flash('success', '分类已创建');
+            }
+            if ($action === 'update') {
+                $id = (int)($_POST['id'] ?? 0);
+                $db->execute("UPDATE document_category SET code=?, name=?, parent_id=?, validity_days=?, is_required=?, sort_order=? WHERE id=?",
+                    [$_POST['code'] ?? '', $_POST['name'] ?? '', (int)($_POST['parent_id'] ?? 0) ?: null, (int)($_POST['validity_days'] ?? 365), (int)($_POST['is_required'] ?? 1), (int)($_POST['sort_order'] ?? 0), $id]);
+                flash('success', '分类已更新');
+            }
+            if ($action === 'delete') {
+                $id = (int)($_POST['id'] ?? 0);
+                if ($id) { $db->execute("DELETE FROM document_category WHERE id=?", [$id]); flash('success', '已删除'); }
+            }
+            header('Location: /report/categories'); exit;
+        }
+        $action = $_GET['action'] ?? '';
+        if ($action === 'create' || $action === 'edit') {
+            if ($isSupplier) { flash('error', '无操作权限'); header('Location: /report/categories'); exit; }
+            $this->showCategoryForm($action === 'edit' ? (int)($_GET['id'] ?? 0) : 0);
+            return;
+        }
+        $cats = $db->query("SELECT * FROM document_category ORDER BY sort_order, code");
+        $title = '文档分类管理';
+        $canManage = !isSupplier();
+        $this->render('report/categories', get_defined_vars());
+    }
+    private function showCategoryForm($id = 0) {
+        $db = DB::getInstance();
+        $item = $id ? $db->single("SELECT * FROM document_category WHERE id=?", [$id], true) : [];
+        $allCats = $db->query("SELECT * FROM document_category ORDER BY sort_order, code");
+        $title = $id ? '编辑分类' : '新增分类';
+        $this->render('report/category_form', get_defined_vars());
+    }
     private function showList() {
         $db = DB::getInstance();
         $search = $_GET['search'] ?? '';
         $type = $_GET['report_type'] ?? '';
         $audit = $_GET['audit_status'] ?? '';
+        $isSupplier = isSupplier();
         $where = []; $params = [];
-        if (isSupplier()) {
+        if ($isSupplier) {
             $sid = userSupplierId();
             $where[] = "((r.source_type='material' AND r.source_id IN (SELECT id FROM material WHERE supplier_id=$sid)) OR (r.source_type='hm' AND r.source_id IN (SELECT id FROM homogeneous_material WHERE supplier_id=$sid)))";
         }
-        if ($search) { $where[] = "(r.report_no LIKE ? OR r.test_agency LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if ($search) { $where[] = "(r.report_no LIKE ? OR r.test_agency LIKE ? OR r.supplier_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if ($type) { $where[] = "r.report_type=?"; $params[] = $type; }
         if ($audit) { $where[] = "r.audit_status=?"; $params[] = $audit; }
         $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
         $sql = "
             SELECT r.id, r.report_no, r.report_type, r.test_agency, r.test_date, r.expiry_date,
                    r.file_path, r.file_size, r.audit_status, r.created_at,
-                   r.source_type, r.source_id,
+                   r.source_type, r.source_id, r.supplier_name,
                    COALESCE(r.material_name, r.hm_name) AS item_name
             FROM (
                 SELECT tr.id, tr.report_no, tr.report_type, tr.test_agency, tr.test_date, tr.expiry_date,
                        tr.file_path, tr.file_size, tr.audit_status, tr.created_at,
                        'material' AS source_type, tr.material_id AS source_id,
-                       m.material_name, NULL AS hm_name
+                       m.material_name, NULL AS hm_name, s.name AS supplier_name
                 FROM test_report tr
                 LEFT JOIN material m ON tr.material_id=m.id
+                LEFT JOIN supplier s ON m.supplier_id=s.id
 
                 UNION ALL
 
                 SELECT hr.id, hr.report_no, hr.report_type, hr.test_agency, hr.test_date, hr.expiry_date,
                        hr.file_path, hr.file_size, 'approved' AS audit_status, hr.created_at,
                        'hm' AS source_type, hr.hm_id AS source_id,
-                       NULL AS material_name, hm.material_name AS hm_name
+                       NULL AS material_name, hm.material_name AS hm_name, s.name AS supplier_name
                 FROM hm_report hr
                 LEFT JOIN homogeneous_material hm ON hr.hm_id=hm.id
+                LEFT JOIN supplier s ON hm.supplier_id=s.id
             ) r
             $whereSql
             ORDER BY r.created_at DESC
@@ -105,23 +150,27 @@ class ReportController extends Controller {
         $db = DB::getInstance();
         $no = $_POST['report_no'] ?? '';
         if (!$no) $no = 'R' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
-        $materialId = (int)($_POST['material_id'] ?? 0);
+        $hmId = (int)($_POST['material_id'] ?? 0);
         $testDate = $_POST['test_date'] ?? '';
-        $effectiveDate = $_POST['effective_date'] ?? $testDate;
         $expiryDate = $_POST['expiry_date'] ?? ($testDate ? date('Y-m-d', strtotime($testDate . ' +1 year')) : '');
         $filePath = '';
+        $fileSize = 0;
         if (!empty($_FILES['report_file']['name'])) {
-            $filePath = $this->handleUpload($_FILES['report_file'], $materialId);
+            $dir = uploadPath($_SESSION['username'] ?? 'unknown');
+            $ext = strtolower(pathinfo($_FILES['report_file']['name'], PATHINFO_EXTENSION));
+            $name = pathinfo($_FILES['report_file']['name'], PATHINFO_FILENAME) . '_' . date('Ymd') . '.' . $ext;
+            $dest = $dir . '/' . $name;
+            move_uploaded_file($_FILES['report_file']['tmp_name'], $dest);
+            $filePath = $dest;
+            $fileSize = (int)$_FILES['report_file']['size'];
         }
-        $db->execute("INSERT INTO test_report (report_no, material_id, report_type, report_version, test_agency, test_date, issue_date, effective_date, expiry_date, file_path, file_size, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-            [$no, $materialId ?: null, $_POST['report_type'] ?? '', $_POST['report_version'] ?? 'V1.0',
-             $_POST['test_agency'] ?? '', $testDate, $_POST['issue_date'] ?? '', $effectiveDate, $expiryDate,
-             $filePath, (int)($_FILES['report_file']['size'] ?? 0), userId()]);
-        $rid = $db->lastInsertId();
-        if ($materialId) {
-            $db->execute("UPDATE material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$materialId]);
-        }
-        logOp('create', 'report', $rid, '上传报告: ' . $no);
+        $reportType = $_POST['report_type'] ?? '';
+        $agency = $_POST['test_agency'] ?? '';
+        $version = 1;
+        $versionGroup = $hmId . '_' . $reportType;
+        $db->execute("INSERT INTO hm_report (hm_id, report_no, report_type, test_agency, test_date, expiry_date, file_path, file_size, version, version_group, status) VALUES (?,?,?,?,?,?,?,?,?,?,'current')",
+            [$hmId, $no, $reportType, $agency, $testDate, $expiryDate, $filePath, $fileSize, $version, $versionGroup]);
+        logOp('create', 'hm_report', $db->lastInsertId(), '上传报告: ' . $no);
         flash('success', '报告上传成功');
         header('Location: /report'); exit;
     }

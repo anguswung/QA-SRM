@@ -1,7 +1,11 @@
 <?php
 class RuleEngine {
     private $db;
-    public function __construct() { $this->db = DB::getInstance(); }
+    private $rules;
+    public function __construct() {
+        $this->db = DB::getInstance();
+        $this->rules = QueryRegistry::complianceRules();
+    }
     
     public function checkMaterial($materialId) {
         $material = $this->db->single("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id WHERE m.id=?", [$materialId], true);
@@ -37,7 +41,7 @@ class RuleEngine {
     }
     
     private function runChecks($item, $type) {
-        $rules = $this->db->query("SELECT * FROM compliance_rule WHERE enabled=1 ORDER BY sort_order");
+        $rules = $this->rules;
         $mandatory = []; $warnings = [];
         foreach ($rules as $rule) {
             if (!$this->matchesRule($item, $type, $rule)) continue;

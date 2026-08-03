@@ -52,14 +52,14 @@ class MaterialController extends Controller {
         $item = $id ? $db->single("SELECT * FROM material WHERE id=?", [$id], true) : [];
         if ($id && !$item) { header('Location: /material'); exit; }
         if ($id && isSupplier() && (int)($item['supplier_id'] ?? 0) !== userSupplierId()) { header('Location: /material?error=no_permission'); exit; }
-        $suppliers = $db->query("SELECT id, code, name FROM supplier WHERE blacklist=0 ORDER BY code");
+        $suppliers = QueryRegistry::supplierDropdown();
         $hmMaterials = $db->query("SELECT id, material_name, supplier_id, supplier_name, weight_mg FROM homogeneous_material ORDER BY material_name");
         $composition = $id ? $db->query("SELECT * FROM material_composition WHERE material_id=?", [$id]) : [];
         $configs = $db->query("SELECT config_key, config_value FROM system_config");
         $supplierName = '-';
         if (!empty($item['supplier_id'])) {
-            $s = $db->single("SELECT name FROM supplier WHERE id=?", [$item['supplier_id']], true);
-            if ($s) $supplierName = $s['name'];
+            $supplierNames = QueryRegistry::supplierNameMap();
+            $supplierName = $supplierNames[$item['supplier_id']] ?? '-';
         }
         $isImported = $id && !empty($item['created_by']) && (int)$item['created_by'] !== userId();
         $currentStep = (int)($_GET['step'] ?? 1);
@@ -440,7 +440,7 @@ class MaterialController extends Controller {
             $existing = $db->single("SELECT id FROM material WHERE material_no=? AND material_name=?", [$no, $name], true);
             if ($existing) {
                 $supplierId = 0;
-                if ($supplierName) { $s = $db->single("SELECT id FROM supplier WHERE name=? OR name_short=?", [$supplierName, $supplierName], true); if ($s) $supplierId = $s['id']; }
+                if ($supplierName) { $supplierId = QueryRegistry::supplierIdByName($supplierName) ?? 0; }
                 if (isSupplier()) $supplierId = userSupplierId();
                 try {
                     $db->execute("UPDATE material SET mpn=?, supplier_id=?, unit_weight=?, weight_unit=?, updated_at=datetime('now','localtime') WHERE id=?",
@@ -454,7 +454,7 @@ class MaterialController extends Controller {
                 $no = $maxNo ? 'MAT' . date('Ymd') . str_pad(((int)substr($maxNo, -3) + 1), 3, '0', STR_PAD_LEFT) : 'MAT' . date('Ymd') . '001';
             }
             $supplierId = 0;
-            if ($supplierName) { $s = $db->single("SELECT id FROM supplier WHERE name=? OR name_short=?", [$supplierName, $supplierName], true); if ($s) $supplierId = $s['id']; }
+            if ($supplierName) { $supplierId = QueryRegistry::supplierIdByName($supplierName) ?? 0; }
             if (isSupplier()) $supplierId = userSupplierId();
             try {
                 $db->execute("INSERT INTO material (material_no, material_name, spec, mpn, supplier_id, unit_weight, weight_unit, created_by) VALUES (?,?,?,?,?,?,?,?)",

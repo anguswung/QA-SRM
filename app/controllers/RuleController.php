@@ -31,7 +31,7 @@ class RuleController extends Controller {
     }
     private function showCheck() {
         $db = DB::getInstance();
-        $suppliers = $db->query("SELECT id, code, name FROM supplier WHERE blacklist=0 ORDER BY code");
+        $suppliers = QueryRegistry::supplierDropdown();
         $title = '合规检查';
         $this->render('rule/check', get_defined_vars());
     }

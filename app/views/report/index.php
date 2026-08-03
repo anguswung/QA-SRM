@@ -26,11 +26,23 @@
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover datatable">
-      <thead><tr><th>报告编号</th><th>来源</th><th>关联项</th><th>类型</th><th>检测机构</th><th>检测日期</th><th>有效期</th><th>审核状态</th><th>操作</th></tr></thead>
+      <thead><tr>
+        <th style="width:140px">报告编号</th>
+        <?php if (!$isSupplier): ?><th style="width:120px">供应商</th><?php endif; ?>
+        <th style="width:80px">来源</th>
+        <th>关联项</th>
+        <th style="width:80px">类型</th>
+        <th>检测机构</th>
+        <th style="width:100px">检测日期</th>
+        <th style="width:100px">有效期</th>
+        <th style="width:80px">审核状态</th>
+        <th style="width:100px">操作</th>
+      </tr></thead>
       <tbody>
         <?php foreach ($reports as $r): ?>
         <tr>
           <td><?=h($r['report_no'])?></td>
+          <?php if (!$isSupplier): ?><td><?=h($r['supplier_name'] ?? '-')?></td><?php endif; ?>
           <td><span class="badge badge-soft-<?=$r['source_type'] === 'material' ? 'primary' : 'success'?>"><?=$r['source_type'] === 'material' ? '物料' : '均质'?></span></td>
           <td><?=h($r['item_name'] ?? '-')?></td>
           <td><span class="badge badge-soft-info"><?=h($r['report_type'])?></span></td>
@@ -68,12 +80,13 @@
         <input type="hidden" name="action" value="create">
         <div class="row">
           <div class="col-md-6">
-            <div class="form-group"><label>关联物料</label>
-              <select name="material_id" class="form-control">
-                <option value="">请选择物料</option>
-                <?php $db = DB::getInstance(); $mats = $db->query("SELECT id, material_no, material_name FROM material WHERE valid_status='Valid' ORDER BY material_name"); ?>
-                <?php foreach ($mats as $m): ?>
-                <option value="<?=$m['id']?>"><?=h($m['material_no'])?> - <?=h($m['material_name'])?></option>
+            <div class="form-group"><label>关联均质材料</label>
+              <input type="text" id="hmSearch" class="form-control form-control-sm mb-1" placeholder="输入名称或供应商搜索...">
+              <select name="material_id" id="hmSelect" class="form-control" size="1">
+                <option value="">请选择均质材料</option>
+                <?php $db = DB::getInstance(); $hms = $db->query("SELECT hm.id, hm.material_name, s.name AS supplier_name FROM homogeneous_material hm LEFT JOIN supplier s ON hm.supplier_id=s.id ORDER BY hm.material_name"); ?>
+                <?php foreach ($hms as $h): ?>
+                <option value="<?=$h['id']?>" data-search="<?=h(strtolower($h['material_name'] . ' ' . ($h['supplier_name'] ?? '')))?>"><?=h($h['material_name'])?><?=($h['supplier_name'] ?? '') ? ' (' . h($h['supplier_name']) . ')' : ''?></option>
                 <?php endforeach; ?>
               </select>
             </div>
@@ -110,3 +123,17 @@
     </form>
   </div>
 </div>
+<script>
+document.getElementById('hmSearch').addEventListener('input', function() {
+  var keyword = this.value.toLowerCase();
+  var select = document.getElementById('hmSelect');
+  var options = select.options;
+  var firstMatch = null;
+  for (var i = 1; i < options.length; i++) {
+    var match = options[i].getAttribute('data-search').indexOf(keyword) !== -1;
+    options[i].style.display = match ? '' : 'none';
+    if (match && !firstMatch) firstMatch = options[i];
+  }
+  if (firstMatch && keyword) { select.value = firstMatch.value; }
+});
+</script>

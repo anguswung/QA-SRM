@@ -23,6 +23,9 @@ function userRole(): string {
     return $_SESSION['role'] ?? '';
 }
 function can($perm): bool {
+    if (!isset($_SESSION['permissions'])) {
+        loadUserPermissions($_SESSION['role'] ?? '');
+    }
     $perms = $_SESSION['permissions'] ?? [];
     return in_array('*', $perms) || in_array($perm, $perms);
 }
@@ -94,5 +97,11 @@ function verify_csrf(): void {
         http_response_code(419);
         die('CSRF token validation failed');
     }
+}
+function canManage($perm): bool {
+    return isAdmin() && can($perm);
+}
+function deleteButton($id, $confirm = '确定删除？'): string {
+    return '<button class="btn btn-sm btn-outline-danger" onclick="if(confirm(\'' . $confirm . '\')){var f=document.createElement(\'form\');f.method=\'post\';f.innerHTML=\'<input name=action value=delete><input name=id value=' . $id . '>\';document.body.appendChild(f);f.submit()}"><i class="fas fa-trash"></i></button>';
 }
 }

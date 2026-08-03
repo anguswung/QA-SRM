@@ -58,6 +58,10 @@ class NoticeController extends Controller {
             $where[] = "n.status='published'";
         }
         $notices = $db->query("SELECT n.*, (SELECT COUNT(*) FROM notice_read_log WHERE notice_id=n.id AND supplier_id=?) AS is_read FROM notice n" . ($where ? " WHERE " . implode(' AND ', $where) : "") . " ORDER BY n.created_at DESC", [userSupplierId()]);
+        $noticeIds = array_column($notices, 'id');
+        $allAttachments = !empty($noticeIds) ? $db->query("SELECT * FROM notice_attachment WHERE notice_id IN (" . implode(',', array_fill(0, count($noticeIds), '?')) . ")", $noticeIds) : [];
+        $attachmentsByNotice = [];
+        foreach ($allAttachments as $a) { $attachmentsByNotice[$a['notice_id']][] = $a; }
         $title = '通知公告';
         $this->render('notice/index', get_defined_vars());
     }

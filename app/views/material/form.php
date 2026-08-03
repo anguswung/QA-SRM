@@ -102,7 +102,7 @@
                     ?>
                     <tr data-hmid="<?=$c['substance_id']?>">
                       <td><span class="font-weight-bold"><?=h($selHm['material_name'] ?? '')?></span><input type="hidden" name="hm_id[]" value="<?=$c['substance_id']?>"></td>
-                      <td class="text-muted small"><?=h(($selHm['supplier_name'] ?? '') ?: (DB::getInstance()->single("SELECT name FROM supplier WHERE id=?", [$selHm['supplier_id'] ?? 2]) ?: '第三方'))?></td>
+                      <td class="text-muted small"><?=h(($selHm['supplier_name'] ?: '') ?: (QueryRegistry::supplierNameMap()[$selHm['supplier_id'] ?? 0] ?? '第三方'))?></td>
                       <td><input type="number" name="min_percentage[]" class="form-control form-control-sm" step="0.01" min="0" max="100" value="<?=h($c['min_percentage'])?>" oninput="calcWeight(this);updateQuantityTotal()"></td>
                       <td class="comp-weight"><?=$wt?></td>
                       <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
@@ -174,7 +174,7 @@
         <table class="table table-hover table-sm mb-0" id="hmPickerTable">
           <thead><tr><th>名称</th><th>供应商</th><th>重量(mg)</th><th style="width:80px">操作</th></tr></thead>
           <tbody>
-            <?php foreach ($hmMaterials as $hm): $spName = $hm['supplier_name'] ?: (DB::getInstance()->single("SELECT name FROM supplier WHERE id=?", [$hm['supplier_id']]) ?: '第三方'); ?>
+            <?php foreach ($hmMaterials as $hm): $spName = $hm['supplier_name'] ?: (QueryRegistry::supplierNameMap()[$hm['supplier_id']] ?? '第三方'); ?>
             <tr data-hmid="<?=$hm['id']?>" data-name="<?=h($hm['material_name'])?>" data-supplier="<?=h($spName)?>">
               <td class="font-weight-bold"><?=h($hm['material_name'])?></td>
               <td class="small"><?=h($spName)?></td>

@@ -27,6 +27,60 @@
     <?php foreach ($reports as $i => $r): ?>
     <?php $expired = $r['expiry_date'] && strtotime($r['expiry_date']) < time(); ?>
     <?php $elems = $reportElements[$r['id']] ?? []; ?>
+    <?php if ($r['report_type'] === 'RoHS'):
+      $rohsDefaults = [
+        ['substance_name'=>'铅（Pb）','cas_no'=>'7439-92-1','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'汞（Hg）','cas_no'=>'7439-97-6','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'镉（Cd）','cas_no'=>'7440-43-9','limit_value'=>100,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'六价铬（Cr VI）','cas_no'=>'18540-29-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'多溴联苯（PBBs）','cas_no'=>'59080-40-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'多溴二苯醚（PBDEs）','cas_no'=>'32534-81-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'邻苯二甲酸二正丁酯（DBP）','cas_no'=>'84-74-2','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'邻苯二甲酸丁基苄酯（BBP）','cas_no'=>'85-68-7','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'邻苯二甲酸二(2-乙基己)酯（DEHP）','cas_no'=>'117-81-7','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'邻苯二甲酸二异丁酯（DIBP）','cas_no'=>'84-69-5','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+      ];
+      $defaults = $rohsDefaults;
+    elseif ($r['report_type'] === 'REACH'):
+      $reachDefaults = [
+        ['substance_name'=>'铅（Pb）','cas_no'=>'7439-92-1','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'汞（Hg）','cas_no'=>'7439-97-6','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'镉（Cd）','cas_no'=>'7440-43-9','limit_value'=>100,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'六价铬（Cr VI）','cas_no'=>'18540-29-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+      ];
+      $defaults = $reachDefaults;
+    elseif ($r['report_type'] === 'HF'):
+      $hfDefaults = [
+        ['substance_name'=>'氟（F）','cas_no'=>'7782-41-4','limit_value'=>900,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'氯（Cl）','cas_no'=>'7782-50-5','limit_value'=>900,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'溴（Br）','cas_no'=>'7726-95-6','limit_value'=>900,'limit_unit'=>'mg/kg'],
+        ['substance_name'=>'碘（I）','cas_no'=>'7553-56-2','limit_value'=>900,'limit_unit'=>'mg/kg'],
+      ];
+      $defaults = $hfDefaults;
+    else:
+      $defaults = [];
+    endif;
+    if (!empty($defaults)):
+      $merged = [];
+      foreach ($defaults as $def) {
+        $found = null;
+        foreach ($elems as $e) {
+          if (isset($e['cas_no']) && $e['cas_no'] === $def['cas_no']) { $found = $e; break; }
+        }
+        if ($found) {
+          $found['substance_name'] = $def['substance_name'];
+          $merged[] = $found;
+        } else {
+          $merged[] = $def;
+        }
+      }
+      foreach ($elems as $e) {
+        $exists = false;
+        foreach ($merged as $m) { if (($m['cas_no'] ?? '') === ($e['cas_no'] ?? '')) { $exists = true; break; } }
+        if (!$exists) $merged[] = $e;
+      }
+      $elems = $merged;
+    endif; ?>
     <div class="tab-pane fade <?=(($activeReportId ?? 0) == $r['id'] ? 'show active' : ($i === 0 && !$activeReportId ? 'show active' : ''))?>" id="report-<?=$r['id']?>" role="tabpanel">
       <div class="row">
         <div class="col-md-5">
@@ -37,6 +91,7 @@
                   <colgroup><col class="w-100"><col></colgroup>
                 <tr><th>报告编号</th><td><?=h($r['report_no'] ?: '-')?></td></tr>
                 <tr><th>报告版本</th><td>v<?=(int)($r['version'] ?? 1)?></td></tr>
+                <?php if ($r['report_type'] !== 'MSDS'): ?>
                 <tr><th>检测机构</th><td><?=h($r['test_agency'] ?: '-')?></td></tr>
                 <tr><th>检测日期</th><td><?=h($r['test_date'] ?: '-')?></td></tr>
                 <tr>
@@ -47,6 +102,7 @@
                     <?php if ($r['expiry_date'] && !$expired && strtotime($r['expiry_date']) < strtotime('+30 days')): ?><span class="status-tag warning">即将到期</span><?php endif; ?>
                   </td>
                 </tr>
+                <?php endif; ?>
                 <tr><th>文件</th><td><?php if ($r['file_path']): ?><a href="<?=h(fileUrl($r['file_path']))?>" target="_blank" class="text-info"><i class="fas fa-file-pdf fa-lg"></i> <?=h(basename($r['file_path']))?></a><?php else: ?><span class="text-muted">-</span><?php endif; ?></td></tr>
                 <tr><th>上传时间</th><td><small><?=h($r['created_at'])?></small></td></tr>
               </table>
@@ -103,11 +159,15 @@
               <table class="table table-bordered table-sm mb-0" id="elemTable-<?=$r['id']?>">
                 <thead>
                   <tr>
-                    <th class="w-80 nowrap"></th>
-                    <?php foreach ($elems as $j => $e): ?>
-                    <th style="width:110px;text-align:center;vertical-align:top">
-                      <?=h($e['substance_name'])?>
-                      <input type="hidden" name="substance_name[<?=$j?>]" value="<?=h($e['substance_name'])?>">
+                    <th style="width:70px"></th>
+                    <?php foreach ($elems as $j => $e):
+                      $name = $e['substance_name'] ?? '';
+                      $len = mb_strlen($name, 'UTF-8');
+                      $w = max(65, min(120, $len * 8));
+                    ?>
+                    <th style="width:<?=$w?>px;text-align:center;vertical-align:top;line-height:1.3">
+                      <?=h($name)?>
+                      <input type="hidden" name="substance_name[<?=$j?>]" value="<?=h($name)?>">
                       <input type="hidden" name="cas_no[<?=$j?>]" value="<?=h($e['cas_no'] ?? '')?>">
                       <input type="hidden" name="limit_value[<?=$j?>]" value="<?=h($e['limit_value'])?>">
                       <input type="hidden" name="limit_unit[<?=$j?>]" value="<?=h($e['limit_unit'] ?? 'mg/kg')?>">
@@ -118,28 +178,31 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <th class="text-muted w-80 va-middle">检测值</th>
+                    <th class="text-muted va-middle" style="font-size:12px">检测值</th>
                     <?php foreach ($elems as $j => $e): ?>
-                    <td><input type="number" step="any" name="content_value[<?=$j?>]" value="<?=h($e['content_value'] ?? '')?>" class="form-control form-control-sm text-center" placeholder="0"></td>
+                    <td><input type="text" name="content_value[<?=$j?>]" value="<?=h($e['content_value'] ?? '')?>" class="form-control form-control-sm text-center" placeholder="0或ND" pattern="[0-9.]*|ND|nd|Nd" title="请输入数字或ND"></td>
                     <?php endforeach; ?>
                   </tr>
                   <tr>
-                    <th class="text-muted w-80 va-middle">限值</th>
+                    <th class="text-muted va-middle" style="font-size:12px">限值</th>
                     <?php foreach ($elems as $j => $e): ?>
-                    <td class="text-center text-muted small" style="vertical-align:middle"><?=h($e['limit_value'])?></td>
+                    <td class="text-center text-muted" style="font-size:11px;vertical-align:middle"><?=h($e['limit_value'])?></td>
                     <?php endforeach; ?>
                   </tr>
                   <tr>
-                    <th class="text-muted w-80 va-middle">单位</th>
+                    <th class="text-muted va-middle" style="font-size:12px">单位</th>
                     <?php foreach ($elems as $j => $e): ?>
-                    <td class="text-center text-muted small va-middle">mg/kg</td>
+                    <td class="text-center text-muted va-middle" style="font-size:11px">mg/kg</td>
                     <?php endforeach; ?>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div class="p-3 d-flex justify-content-between border-top">
-              <?php if (can('homogeneous.edit')): ?><button type="button" class="btn btn-sm btn-outline-primary" onclick="addReachCol(<?=$r['id']?>)"><i class="fas fa-plus"></i> 添加元素</button><?php endif; ?>
+              <div>
+                <?php if (can('homogeneous.edit')): ?><button type="button" class="btn btn-sm btn-outline-primary" onclick="addReachCol(<?=$r['id']?>)"><i class="fas fa-plus"></i> 添加元素</button><?php endif; ?>
+                <small class="text-muted ml-2">检测值可输入数字或ND（未检出）</small>
+              </div>
               <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save"></i> 保存</button>
             </div>
           </form>
@@ -171,7 +234,7 @@ function addReachCol(reportId) {
 
   var rows = tbody.querySelectorAll('tr');
   var tdVal = document.createElement('td');
-  tdVal.innerHTML = '<input type="number" step="any" name="content_value[' + colNum + ']" class="form-control form-control-sm text-center" style="width:60px" placeholder="0">';
+  tdVal.innerHTML = '<input type="text" name="content_value[' + colNum + ']" class="form-control form-control-sm text-center" style="width:60px" placeholder="0或ND" pattern="[0-9.]*|ND|nd|Nd" title="请输入数字或ND">';
   rows[0].appendChild(tdVal);
 
   var tdLimit = document.createElement('td');

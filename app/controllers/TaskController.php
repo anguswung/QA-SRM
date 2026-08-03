@@ -47,7 +47,7 @@ class TaskController extends Controller {
     }
     private function showForm() {
         $db = DB::getInstance();
-        $suppliers = $db->query("SELECT id, code, name FROM supplier WHERE blacklist=0 AND status='active' ORDER BY code");
+        $suppliers = QueryRegistry::supplierDropdownActive();
         $templates = $db->query("SELECT * FROM bpm_template WHERE status='published' ORDER BY name");
         $title = '新建任务';
         $this->render('task/form', get_defined_vars());

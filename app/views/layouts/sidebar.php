@@ -11,16 +11,13 @@ $menu = [
             ['label' => '报告列表', 'url' => '/report', 'perm' => 'report.view'],
             ['label' => '报告审核', 'url' => '/report/audit', 'perm' => 'report.audit'],
             ['label' => '物质含量', 'url' => '/report/elements', 'perm' => 'report.view'],
+            ['label' => '文档分类', 'url' => '/report/categories', 'perm' => 'document.view'],
         ]],
     'compliance' => ['icon' => 'fa-balance-scale', 'label' => '合规分析', 'url' => '/compliance', 'perm' => 'compliance.view',
         'children' => [
             ['label' => '分析看板', 'url' => '/compliance', 'perm' => 'compliance.view'],
             ['label' => '合规评估', 'url' => '/compliance/analyze', 'perm' => 'compliance.analyze'],
             ['label' => '合规矩阵', 'url' => '/compliance/matrix', 'perm' => 'compliance.view'],
-        ]],
-    'document' => ['icon' => 'fa-file-alt', 'label' => '文档管理', 'url' => '/document/categories', 'perm' => 'document.view',
-        'children' => [
-            ['label' => '文档分类', 'url' => '/document/categories', 'perm' => 'document.view'],
         ]],
     'regulation' => ['icon' => 'fa-gavel', 'label' => '法规管理', 'url' => '/regulation', 'perm' => 'regulation.view',
         'children' => [
@@ -79,7 +76,7 @@ unset($m);
   <nav class="sidebar-nav">
     <?php foreach ($menu as $k => $m): ?>
     <?php $hasChildren = !empty($m['children']); ?>
-    <?php $isOpen = $hasChildren && (menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'document' && menuOpen('/document')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query'))); ?>
+    <?php $isOpen = $hasChildren && (menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query'))); ?>
     <div class="nav-item <?=$isOpen ? 'menu-open' : ''?>">
       <?php if ($hasChildren): ?>
       <span class="nav-link <?=menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query')) ? 'active' : ''?> has-children">
@@ -96,7 +93,7 @@ unset($m);
       <?php if ($hasChildren): ?>
       <div class="submenu <?=$isOpen ? 'open' : ''?>">
         <?php foreach ($m['children'] as $c): ?>
-        <a href="<?=h($c['url'])?>" class="subnav-link <?=menuOpen($c['url']) ? 'active' : ''?>"><?=h($c['label'])?></a>
+        <a href="<?=h($c['url'])?>" class="subnav-link <?=rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/') === rtrim($c['url'], '/') ? 'active' : ''?>"><?=h($c['label'])?></a>
         <?php endforeach; ?>
       </div>
       <?php endif; ?>
