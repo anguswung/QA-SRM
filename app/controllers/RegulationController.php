@@ -4,6 +4,7 @@ class RegulationController extends Controller {
         $this->requirePermission('regulation.view');
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isAdmin()) { flash('error', '无权操作'); header('Location: /regulation'); exit; }
             $action = $_POST['action'] ?? '';
             if ($action === 'create') { $this->doCreate(); return; }
             if ($action === 'update') { $this->doUpdate(); return; }
@@ -13,8 +14,8 @@ class RegulationController extends Controller {
             if ($action === 'content_delete') { $this->contentDelete(); return; }
         }
         $action = $_GET['action'] ?? '';
-        if ($action === 'create') { $this->showForm(); return; }
-        if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
+        if ($action === 'create') { $this->requirePermission('regulation.edit'); $this->showForm(); return; }
+        if ($action === 'edit') { $this->requirePermission('regulation.edit'); $this->showForm((int)($_GET['id'] ?? 0)); return; }
         if ($action === 'detail') { $this->detail((int)($_GET['id'] ?? 0)); return; }
         $this->showList();
     }

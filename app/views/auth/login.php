@@ -13,6 +13,7 @@
       <div class="alert alert-danger alert-auto"><?=h($loginError)?><script>setTimeout(function(){document.cookie='login_error=; path=/; max-age=0'},3000)</script></div>
       <?php endif; ?>
       <form method="post">
+        <?=csrf_field()?>
         <div class="form-group">
           <label><i class="fas fa-user"></i> 用户名</label>
           <input type="text" name="username" class="form-control" placeholder="请输入用户名" required autofocus>

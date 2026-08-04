@@ -2,7 +2,7 @@
   <h5><i class="fas fa-boxes"></i> 物料管理</h5>
   <div>
      <?php if (can('material.create')): ?><a href="/material?action=create&type=part" class="btn btn-primary"><i class="fas fa-plus"></i> 新增物料</a><?php endif; ?>
-     <?php if (can('material.create')): ?><button class="btn btn-success" data-toggle="modal" data-target="#importModal"><i class="fas fa-upload"></i> 批量导入</button><?php endif; ?>
+     <?php if (can('material.create')): ?><button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal"><i class="fas fa-upload"></i> 批量导入</button><?php endif; ?>
   </div>
 </div>
 <div class="row mb-3">
@@ -94,14 +94,14 @@
             <div class="btn-group btn-group-sm">
               <a href="/material?action=detail&id=<?=$m['id']?>" class="btn btn-outline-info" title="查看"><i class="fas fa-eye"></i></a>
               <?php if (can('material.edit')): ?><a href="/material?action=edit&id=<?=$m['id']?>" class="btn btn-outline-primary" title="编辑"><i class="fas fa-pen"></i></a><?php endif; ?>
-              <?php if (isSupplier() && in_array($m['audit_status'], ['N','R'])): ?>
-              <button class="btn btn-outline-success" title="提交审核" onclick="if(confirm('确定提交审核？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=submit_audit><input name=id value=<?=$m['id']?>>';document.body.appendChild(f);f.submit()}"><i class="fas fa-paper-plane"></i></button>
-              <?php endif; ?>
+               <?php if (isSupplier() && in_array($m['audit_status'], ['N','R'])): ?>
+               <button class="btn btn-outline-success" title="提交审核" onclick="if(confirm('确定提交审核？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=submit_audit><input name=id value=<?=$m['id']?>><input name=_csrf_token value=&quot;+window._csrf+&quot;>';document.body.appendChild(f);f.submit()}"><i class="fas fa-paper-plane"></i></button>
+               <?php endif; ?>
               <?php if (isAdmin() && $m['audit_status'] === 'S' && can('material.audit')): ?>
-              <button class="btn btn-outline-success" title="通过" data-toggle="modal" data-target="#auditModal" data-id="<?=$m['id']?>" data-action="A"><i class="fas fa-check"></i></button>
-              <button class="btn btn-outline-danger" title="驳回" data-toggle="modal" data-target="#auditModal" data-id="<?=$m['id']?>" data-action="R"><i class="fas fa-times"></i></button>
+               <button class="btn btn-outline-success" title="通过" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="<?=$m['id']?>" data-action="A"><i class="fas fa-check"></i></button>
+               <button class="btn btn-outline-danger" title="驳回" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="<?=$m['id']?>" data-action="R"><i class="fas fa-times"></i></button>
               <?php endif; ?>
-              <?php if (can('material.delete')): ?><button class="btn btn-outline-danger" title="删除" onclick="if(confirm('确认删除？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=delete><input name=id value=<?=$m['id']?>>';document.body.appendChild(f);f.submit()}"><i class="fas fa-trash"></i></button><?php endif; ?>
+               <?php if (can('material.delete')): ?><button class="btn btn-outline-danger" title="删除" onclick="if(confirm('确认删除？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=delete><input name=id value=<?=$m['id']?>><input name=_csrf_token value=&quot;+window._csrf+&quot;>';document.body.appendChild(f);f.submit()}"><i class="fas fa-trash"></i></button><?php endif; ?>
             </div>
           </td>
         </tr>
@@ -119,8 +119,8 @@
 </div>
 <div class="modal fade" id="importModal">
   <div class="modal-dialog">
-    <form method="post" enctype="multipart/form-data" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">批量导入物料</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" enctype="multipart/form-data" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">批量导入物料</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="import">
         <div class="alert alert-info py-2">
@@ -134,15 +134,15 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">导入</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>
 </div>
 <div class="modal fade" id="auditModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">物料审核</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">物料审核</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="audit">
         <input type="hidden" name="id" id="auditId">
@@ -151,7 +151,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">确认</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>
@@ -190,7 +190,7 @@ function batchSubmitAudit() {
   if (!confirm('确定提交选中的 ' + ids.length + ' 项物料审核？')) return;
   var f = document.createElement('form');
   f.method = 'post';
-  f.innerHTML = '<input name="action" value="batch_submit_audit"><input name="ids" value="' + ids.join(',') + '">';
+  f.innerHTML = '<input name="action" value="batch_submit_audit"><input name="ids" value="' + ids.join(',') + '"><input name="_csrf_token" value="' + window._csrf + '">';
   document.body.appendChild(f);
   f.submit();
 }

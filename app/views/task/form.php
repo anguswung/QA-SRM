@@ -3,7 +3,7 @@
     <div class="card">
       <div class="card-header"><i class="fas fa-plus"></i> 下发任务</div>
       <div class="card-body">
-        <form method="post">
+        <form method="post"><?=csrf_field()?>
           <input type="hidden" name="action" value="create">
           <div class="form-group"><label>任务标题 <span class="text-danger">*</span></label>
             <input type="text" name="title" class="form-control" required placeholder="如：2026年3月RoHS资料补充">

@@ -3,7 +3,7 @@
   <div>
     <?php if (can('supplier.create')): ?><a href="/supplier?action=create" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> 新增供应商</a><?php endif; ?>
     <a href="/supplier/rating" class="btn btn-sm btn-outline-info"><i class="fas fa-star"></i> 评级</a>
-    <button class="btn btn-sm btn-success" data-toggle="modal" data-target="#importModal"><i class="fas fa-upload"></i> 批量导入</button>
+    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#importModal"><i class="fas fa-upload"></i> 批量导入</button>
   </div>
 </div>
 <div class="search-bar mb-3">
@@ -41,7 +41,7 @@
           <td>
             <?php if (can('supplier.edit')): ?><a href="/supplier?action=edit&id=<?=$s['id']?>" class="btn btn-sm btn-outline-primary" title="编辑"><i class="fas fa-edit"></i></a><?php endif; ?>
             <?php if (can('supplier.edit')): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定<?=$s['blacklist'] ? '移出' : '加入'?>黑名单？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定<?=$s['blacklist'] ? '移出' : '加入'?><?=csrf_field()?>黑名单？')">
               <input type="hidden" name="action" value="blacklist"><input type="hidden" name="id" value="<?=$s['id']?>">
               <button class="btn btn-sm btn-<?=$s['blacklist'] ? 'success' : 'danger'?>">
                 <i class="fas fa-<?=$s['blacklist'] ? 'check-circle' : 'ban'?>"></i> <?=$s['blacklist'] ? '移出黑名单' : '禁用账号'?>
@@ -57,8 +57,8 @@
 </div>
 <div class="modal fade" id="importModal">
   <div class="modal-dialog">
-    <form method="post" enctype="multipart/form-data" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">批量导入供应商</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" enctype="multipart/form-data" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">批量导入供应商</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="import">
         <div class="alert alert-info py-2">
@@ -71,7 +71,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">导入</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

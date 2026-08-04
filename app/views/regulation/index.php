@@ -45,7 +45,7 @@
           <td>
             <?php if (can('regulation.edit')): ?><a href="/regulation?action=edit&id=<?=$r['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
             <?php if ($r['status'] === 'draft'): ?>
-            <form method="post" class="d-inline inline-form">
+            <form method="post" class="d-inline inline-form"><?=csrf_field()?>
               <input type="hidden" name="action" value="publish">
               <input type="hidden" name="id" value="<?=$r['id']?>">
               <input type="hidden" name="status" value="published">
@@ -53,7 +53,7 @@
             </form>
             <?php endif; ?>
             <?php if (can('regulation.delete')): ?>
-            <form method="post" class="d-inline inline-form" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline inline-form" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="id" value="<?=$r['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
@@ -71,7 +71,7 @@ $(document).on('click', '.toggle-focus', function(){
   var $this = $(this);
   var id = $this.data('id');
   var focus = $this.data('focus') ? 0 : 1;
-  $.post('/regulation/focus', {id: id, is_focus: focus}, function(){
+  $.post('/regulation/focus', {id: id, is_focus: focus, _csrf_token: window._csrf}, function(){
     $this.data('focus', focus);
     $this.find('i').toggleClass('text-warning text-muted');
   });

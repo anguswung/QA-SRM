@@ -34,7 +34,7 @@
               <br><small class="text-muted">上传: <?=h($att['uploader_name'] ?? '-')?> / <?=h($att['created_at'])?></small>
             </div>
             <?php if (isAdmin() || $instance['initiator_id'] === userId()): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete_attachment">
               <input type="hidden" name="id" value="<?=$att['id']?>">
               <input type="hidden" name="instance_id" value="<?=$instance['id']?>">
@@ -49,7 +49,7 @@
         <?php endif; ?>
         <?php if ($instance['status'] === 'active'): ?>
         <hr>
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data"><?=csrf_field()?>
           <input type="hidden" name="action" value="upload_attachment">
           <input type="hidden" name="instance_id" value="<?=$instance['id']?>">
           <div class="input-group input-group-sm">
@@ -143,7 +143,7 @@
     <div class="card mt-3">
       <div class="card-header"><i class="fas fa-check-circle"></i> 提交任务</div>
       <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data"><?=csrf_field()?>
           <input type="hidden" name="action" value="submit">
           <input type="hidden" name="instance_id" value="<?=$instance['id']?>">
           <div class="form-group"><label>处理意见</label>

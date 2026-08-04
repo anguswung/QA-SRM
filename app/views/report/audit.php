@@ -27,9 +27,9 @@
           <td>
             <a href="/report/elements?report_id=<?=$r['id']?>" class="btn btn-sm btn-outline-info" title="元素含量"><i class="fas fa-flask"></i></a>
             <?php if (can('report.audit')): ?>
-            <button class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#auditModal"
+            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#auditModal"
               data-id="<?=$r['id']?>" data-status="approved"><i class="fas fa-check"></i></button>
-            <button class="btn btn-sm btn-outline-danger" data-toggle="modal" data-target="#auditModal"
+            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#auditModal"
               data-id="<?=$r['id']?>" data-status="rejected"><i class="fas fa-times"></i></button>
             <?php endif; ?>
           </td>
@@ -41,8 +41,8 @@
 </div>
 <div class="modal fade" id="auditModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">报告审核</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">报告审核</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="id" id="auditId">
         <input type="hidden" name="audit_status" id="auditStatus">
@@ -50,7 +50,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">确认</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

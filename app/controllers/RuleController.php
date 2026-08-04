@@ -6,13 +6,14 @@ class RuleController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $action = $_POST['action'] ?? '';
             if ($action === 'toggle') {
+                if (!isAdmin()) { header('Content-Type: application/json'); echo json_encode(['ok'=>false,'error'=>'no permission']); exit; }
                 $id = (int)($_POST['id'] ?? 0);
                 $rule = $db->single("SELECT enabled FROM compliance_rule WHERE id=?", [$id], true);
                 if ($rule) $db->execute("UPDATE compliance_rule SET enabled=? WHERE id=?", [$rule['enabled'] ? 0 : 1, $id]);
                 header('Content-Type: application/json'); echo json_encode(['ok'=>true]); exit;
             }
             if ($action === 'check') {
-                $supplierId = (int)($_POST['supplier_id'] ?? 0);
+                $supplierId = isAdmin() ? (int)($_POST['supplier_id'] ?? 0) : userSupplierId();
                 $engine = new RuleEngine();
                 $result = $supplierId ? $engine->checkSupplierAll($supplierId) : $engine->checkSupplierAll(userSupplierId());
                 header('Content-Type: application/json'); echo json_encode($result); exit;

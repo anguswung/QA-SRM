@@ -108,6 +108,7 @@ class MaterialController extends Controller {
         $db = DB::getInstance();
         $hm = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
         if (!$hm) { echo json_encode(['error' => 'not found']); exit; }
+        if (isSupplier() && (int)($hm['created_by'] ?? 0) !== userId()) { echo json_encode(['error' => 'no permission']); exit; }
         $reports = $db->query("SELECT * FROM hm_report WHERE hm_id=? ORDER BY version_group, version DESC", [$hmId]);
         $analysis = $db->query("SELECT ar.*, rl.name AS regulation_name, rl.regulation_no FROM analysis_record ar LEFT JOIN regulation_lib rl ON ar.regulation_id=rl.id WHERE ar.hm_id=? ORDER BY ar.analyzed_at DESC LIMIT 50", [$hmId]);
         header('Content-Type: application/json; charset=utf-8');
@@ -135,6 +136,10 @@ class MaterialController extends Controller {
             header('Location: /material?action=edit&id=' . $mid . '&step=2'); exit;
         }
         $mid = (int)($_POST['id'] ?? 0);
+        if ($mid && isSupplier()) {
+            $m = $db->single("SELECT supplier_id FROM material WHERE id=?", [$mid], true);
+            if (!$m || (int)$m['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /material'); exit; }
+        }
         if ($step == 3) { $this->saveComposition($mid); $this->saveReport($mid); logOp('update', 'material', $mid, '保存成分与报告(步骤3)'); header('Location: /material?action=edit&id=' . $mid . '&step=3'); exit; }
         // step 4: final save all + redirect
         $this->saveComposition($mid); $this->saveReport($mid);
@@ -315,8 +320,8 @@ class MaterialController extends Controller {
         }
         $sheet->getStyle('A1:K1')->getFont()->setBold(true);
         $sheet->getStyle('A1:K1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->getRGB('DBEAFE');
-        $hms = $db->query("SELECT id, material_name, supplier_name AS hm_supplier_name, weight_mg FROM homogeneous_material ORDER BY id");
-        $allComps = $db->query("SELECT hc.*, hm.material_name FROM hm_composition hc JOIN homogeneous_material hm ON hc.hm_id=hm.id ORDER BY hm.id, hc.id");
+        $hms = $db->query("SELECT id, material_name, supplier_name AS hm_supplier_name, weight_mg FROM homogeneous_material WHERE " . (isSupplier() ? "created_by=?" : "1=1") . " ORDER BY id", isSupplier() ? [userId()] : []);
+        $allComps = $db->query("SELECT hc.*, hm.material_name FROM hm_composition hc JOIN homogeneous_material hm ON hc.hm_id=hm.id WHERE " . (isSupplier() ? "hm.created_by=?" : "1=1") . " ORDER BY hm.id, hc.id", isSupplier() ? [userId()] : []);
         $compsByHm = [];
         foreach ($allComps as $c) { $compsByHm[$c['hm_id']][] = $c; }
         $row = 2;
@@ -369,7 +374,9 @@ class MaterialController extends Controller {
         $sheet->getStyle('A2:F2')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->getRGB('E2E8F0');
         $sheet->getStyle('A2:F2')->getAlignment()->setWrapText(true);
         $sheet->getRowDimension(2)->setRowHeight(45);
-        $materials = $db->query("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id ORDER BY m.id DESC LIMIT 3");
+        $materials = isSupplier()
+            ? $db->query("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id WHERE m.supplier_id=? ORDER BY m.id DESC LIMIT 3", [userSupplierId()])
+            : $db->query("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id ORDER BY m.id DESC LIMIT 3");
         if (empty($materials)) {
             $materials = [[
                 'material_no' => 'MAT202507001', 'material_name' => '示例物料-连接器',
@@ -437,8 +444,12 @@ class MaterialController extends Controller {
             $unitWeight = (float)($row[4] ?? 0); $unit = trim($row[5] ?? 'g');
             if (!in_array($unit, ['g', 'M', 'Pcs'])) $unit = 'g';
             if (empty($no) && empty($name)) continue;
-            $existing = $db->single("SELECT id FROM material WHERE material_no=? AND material_name=?", [$no, $name], true);
+            $existing = $db->single("SELECT id, supplier_id FROM material WHERE material_no=? AND material_name=?", [$no, $name], true);
             if ($existing) {
+                if (isSupplier() && (int)$existing['supplier_id'] !== userSupplierId()) {
+                    $errors[] = "第".($i+1)."行 物料已存在且不属于当前供应商";
+                    continue;
+                }
                 $supplierId = 0;
                 if ($supplierName) { $supplierId = QueryRegistry::supplierIdByName($supplierName) ?? 0; }
                 if (isSupplier()) $supplierId = userSupplierId();
@@ -518,6 +529,7 @@ class MaterialController extends Controller {
         $this->requirePermission('material.edit');
         $mid = (int)($_POST['material_id'] ?? 0);
         if (!$mid) { header('Location: /material'); exit; }
+        $this->requireSupplierRecord('material', $mid, '/material');
         $db = DB::getInstance();
         $hmId = (int)($_POST['hm_id'] ?? 0);
         if ($hmId) {
@@ -546,6 +558,7 @@ class MaterialController extends Controller {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $c = DB::getInstance()->single("SELECT material_id FROM material_composition WHERE id=?", [$id], true);
+            if ($c) $this->requireSupplierRecord('material', $c['material_id'], '/material');
             DB::getInstance()->execute("DELETE FROM material_composition WHERE id=?", [$id]);
             if ($c) {
                 $this->updateMainComponent($c['material_id']);
@@ -558,6 +571,9 @@ class MaterialController extends Controller {
         $this->requirePermission('material.edit');
         $id = (int)($_POST['id'] ?? 0);
         if (!$id) { echo json_encode(['success' => false, 'message' => '无效ID']); exit; }
+        $c = DB::getInstance()->single("SELECT material_id FROM material_composition WHERE id=?", [$id], true);
+        if (!$c) { echo json_encode(['success' => false, 'message' => '记录不存在']); exit; }
+        $this->requireSupplierRecord('material', $c['material_id'], '/material');
         $pct = (float)($_POST['min_percentage'] ?? 0);
         $db = DB::getInstance();
         $db->execute("UPDATE material_composition SET min_percentage=?, max_percentage=? WHERE id=?", [$pct, $pct, $id]);
@@ -568,6 +584,7 @@ class MaterialController extends Controller {
         $this->requirePermission('material.edit');
         $mid = (int)($_POST['material_id'] ?? 0);
         if (!$mid) { header('Location: /material'); exit; }
+        $this->requireSupplierRecord('material', $mid, '/material');
         $db = DB::getInstance();
         $ids = $_POST['comp_id'] ?? [];
         $pcts = $_POST['comp_pct'] ?? [];

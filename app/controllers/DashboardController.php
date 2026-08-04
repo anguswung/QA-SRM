@@ -30,10 +30,14 @@ class DashboardController extends Controller {
             $todoUnreadNotices = $db->single("SELECT COUNT(*) FROM notice n WHERE n.status='published' AND n.id NOT IN (SELECT notice_id FROM notice_read_log WHERE supplier_id=?)", [$sid]);
             $recentNotices = $db->query("SELECT n.*, (SELECT COUNT(*) FROM notice_read_log WHERE notice_id=n.id AND supplier_id=?) AS is_read FROM notice n WHERE n.status='published' ORDER BY n.publish_time DESC LIMIT 5", [$sid]);
         }
-        $trends = $db->query("SELECT strftime('%Y-%m', created_at) AS month, SUM(CASE WHEN is_over_limit=1 THEN 1 ELSE 0 END) AS violations, COUNT(*) AS total FROM element_content WHERE created_at >= date('now','-6 months') GROUP BY month ORDER BY month");
+        $trends = isSupplier()
+            ? $db->query("SELECT strftime('%Y-%m', ec.created_at) AS month, SUM(CASE WHEN ec.is_over_limit=1 THEN 1 ELSE 0 END) AS violations, COUNT(*) AS total FROM element_content ec JOIN test_report tr ON ec.report_id=tr.id WHERE ec.created_at >= date('now','-6 months') AND tr.material_id IN (SELECT id FROM material WHERE supplier_id=?) GROUP BY month ORDER BY month", [userSupplierId()])
+            : $db->query("SELECT strftime('%Y-%m', created_at) AS month, SUM(CASE WHEN is_over_limit=1 THEN 1 ELSE 0 END) AS violations, COUNT(*) AS total FROM element_content WHERE created_at >= date('now','-6 months') GROUP BY month ORDER BY month");
         $months = []; $violations = []; $totals = [];
         foreach ($trends as $t) { $months[] = $t['month']; $violations[] = (int)$t['violations']; $totals[] = (int)$t['total']; }
-        $warnings = $db->query("SELECT wr.*, m.material_name, ec.substance_name, ec.content_value, ec.limit_value, tr.report_no, tr.test_date FROM warning_record wr LEFT JOIN material m ON wr.material_id=m.id LEFT JOIN test_report tr ON wr.report_id=tr.id LEFT JOIN element_content ec ON ec.report_id=tr.id WHERE wr.solved=0 ORDER BY wr.created_at DESC LIMIT 10");
+        $warnings = isSupplier()
+            ? $db->query("SELECT wr.*, m.material_name, ec.substance_name, ec.content_value, ec.limit_value, tr.report_no, tr.test_date FROM warning_record wr LEFT JOIN material m ON wr.material_id=m.id LEFT JOIN test_report tr ON wr.report_id=tr.id LEFT JOIN element_content ec ON ec.report_id=tr.id WHERE wr.solved=0 AND wr.material_id IN (SELECT id FROM material WHERE supplier_id=?) ORDER BY wr.created_at DESC LIMIT 10", [userSupplierId()])
+            : $db->query("SELECT wr.*, m.material_name, ec.substance_name, ec.content_value, ec.limit_value, tr.report_no, tr.test_date FROM warning_record wr LEFT JOIN material m ON wr.material_id=m.id LEFT JOIN test_report tr ON wr.report_id=tr.id LEFT JOIN element_content ec ON ec.report_id=tr.id WHERE wr.solved=0 ORDER BY wr.created_at DESC LIMIT 10");
         $title = '仪表盘';
         $this->render('dashboard/index', get_defined_vars());
     }

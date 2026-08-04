@@ -25,7 +25,7 @@ function runCheck() {
   var btn = event.target;
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>检查中...';
   document.getElementById('checkResults').innerHTML = '';
-  fetch('/rule', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'action=check&supplier_id=' + sid})
+  fetch('/rule', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'action=check&supplier_id=' + sid + '&_csrf_token=' + encodeURIComponent(window._csrf)})
     .then(function(r){ return r.json(); })
     .then(function(d){
       var html = '<div class="card"><div class="card-header">检查结果</div><div class="card-body">';

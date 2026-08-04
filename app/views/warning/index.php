@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-exclamation-triangle"></i> 预警中心</h5>
   <div>
-    <form method="post" class="inline-form">
+    <form method="post" class="inline-form"><?=csrf_field()?>
       <input type="hidden" name="action" value="generate">
       <button class="btn btn-sm btn-warning"><i class="fas fa-sync"></i> 生成预警</button>
     </form>
@@ -56,7 +56,7 @@
           <td><small><?=h($w['created_at'])?></small></td>
           <td>
             <?php if (!$w['solved']): ?>
-            <form method="post" class="d-inline">
+            <form method="post" class="d-inline"><?=csrf_field()?>
               <input type="hidden" name="action" value="resolve">
               <input type="hidden" name="id" value="<?=$w['id']?>">
               <button class="btn btn-sm btn-outline-success"><i class="fas fa-check"></i> 处理</button>

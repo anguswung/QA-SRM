@@ -27,7 +27,7 @@
       <div class="card-header">
         管控条款
         <div class="card-actions">
-          <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#contentModal"><i class="fas fa-plus"></i> 添加条款</button>
+          <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#contentModal"><i class="fas fa-plus"></i> 添加条款</button>
         </div>
       </div>
       <div class="card-body p-0">
@@ -43,7 +43,7 @@
               <td class="font-weight-bold"><?=h($c['limit_value'])?> <?=h($c['limit_unit'])?></td>
               <td><small class="text-muted"><?=h($c['exemption_desc'] ?? '-')?></small></td>
               <td>
-                <form method="post" onsubmit="return confirm('确定删除？')" class="d-inline">
+                <form method="post" onsubmit="return confirm('确定删除？')" class="d-inline"><?=csrf_field()?>
                   <input type="hidden" name="action" value="content_delete">
                   <input type="hidden" name="id" value="<?=$c['id']?>">
                   <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
@@ -60,8 +60,8 @@
 <div class="modal fade" id="contentModal">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post">
-        <div class="modal-header"><h5 class="modal-title">添加管控条款</h5><button class="close" data-dismiss="modal">&times;</button></div>
+      <form method="post"><?=csrf_field()?>
+        <div class="modal-header"><h5 class="modal-title">添加管控条款</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
         <div class="modal-body">
           <input type="hidden" name="action" value="content_create">
           <input type="hidden" name="regulation_id" value="<?=$item['id']?>">
@@ -97,7 +97,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-primary">添加</button>
-          <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
         </div>
       </form>
     </div>

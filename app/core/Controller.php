@@ -43,6 +43,32 @@ class Controller {
         }
     }
 
+    protected function requireSupplierRecord(string $table, $id, string $redirect = '/'): ?array {
+        $row = DB::getInstance()->single("SELECT * FROM $table WHERE id=?", [(int)$id], true);
+        if (!$row) {
+            flash('error', '记录不存在');
+            $this->redirect($redirect);
+        }
+        if (isSupplier() && (int)($row['supplier_id'] ?? 0) !== userSupplierId()) {
+            flash('error', '无权操作');
+            $this->redirect($redirect);
+        }
+        return $row;
+    }
+
+    protected function requireUserRecord(string $table, $id, string $ownerField, string $redirect = '/'): ?array {
+        $row = DB::getInstance()->single("SELECT * FROM $table WHERE id=?", [(int)$id], true);
+        if (!$row) {
+            flash('error', '记录不存在');
+            $this->redirect($redirect);
+        }
+        if (isSupplier() && (int)($row[$ownerField] ?? 0) !== userId()) {
+            flash('error', '无权操作');
+            $this->redirect($redirect);
+        }
+        return $row;
+    }
+
     protected function requireNotApproved(string $status, string $redirect = '/'): void {
         if ($status === 'A' && !isAdmin()) {
             flash('error', '已批准的记录无法操作');

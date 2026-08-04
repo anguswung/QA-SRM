@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-clipboard-list"></i> 操作日志</h5>
   <div>
-    <form method="post" action="/system/logs" id="quickCleanForm" class="d-inline-flex align-items-center">
+    <form method="post" action="/system/logs" id="quickCleanForm" class="d-inline-flex align-items-center"><?=csrf_field()?>
       <input type="hidden" name="action" value="clean_logs">
       <select name="keep_days" class="form-control form-control-sm mr-2" style="width:auto" onchange="document.getElementById('quickKeepDays').value=this.value">
         <option value="30">30 天前</option>

@@ -144,9 +144,6 @@ $(function() {
         if (!confirm($(this).data('confirm') || '确定执行此操作？')) e.preventDefault();
     });
     $('.alert-auto').delay(3000).fadeOut(500);
-    $('#sidebarToggle').on('click', function() {
-        $('body').toggleClass('sidebar-collapsed');
-    });
     $(document).on('click', '.tree-toggle', function() {
         $(this).toggleClass('expanded');
         $(this).closest('.tree-node').find('.tree-children:first').toggleClass('open');

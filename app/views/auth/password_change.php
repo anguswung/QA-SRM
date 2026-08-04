@@ -3,7 +3,7 @@
     <div class="card">
       <div class="card-header"><i class="fas fa-key"></i> 修改密码</div>
       <div class="card-body">
-        <form method="post">
+        <form method="post"><?=csrf_field()?>
           <div class="form-group">
             <label>原密码</label>
             <input type="password" name="old_password" class="form-control" required>

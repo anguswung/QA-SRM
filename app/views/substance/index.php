@@ -37,7 +37,7 @@
           <td>
             <?php if (can('substance.edit')): ?><a href="/substance?action=edit&id=<?=$s['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
             <?php if (can('substance.delete')): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$s['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>

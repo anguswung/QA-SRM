@@ -247,6 +247,7 @@ class SupplierController extends Controller {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $c = DB::getInstance()->single("SELECT supplier_id FROM supplier_contact WHERE id=?", [$id], true);
+            if ($c && isSupplier() && (int)$c['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /supplier/rating'); exit; }
             DB::getInstance()->execute("DELETE FROM supplier_contact WHERE id=?", [$id]);
             if ($c) { header('Location: /supplier?action=detail&id=' . $c['supplier_id']); exit; }
         }

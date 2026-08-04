@@ -19,7 +19,7 @@
           <?php if ($canManage): ?>
           <td>
             <a href="/report/categories?action=edit&id=<?=$c['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$c['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>

@@ -147,7 +147,6 @@ class HomogeneousController extends Controller {
             $saved++;
         }
         if ($saved) {
-            $db->execute("UPDATE homogeneous_material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$hmId]);
             // auto-analyze
             (new ComplianceEngine())->analyzeHm($hmId);
         }
@@ -168,6 +167,7 @@ class HomogeneousController extends Controller {
             header('Location: /homogeneous?action=edit&id=' . $mid . '&step=2'); exit;
         }
         $mid = (int)($_POST['id'] ?? 0);
+        if ($mid) $this->requireUserRecord('homogeneous_material', $mid, 'created_by', '/homogeneous');
         if ($step == 1) { header('Location: /homogeneous?action=edit&id=' . $mid . '&step=1'); exit; }
         if ($step == 3) {
             $pcts = $_POST['comp_pct'] ?? [];
@@ -276,7 +276,8 @@ class HomogeneousController extends Controller {
         header('Location: /homogeneous'); exit;
     }
     private function doAuditHm() {
-        $this->requirePermission('homogeneous.view');
+        $this->requirePermission('homogeneous.audit');
+        if (!isAdmin()) { flash('error', '无权操作'); header('Location: /homogeneous'); exit; }
         $id = (int)($_POST['id'] ?? 0);
         $status = $_POST['audit_status'] ?? '';
         if ($id && in_array($status, ['A', 'R'])) {
@@ -452,6 +453,7 @@ class HomogeneousController extends Controller {
         $this->requirePermission('compliance.analyze');
         $hmId = (int)($_POST['hm_id'] ?? 0);
         if ($hmId) {
+            $this->requireUserRecord('homogeneous_material', $hmId, 'created_by', '/homogeneous');
             $engine = new ComplianceEngine();
             $results = $engine->analyzeHm($hmId);
             flash('success', '分析完成，共 ' . count($results) . ' 条');
@@ -502,6 +504,13 @@ class HomogeneousController extends Controller {
                 if ($hm) { $hmId = $hm['id']; }
             }
             if ($hmId) {
+                if (isSupplier()) {
+                    $own = $db->single("SELECT created_by FROM homogeneous_material WHERE id=?", [$hmId], true);
+                    if (!$own || (int)$own['created_by'] !== userId()) {
+                        $errors[] = "第".($i+1)."行 均质材料ID{$hmId}已存在且不属于当前用户";
+                        continue;
+                    }
+                }
                 $supplierId = 0;
                 if ($hmSupplier) { $supplierId = QueryRegistry::supplierIdByName($hmSupplier) ?? 0; }
                 $db->execute("UPDATE homogeneous_material SET supplier_name=?, weight_mg=?, supplier_id=?, updated_at=datetime('now','localtime') WHERE id=?",
@@ -542,6 +551,7 @@ class HomogeneousController extends Controller {
         $db = DB::getInstance();
         $source = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$sourceId], true);
         if (!$source) { flash('error', '原均质材料不存在'); header('Location: /homogeneous'); exit; }
+        if (isSupplier() && (int)($source['created_by'] ?? 0) !== userId()) { flash('error', '无权操作'); header('Location: /homogeneous'); exit; }
         $db->execute("INSERT INTO homogeneous_material (material_name, supplier_name, weight_mg, weight_unit, supplier_id, env_status, audit_status, created_by) VALUES (?,?,?,?,?,?,?,?)",
             [$newName, $source['supplier_name'], $source['weight_mg'], $source['weight_unit'], $source['supplier_id'], 'pending', 'N', userId()]);
         $newId = $db->lastInsertId();

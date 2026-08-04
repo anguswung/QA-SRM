@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-file-alt"></i> 检测报告</h5>
   <div>
-    <?php if (can('report.create')): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#reportModal"><i class="fas fa-plus"></i> 上传报告</button><?php endif; ?>
+    <?php if (can('report.create')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reportModal"><i class="fas fa-plus"></i> 上传报告</button><?php endif; ?>
   </div>
 </div>
 <div class="search-bar mb-3">
@@ -25,24 +25,24 @@
 </div>
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover datatable" data-options='{"autoWidth":false}'>
       <thead><tr>
-        <th style="width:140px">报告编号</th>
-        <?php if (!$isSupplier): ?><th style="width:120px">供应商</th><?php endif; ?>
-        <th style="width:80px">来源</th>
-        <th>关联项</th>
-        <th style="width:80px">类型</th>
-        <th>检测机构</th>
-        <th style="width:100px">检测日期</th>
-        <th style="width:100px">有效期</th>
-        <th style="width:80px">审核状态</th>
-        <th style="width:100px">操作</th>
+        <th style="width:14%">报告编号</th>
+        <?php if (!$isSupplier): ?><th style="width:6%">供应商</th><?php endif; ?>
+        <th style="width:5%">来源</th>
+        <th style="width:6%">关联项</th>
+        <th style="width:6%">类型</th>
+        <th style="width:26%">检测机构</th>
+        <th style="width:9%">检测日期</th>
+        <th style="width:9%">有效期</th>
+        <th style="width:8%">审核状态</th>
+        <th style="width:11%">操作</th>
       </tr></thead>
       <tbody>
         <?php foreach ($reports as $r): ?>
         <tr>
           <td><?=h($r['report_no'])?></td>
-          <?php if (!$isSupplier): ?><td><?=h($r['supplier_name'] ?? '-')?></td><?php endif; ?>
+          <?php if (!$isSupplier): ?><td><?=h($r['supplier_name_short'] ?: ($r['supplier_name'] ?? '-'))?></td><?php endif; ?>
           <td><span class="badge badge-soft-<?=$r['source_type'] === 'material' ? 'primary' : 'success'?>"><?=$r['source_type'] === 'material' ? '物料' : '均质'?></span></td>
           <td><?=h($r['item_name'] ?? '-')?></td>
           <td><span class="badge badge-soft-info"><?=h($r['report_type'])?></span></td>
@@ -54,7 +54,7 @@
             <?php if ($r['source_type'] === 'material'): ?>
             <?php if (can('report.edit')): ?><a href="/report?action=edit&id=<?=$r['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
             <?php if (can('report.delete')): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>
@@ -74,8 +74,8 @@
 </div>
 <div class="modal fade" id="reportModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" enctype="multipart/form-data" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" enctype="multipart/form-data" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="row">
@@ -118,7 +118,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">上传</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

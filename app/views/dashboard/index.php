@@ -164,7 +164,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h4 class="modal-title" id="dashboardNoticeTitle"></h4>
-        <button class="close" data-dismiss="modal">&times;</button>
+        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         <div class="text-right text-muted mb-3 pb-2 border-bottom fs-13">
@@ -181,7 +181,7 @@ function showDashboardNotice(title, content, publisher, pubTime) {
   $('#dashboardNoticeTitle').text(title);
   $('#dashboardNoticePubInfo').text('发布人: ' + (publisher || '-') + ' | 时间: ' + (pubTime || '-'));
   $('#dashboardNoticeContent').html(content);
-  $('#dashboardNoticeModal').modal('show');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('dashboardNoticeModal')).show();
 }
 new Chart(document.getElementById('statusChart'), {
   type: 'doughnut',

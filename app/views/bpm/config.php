@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-cog"></i> 流程配置</h5>
   <div>
-    <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#templateModal"><i class="fas fa-plus"></i> 新增模板</button>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#templateModal"><i class="fas fa-plus"></i> 新增模板</button>
     <a href="/bpm" class="btn btn-sm btn-outline-secondary">任务中心</a>
   </div>
 </div>
@@ -16,7 +16,7 @@
             <?php foreach ($templates as $t): ?>
             <tr><td><?=h($t['name'])?></td><td><?=h($t['category'])?></td><td><?=statusBadge($t['status'])?></td>
               <td>
-                <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+                <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
                   <input type="hidden" name="action" value="template_delete"><input type="hidden" name="id" value="<?=$t['id']?>">
                   <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                 </form>
@@ -44,7 +44,7 @@
               <td><?=h($n['role_required'])?></td>
               <td><?=h($n['timeout_hours'] ?? '-')?></td>
               <td>
-                <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+                <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
                   <input type="hidden" name="action" value="node_delete"><input type="hidden" name="id" value="<?=$n['id']?>">
                   <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                 </form>
@@ -58,7 +58,7 @@
     <div class="card mt-3">
       <div class="card-header">添加节点</div>
       <div class="card-body">
-        <form method="post">
+        <form method="post"><?=csrf_field()?>
           <input type="hidden" name="action" value="node_create">
           <div class="row">
             <div class="col-6">
@@ -107,8 +107,8 @@
 </div>
 <div class="modal fade" id="templateModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">新增流程模板</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">新增流程模板</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="template_create">
         <div class="form-group"><label>模板名称</label><input type="text" name="name" class="form-control" required></div>
@@ -121,7 +121,7 @@
         </div>
         <div class="form-group"><label>描述</label><textarea name="description" class="form-control" rows="2"></textarea></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>

@@ -4,7 +4,7 @@
 <div class="card mb-3">
   <div class="card-header"><i class="fas fa-building mr-1"></i> 公司信息</div>
   <div class="card-body">
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data"><?=csrf_field()?>
       <?php
       $companyKeys = ['company_name' => '公司名称', 'company_short_name' => '公司简称', 'company_phone' => '公司电话', 'company_address' => '公司地址', 'system_name' => '系统名称'];
       foreach ($companyKeys as $ck => $cl):
@@ -42,7 +42,7 @@
 <div class="card">
   <div class="card-header"><i class="fas fa-sliders-h mr-1"></i> 其他参数</div>
   <div class="card-body">
-    <form method="post">
+    <form method="post"><?=csrf_field()?>
       <table class="table mb-0">
         <thead><tr><th>配置键</th><th>配置值</th><th>说明</th></tr></thead>
         <tbody>

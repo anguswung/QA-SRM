@@ -2,7 +2,7 @@
   <h5><i class="fas fa-bullhorn"></i> 通知公告</h5>
   <?php if (canManage('notice.create')): ?>
   <div>
-    <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#noticeModal"><i class="fas fa-plus"></i> 发布通知</button>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#noticeModal"><i class="fas fa-plus"></i> 发布通知</button>
   </div>
   <?php endif; ?>
 </div>
@@ -24,10 +24,10 @@
           <?php endif; ?>
           <?php if (canManage('notice.delete')): ?>
           <td>
-            <button class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#editNoticeModal"
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editNoticeModal"
               data-id="<?=$n['id']?>" data-title="<?=h($n['title'])?>" data-content="<?=h($n['content'])?>"
               data-has-attachment="<?=!empty($attachments) ? 1 : 0?>"><i class="fas fa-edit"></i></button>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$n['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>
@@ -44,7 +44,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h4 class="modal-title" id="viewTitle"></h4>
-        <button class="close" data-dismiss="modal">&times;</button>
+        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         <div class="text-right text-muted mb-3 pb-2 border-bottom fs-13">
@@ -59,8 +59,8 @@
 <?php if (canManage('notice.create')): ?>
 <div class="modal fade" id="noticeModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" enctype="multipart/form-data" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">发布通知</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" enctype="multipart/form-data" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">发布通知</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="form-group"><label>标题</label><input type="text" name="title" class="form-control" required></div>
@@ -71,7 +71,7 @@
         </div>
         <div class="form-group"><label>附件</label><input type="file" name="attachment" class="form-control-file"></div>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-primary" id="noticeSubmitBtn">发布</button><button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button type="button" class="btn btn-primary" id="noticeSubmitBtn">发布</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>
@@ -79,8 +79,8 @@
 <?php if (canManage('notice.create')): ?>
 <div class="modal fade" id="editNoticeModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" enctype="multipart/form-data" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">编辑通知</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" enctype="multipart/form-data" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">编辑通知</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="update">
         <input type="hidden" name="id" id="editNoticeId">
@@ -92,7 +92,7 @@
         </div>
         <div class="form-group"><label>附件（重新上传会替换旧附件）</label><input type="file" name="attachment" class="form-control-file"></div>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-primary" id="editNoticeSubmitBtn">保存</button><button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button type="button" class="btn btn-primary" id="editNoticeSubmitBtn">保存</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>
@@ -110,6 +110,7 @@ function imgHandler(quill) {
       if (!file) return;
       var fd = new FormData();
       fd.append('file', file);
+      fd.append('_csrf_token', window._csrf);
       fetch('/upload-image.php', { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
         .then(function(res) {
@@ -192,6 +193,6 @@ function showNotice(title, content, publisher, pubTime, attachments) {
     }
   }
   $('#viewAttachments').html(html);
-  $('#viewModal').modal('show');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('viewModal')).show();
 }
 </script>

@@ -53,8 +53,12 @@ class AuthController extends Controller {
                 flash('error', '原密码错误');
             } elseif ($new !== $confirm) {
                 flash('error', '两次密码不一致');
-            } elseif (strlen($new) < 6) {
-                flash('error', '密码长度至少6位');
+            } elseif (strlen($new) < 8) {
+                flash('error', '密码长度至少8位');
+            } elseif (!preg_match('/[A-Za-z]/', $new) || !preg_match('/\d/', $new)) {
+                flash('error', '密码需同时包含字母和数字');
+            } elseif (password_verify($new, $user['password'])) {
+                flash('error', '新密码不能与原密码相同');
             } else {
                 $db->execute("UPDATE users SET password=?, password_changed=1 WHERE id=?",
                     [password_hash($new, PASSWORD_DEFAULT), userId()]);

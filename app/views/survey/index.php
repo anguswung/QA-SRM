@@ -2,7 +2,7 @@
   <h5><i class="fas fa-poll"></i> 问卷调查</h5>
   <?php if (canManage('survey.create')): ?>
   <div>
-    <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#surveyModal"><i class="fas fa-plus"></i> 创建问卷</button>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#surveyModal"><i class="fas fa-plus"></i> 创建问卷</button>
   </div>
   <?php endif; ?>
 </div>
@@ -23,10 +23,10 @@
               <td><span class="badge badge-soft-info"><?=(int)$s['response_count']?></span></td>
               <?php if (isAdmin()): ?>
               <td>
-                <button class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#editSurveyModal"
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editSurveyModal"
                   data-id="<?=$s['id']?>" data-title="<?=h($s['title'])?>" data-desc="<?=h($s['description'])?>"
                   data-expire="<?=h($s['expiration_date'])?>" data-status="<?=$s['status']?>"><i class="fas fa-edit"></i></button>
-                <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+                <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
                   <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$s['id']?>">
                   <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                 </form>
@@ -64,7 +64,7 @@
       <div class="card-body">
         <?php $activeSurveys = array_filter($surveys, fn($s) => $s['status'] === 'active'); ?>
         <?php if (count($activeSurveys) > 0): ?>
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data"><?=csrf_field()?>
           <input type="hidden" name="action" value="submit">
           <div class="form-group">
             <label>选择问卷</label>
@@ -99,9 +99,9 @@
               <td><?=$r['file_path'] ? '<a href="' . h(fileUrl($r['file_path'])) . '" target="_blank"><i class="fas fa-download"></i></a>' : '-'?></td>
               <td><?=$r['submit_status'] === '1' ? '<span class="status-tag success">已提交</span>' : ($r['submit_status'] === '2' ? '<span class="status-tag success">已通过</span>' : '<span class="status-tag warning">待审核</span>')?></td>
               <td>
-                <button class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#reviewModal"
+                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#reviewModal"
                   data-id="<?=$r['id']?>" data-status="2"><i class="fas fa-check"></i></button>
-                <button class="btn btn-sm btn-outline-danger" data-toggle="modal" data-target="#reviewModal"
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reviewModal"
                   data-id="<?=$r['id']?>" data-status="3"><i class="fas fa-times"></i></button>
               </td>
             </tr>
@@ -115,8 +115,8 @@
 </div>
 <div class="modal fade" id="surveyModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">创建问卷</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">创建问卷</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="form-group"><label>标题</label><input type="text" name="title" class="form-control" required></div>
@@ -127,14 +127,14 @@
         </div>
         <div class="form-group"><label>截止日期</label><input type="date" name="expiration_date" class="form-control"></div>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-primary" id="surveySubmitBtn">创建</button><button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button type="button" class="btn btn-primary" id="surveySubmitBtn">创建</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>
 <div class="modal fade" id="editSurveyModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">编辑问卷</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">编辑问卷</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="update">
         <input type="hidden" name="id" id="editSurveyId">
@@ -152,21 +152,21 @@
           </select>
         </div>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-primary" id="editSurveySubmitBtn">保存</button><button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button type="button" class="btn btn-primary" id="editSurveySubmitBtn">保存</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>
 <div class="modal fade" id="reviewModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">审核回复</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">审核回复</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="review">
         <input type="hidden" name="id" id="reviewId">
         <input type="hidden" name="submit_status" id="reviewStatus">
         <div class="form-group"><label>审核意见</label><textarea name="review_comment" class="form-control" rows="3"></textarea></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary">确认</button><button class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button class="btn btn-primary">确认</button><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>
@@ -183,6 +183,7 @@ function imgHandler(quill) {
       if (!file) return;
       var fd = new FormData();
       fd.append('file', file);
+      fd.append('_csrf_token', window._csrf);
       fetch('/upload-image.php', { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
         .then(function(res) {

@@ -15,7 +15,7 @@
     <ul class="nav nav-tabs card-header-tabs" id="reportTabs" role="tablist">
       <?php foreach ($reports as $i => $r): ?>
       <li class="nav-item">
-        <a class="nav-link <?=($activeReportId ?? 0) == $r['id'] ? 'active' : ($i === 0 && !$activeReportId ? 'active' : '')?>" id="tab-<?=$r['id']?>" data-toggle="tab" href="#report-<?=$r['id']?>" role="tab">
+        <a class="nav-link <?=($activeReportId ?? 0) == $r['id'] ? 'active' : ($i === 0 && !$activeReportId ? 'active' : '')?>" id="tab-<?=$r['id']?>" data-bs-toggle="tab" href="#report-<?=$r['id']?>" role="tab">
           <?=h($r['report_type'] ?: '报告')?> v<?=(int)($r['version'] ?? 1)?>
           <?php if (($r['status'] ?? 'current') === 'superseded'): ?><span class="badge badge-secondary">旧版</span><?php endif; ?>
         </a>
@@ -151,7 +151,7 @@
       <div class="card mt-3">
         <div class="card-header">测试数据 — 手工录入</div>
         <div class="card-body p-0">
-          <form method="post" action="/homogeneous?action=reports&id=<?=$item['id']?>">
+          <form method="post" action="/homogeneous?action=reports&id=<?=$item['id']?><?=csrf_field()?>">
             <input type="hidden" name="action" value="save_elements">
             <input type="hidden" name="hm_report_id" value="<?=$r['id']?>">
             <input type="hidden" name="hm_id" value="<?=$item['id']?>">

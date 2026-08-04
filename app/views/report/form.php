@@ -3,7 +3,7 @@
     <div class="card">
       <div class="card-header"><i class="fas fa-edit"></i> 编辑报告</div>
       <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data"><?=csrf_field()?>
           <input type="hidden" name="action" value="update">
           <input type="hidden" name="id" value="<?=$item['id']?>">
           <div class="row">

@@ -47,7 +47,7 @@
       <div class="card-header">
         评价记录
         <div class="card-actions">
-          <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#ratingModal"><i class="fas fa-plus"></i> 评价</button>
+          <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#ratingModal"><i class="fas fa-plus"></i> 评价</button>
         </div>
       </div>
       <div class="card-body p-0">
@@ -87,8 +87,8 @@
 
 <div class="modal fade" id="ratingModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title" id="ratingModalTitle">供应商评价</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title" id="ratingModalTitle">供应商评价</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="rating_create">
         <input type="hidden" name="supplier_id" value="<?=$item['id']?>">
@@ -97,7 +97,7 @@
           <ul class="nav nav-tabs card-header-tabs">
             <?php $dims = ['资料完整性', '合规率', '响应速度', '综合']; ?>
             <?php foreach ($dims as $i => $dim): ?>
-            <li class="nav-item"><a class="nav-link <?=$i === 0 ? 'active' : ''?>" data-toggle="tab" href="#tab<?=$i?>"><?=$dim?></a></li>
+            <li class="nav-item"><a class="nav-link <?=$i === 0 ? 'active' : ''?>" data-bs-toggle="tab" href="#tab<?=$i?>"><?=$dim?></a></li>
             <?php endforeach; ?>
           </ul>
         </div>
@@ -133,7 +133,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary"><?=$isEdit ? '修改保存' : '保存全部维度'?></button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

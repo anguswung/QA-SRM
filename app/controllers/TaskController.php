@@ -46,6 +46,7 @@ class TaskController extends Controller {
         $this->render('task/index', get_defined_vars());
     }
     private function showForm() {
+        $this->requirePermission('task.create');
         $db = DB::getInstance();
         $suppliers = QueryRegistry::supplierDropdownActive();
         $templates = $db->query("SELECT * FROM bpm_template WHERE status='published' ORDER BY name");
@@ -56,12 +57,16 @@ class TaskController extends Controller {
         $db = DB::getInstance();
         $instance = $db->single("SELECT bi.*, t.name AS template_name, u.realname AS initiator_name FROM bpm_instance bi JOIN bpm_template t ON bi.template_id=t.id LEFT JOIN users u ON bi.initiator_id=u.id WHERE bi.id=?", [$id], true);
         if (!$instance) { header('Location: /task'); exit; }
+        if (isSupplier() && (int)$instance['initiator_id'] !== userId() && !$this->isInstanceAssignee($id)) {
+            flash('error', '无权操作'); header('Location: /task'); exit;
+        }
         $tasks = $db->query("SELECT bt.*, bn.node_name, bn.node_type, bn.sort_order, u.realname AS assignee_name FROM bpm_task bt JOIN bpm_node bn ON bt.node_id=bn.id LEFT JOIN users u ON bt.assignee_id=u.id WHERE bt.instance_id=? ORDER BY bt.id", [$id]);
         $attachments = $db->query("SELECT ta.*, u.realname AS uploader_name FROM task_attachment ta LEFT JOIN users u ON ta.uploaded_by=u.id WHERE ta.instance_id=? ORDER BY ta.created_at DESC", [$id]);
         $title = '任务详情';
         $this->render('task/detail', get_defined_vars());
     }
     private function doCreate() {
+        $this->requirePermission('task.create');
         $db = DB::getInstance();
         $supplierId = (int)($_POST['supplier_id'] ?? 0);
         $templateId = (int)($_POST['template_id'] ?? 0);
@@ -91,6 +96,7 @@ class TaskController extends Controller {
         $comment = $_POST['comment'] ?? '';
         if ($instanceId) {
             $db = DB::getInstance();
+            if (isSupplier() && !$this->isInstanceAssignee($instanceId)) { flash('error', '无权操作'); header('Location: /task'); exit; }
             // Handle file upload
             if (!empty($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
                 $this->saveAttachment($instanceId, $_FILES['attachment']);
@@ -105,6 +111,7 @@ class TaskController extends Controller {
     private function doUploadAttachment() {
         $instanceId = (int)($_POST['instance_id'] ?? 0);
         if ($instanceId && !empty($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+            if (isSupplier() && !$this->isInstanceAssignee($instanceId)) { flash('error', '无权操作'); header('Location: /task'); exit; }
             $this->saveAttachment($instanceId, $_FILES['attachment']);
             flash('success', '文件已上传');
         }
@@ -116,12 +123,17 @@ class TaskController extends Controller {
             $db = DB::getInstance();
             $att = $db->single("SELECT * FROM task_attachment WHERE id=?", [$id], true);
             if ($att) {
+                if (isSupplier() && !$this->isInstanceAssignee((int)$att['instance_id'])) { flash('error', '无权操作'); header('Location: /task'); exit; }
                 if (!empty($att['file_path']) && file_exists($att['file_path'])) unlink($att['file_path']);
                 $db->execute("DELETE FROM task_attachment WHERE id=?", [$id]);
                 flash('success', '文件已删除');
             }
         }
         header('Location: /task?action=detail&id=' . (int)($_POST['instance_id'] ?? 0)); exit;
+    }
+    private function isInstanceAssignee(int $instanceId): bool {
+        $db = DB::getInstance();
+        return (bool)$db->single("SELECT COUNT(*) FROM bpm_task WHERE instance_id=? AND assignee_id=? AND status='pending'", [$instanceId, userId()]);
     }
     private function saveAttachment($instanceId, $file) {
         $config = require __DIR__ . '/../../config/app.php';

@@ -21,7 +21,7 @@
           </div>
         </form>
         <?php if ($materialId): ?>
-        <form method="post">
+        <form method="post"><?=csrf_field()?>
           <input type="hidden" name="material_id" value="<?=$materialId?>">
           <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-play"></i> 执行分析</button>
         </form>

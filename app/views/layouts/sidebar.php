@@ -68,37 +68,54 @@ foreach ($menu as $k => &$m) {
 }
 unset($m);
 ?>
-<aside class="app-sidebar">
-  <div class="sidebar-header">
-    <i class="icon-zh-w"></i>
-    <span class="sidebar-title">合规管理系统</span>
-  </div>
-  <nav class="sidebar-nav">
-    <?php foreach ($menu as $k => $m): ?>
-    <?php $hasChildren = !empty($m['children']); ?>
-    <?php $isOpen = $hasChildren && (menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query'))); ?>
-    <div class="nav-item <?=$isOpen ? 'menu-open' : ''?>">
-      <?php if ($hasChildren): ?>
-      <span class="nav-link <?=menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query')) ? 'active' : ''?> has-children">
-        <i class="fas <?=h($m['icon'])?>"></i>
-        <span><?=h($m['label'])?></span>
-        <i class="fas fa-chevron-down arrow"></i>
-      </span>
-      <?php else: ?>
-      <a href="<?=h($m['url'])?>" class="nav-link <?=menuOpen($m['url']) ? 'active' : ''?>">
-        <i class="fas <?=h($m['icon'])?>"></i>
-        <span><?=h($m['label'])?></span>
+<aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <h1 class="navbar-brand navbar-brand-autodark">
+      <a href="/dashboard">
+        <i class="icon-zh-w"></i>
+        <span class="sidebar-title">合规管理系统</span>
       </a>
-      <?php endif; ?>
-      <?php if ($hasChildren): ?>
-      <div class="submenu <?=$isOpen ? 'open' : ''?>">
-        <?php foreach ($m['children'] as $c): ?>
-        <a href="<?=h($c['url'])?>" class="subnav-link <?=rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/') === rtrim($c['url'], '/') ? 'active' : ''?>"><?=h($c['label'])?></a>
+    </h1>
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <ul class="navbar-nav pt-lg-3">
+        <?php foreach ($menu as $k => $m): ?>
+        <?php $hasChildren = !empty($m['children']); ?>
+        <?php $mActive = menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query')); ?>
+        <?php $cPath = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/'); ?>
+        <?php if ($hasChildren): ?>
+        <li class="nav-item <?=$mActive ? 'active' : ''?>">
+          <a class="nav-link" href="#navbar-<?=$k?>" data-bs-toggle="collapse" data-bs-target="#navbar-<?=$k?>" role="button" aria-expanded="<?=$mActive ? 'true' : 'false'?>" aria-controls="navbar-<?=$k?>">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="fas <?=h($m['icon'])?>"></i>
+            </span>
+            <span class="nav-link-title"><?=h($m['label'])?></span>
+            <span class="nav-link-toggle"></span>
+          </a>
+          <div class="collapse submenu <?=$mActive ? 'show' : ''?>" id="navbar-<?=$k?>" data-bs-parent="#navbar-menu">
+            <ul class="nav nav-pills">
+              <?php foreach ($m['children'] as $c): ?>
+              <li class="nav-item">
+                <a href="<?=h($c['url'])?>" class="nav-link <?=$cPath === rtrim($c['url'], '/') ? 'active' : ''?>"><?=h($c['label'])?></a>
+              </li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
+        </li>
+        <?php else: ?>
+        <li class="nav-item <?=$mActive ? 'active' : ''?>">
+          <a class="nav-link" href="<?=h($m['url'])?>">
+            <span class="nav-link-icon d-md-none d-lg-inline-block">
+              <i class="fas <?=h($m['icon'])?>"></i>
+            </span>
+            <span class="nav-link-title"><?=h($m['label'])?></span>
+          </a>
+        </li>
+        <?php endif; ?>
         <?php endforeach; ?>
-      </div>
-      <?php endif; ?>
+      </ul>
     </div>
-    <?php endforeach; ?>
-  </nav>
+  </div>
 </aside>
-<script>!function(){var s=document.querySelector('.sidebar-nav');if(!s)return;function p(e){while(e&&e.nodeType&&!e.classList.contains('nav-item'))e=e.parentNode;return e&&e.classList.contains('nav-item')?e:null}function c(e){var sub=e.querySelector('.submenu'),arr=e.querySelector('.nav-link .arrow');sub&&(sub.classList.remove('open'),sub.style.maxHeight=''),e.classList.remove('menu-open'),arr&&arr.classList.remove('rotated')}s.addEventListener('mousedown',function(e){var t=e.target.closest('.nav-link.has-children');if(!t)return;e.preventDefault();var n=p(t);if(!n)return;var o=n.classList.contains('menu-open'),al=s.querySelectorAll('.nav-item.menu-open');[].forEach.call(al,function(e){e!==n&&c(e)});if(o)c(n);else{n.classList.add('menu-open');var sb=n.querySelector('.submenu');sb&&(sb.classList.add('open'),sb.style.maxHeight=sb.scrollHeight+'px');var ar=t.querySelector('.arrow');ar&&ar.classList.add('rotated')}});s.addEventListener('click',function(e){e.target.closest('.nav-link.has-children')&&e.preventDefault()})}();</script>

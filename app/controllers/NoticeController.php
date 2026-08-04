@@ -4,6 +4,8 @@ class NoticeController extends Controller {
         $this->requirePermission('notice.view');
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->requirePermission('notice.edit');
+            if (!isAdmin()) { flash('error', '无权操作'); header('Location: /notice'); exit; }
             $action = $_POST['action'] ?? '';
             if ($action === 'create') {
                 $db->execute("INSERT INTO notice (title, content, publisher_id, publisher_name, publish_time) VALUES (?,?,?,?,datetime('now','localtime'))",

@@ -7,6 +7,12 @@ if (!isset($_SESSION['user_id'])) {
     echo json_encode(['code' => 401, 'msg' => '未登录']);
     exit;
 }
+if (($_POST['_csrf_token'] ?? '') === '' || empty($_SESSION['_csrf_token']) || !hash_equals($_SESSION['_csrf_token'], $_POST['_csrf_token'] ?? '')) {
+    http_response_code(419);
+    header('Content-Type: application/json');
+    echo json_encode(['code' => 419, 'msg' => 'CSRF token validation failed']);
+    exit;
+}
 $file = $_FILES['file'] ?? null;
 if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
     header('Content-Type: application/json');

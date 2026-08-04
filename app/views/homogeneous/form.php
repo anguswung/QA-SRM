@@ -218,6 +218,7 @@
               if (!status) return;
               var fd = new FormData();
               fd.append('file', file);
+              fd.append('_csrf_token', window._csrf);
               status.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>正在识别...';
               status.className = 'text-info';
               fetch('/report-recognize.php', {method:'POST', body:fd})

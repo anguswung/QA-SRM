@@ -7,16 +7,17 @@ class WarningController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $action = $_POST['action'] ?? '';
             if ($action === 'generate') {
+                if (!isAdmin()) { flash('error', '无权操作'); header('Location: /warning'); exit; }
                 $count = $engine->generateWarnings();
                 flash('success', "预警生成完成，新增$count 条");
             }
             if ($action === 'resolve') {
                 $id = (int)($_POST['id'] ?? 0);
-                if ($id) { $engine->resolve($id); logOp('update', 'warning', $id, '处理预警'); flash('success', '预警已处理'); }
+                if ($id) { $this->requireSupplierWarning($id); $engine->resolve($id); logOp('update', 'warning', $id, '处理预警'); flash('success', '预警已处理'); }
             }
             if ($action === 'resolve_all') {
                 $ids = $_POST['ids'] ?? [];
-                foreach ($ids as $id) { $engine->resolve((int)$id); }
+                foreach ($ids as $id) { $id = (int)$id; $this->requireSupplierWarning($id); $engine->resolve($id); }
                 flash('success', '批量处理完毕');
             }
             header('Location: /warning'); exit;
@@ -32,5 +33,13 @@ class WarningController extends Controller {
         $stats = $db->query("SELECT warning_type, COUNT(*) AS cnt, SUM(CASE WHEN solved=0 THEN 1 ELSE 0 END) AS pending_count FROM warning_record GROUP BY warning_type");
         $title = '预警中心';
         $this->render('warning/index', get_defined_vars());
+    }
+    private function requireSupplierWarning(int $id): void {
+        if (!isSupplier()) return;
+        $db = DB::getInstance();
+        $w = $db->single("SELECT material_id FROM warning_record WHERE id=?", [$id], true);
+        if (!$w) { flash('error', '记录不存在'); header('Location: /warning'); exit; }
+        $m = $db->single("SELECT supplier_id FROM material WHERE id=?", [(int)$w['material_id']], true);
+        if (!$m || (int)$m['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /warning'); exit; }
     }
 }

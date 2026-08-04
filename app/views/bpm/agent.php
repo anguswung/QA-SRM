@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-user-friends"></i> 流程代理</h5>
   <div>
-    <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#agentModal"><i class="fas fa-plus"></i> 新增代理</button>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#agentModal"><i class="fas fa-plus"></i> 新增代理</button>
     <a href="/bpm" class="btn btn-sm btn-outline-secondary">任务中心</a>
   </div>
 </div>
@@ -19,7 +19,7 @@
           <td><?=statusBadge($a['status'])?></td>
           <td><small><?=h($a['remark'])?></small></td>
           <td>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$a['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>
@@ -32,8 +32,8 @@
 </div>
 <div class="modal fade" id="agentModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">新增代理</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">新增代理</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="form-group"><label>委托人</label>
@@ -57,7 +57,7 @@
         </div>
         <div class="form-group"><label>备注</label><textarea name="remark" class="form-control" rows="2"></textarea></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>

@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-users"></i> 用户管理</h5>
   <div>
-    <?php if (can('system.users')): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#userModal"><i class="fas fa-plus"></i> 新增用户</button><?php endif; ?>
+    <?php if (can('system.users')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#userModal"><i class="fas fa-plus"></i> 新增用户</button><?php endif; ?>
   </div>
 </div>
 <div class="card">
@@ -19,13 +19,13 @@
           <td><?=statusBadge($u['status'])?></td>
           <td>
             <?php if (can('system.users')): ?>
-            <button class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#editUserModal"
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal"
               data-id="<?=$u['id']?>" data-username="<?=h($u['username'])?>" data-realname="<?=h($u['realname'])?>"
               data-role="<?=$u['role']?>" data-email="<?=h($u['email'])?>" data-phone="<?=h($u['phone'])?>"
               data-supplier="<?=$u['supplier_id']?>" data-status="<?=$u['status']?>"><i class="fas fa-edit"></i></button>
             <?php endif; ?>
             <?php if (can('system.users') && $u['id'] !== userId()): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$u['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>
@@ -39,8 +39,8 @@
 </div>
 <div class="modal fade" id="userModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">新增用户</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">新增用户</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="form-group"><label>用户名</label><input type="text" name="username" class="form-control" required></div>
@@ -77,14 +77,14 @@
         <div class="form-group"><label>邮箱</label><input type="email" name="email" class="form-control"></div>
         <div class="form-group"><label>电话</label><input type="text" name="phone" class="form-control"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>
 <div class="modal fade" id="editUserModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">编辑用户</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">编辑用户</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="update">
         <input type="hidden" name="id" id="editId">
@@ -121,7 +121,7 @@
         </div>
         <div class="form-group"><label>邮箱</label><input type="email" name="email" id="editEmail" class="form-control"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary">保存</button><button class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button class="btn btn-primary">保存</button><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>

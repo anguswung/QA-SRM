@@ -50,7 +50,7 @@
       <div class="card-header">
         合规判定
         <div class="card-actions">
-          <form method="post" class="inline-form">
+          <form method="post" class="inline-form"><?=csrf_field()?>
             <input type="hidden" name="action" value="analyze_hm">
             <input type="hidden" name="hm_id" value="<?=$item['id']?>">
             <button class="btn btn-sm btn-primary"><i class="fas fa-play"></i> 执行分析</button>

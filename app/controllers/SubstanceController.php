@@ -4,19 +4,21 @@ class SubstanceController extends Controller {
         $this->requirePermission('substance.view');
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isAdmin()) { flash('error', '无权操作'); header('Location: /substance'); exit; }
             $action = $_POST['action'] ?? '';
             if ($action === 'create') { $this->doCreate(); return; }
             if ($action === 'update') { $this->doUpdate(); return; }
             if ($action === 'delete') { $this->doDelete(); return; }
         }
         $action = $_GET['action'] ?? '';
-        if ($action === 'create') { $this->showForm(); return; }
-        if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
+        if ($action === 'create') { $this->requirePermission('substance.edit'); $this->showForm(); return; }
+        if ($action === 'edit') { $this->requirePermission('substance.edit'); $this->showForm((int)($_GET['id'] ?? 0)); return; }
         $this->showList();
     }
     public function groups() {
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isAdmin()) { flash('error', '无权操作'); header('Location: /substance/groups'); exit; }
             $action = $_POST['action'] ?? '';
             if ($action === 'create') {
                 $db->execute("INSERT INTO substance_group (name, parent_id, sort_order) VALUES (?,?,?)",
@@ -37,6 +39,7 @@ class SubstanceController extends Controller {
     public function uses() {
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isAdmin()) { flash('error', '无权操作'); header('Location: /substance/uses'); exit; }
             if (($_POST['action'] ?? '') === 'create') {
                 $db->execute("INSERT INTO maybe_use (name, description) VALUES (?,?)",
                     [$_POST['name'] ?? '', $_POST['description'] ?? '']);

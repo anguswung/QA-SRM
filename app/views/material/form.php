@@ -117,7 +117,7 @@
                 </table>
               </div>
               <div class="d-flex align-items-center justify-content-between mb-2">
-                <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#hmPickerModal">
+                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#hmPickerModal">
                   <i class="fas fa-plus"></i> 从库中选择均质材料
                 </button>
                 <div class="text-right">
@@ -167,7 +167,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="fas fa-flask text-success mr-1"></i> 选择均质材料</h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         <input type="text" class="form-control mb-3" id="hmFilter" placeholder="搜索均质材料名称..." onkeyup="filterHM(this.value)">
@@ -186,7 +186,7 @@
         </table>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </div>
   </div>
@@ -244,7 +244,7 @@ function pickHM(id, name, code, supplier, weightMg) {
   var $tbody = $('#compositionTable tbody');
   $tbody.find('.empty-row').remove();
   $tbody.append(html);
-  $('#hmPickerModal').modal('hide');
+  bootstrap.Modal.getInstance(document.getElementById('hmPickerModal')).hide();
   setTimeout(updateQuantityTotal, 50);
 }
 function calcWeight(inp) {

@@ -9,8 +9,25 @@ spl_autoload_register(function ($class) {
     }
 });
 
+// Session hardening
+$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? '') === '443';
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => $https,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 date_default_timezone_set($config['timezone'] ?? 'Asia/Shanghai');
+
+// Security response headers
+header('X-Frame-Options: SAMEORIGIN');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: same-origin');
+header('Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()');
+header('X-Permitted-Cross-Domain-Policies: none');
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = rtrim($uri, '/') ?: '/dashboard';
@@ -83,7 +100,7 @@ if ($uri !== '/login' && !isset($_SESSION['user_id'])) {
 
 
 // CSRF protection for POST requests (non-API)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($uri, '/api/') !== 0 && $uri !== '/login' && !empty($_POST['_csrf_token'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($uri, '/api/') !== 0) {
     verify_csrf();
 }
 

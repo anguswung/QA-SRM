@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-user-tag"></i> 角色管理</h5>
   <div>
-    <?php if (can('system.roles')): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#roleModal"><i class="fas fa-plus"></i> 新增角色</button><?php endif; ?>
+    <?php if (can('system.roles')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#roleModal"><i class="fas fa-plus"></i> 新增角色</button><?php endif; ?>
   </div>
 </div>
 <div class="card">
@@ -16,12 +16,12 @@
           <td><?=$isSuper ? '所有权限' : count($p) . ' 项'?></td>
           <td>
             <?php if (can('system.roles')): ?>
-            <button class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#editRoleModal"
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRoleModal"
               data-id="<?=$r['id']?>" data-name="<?=h($r['name'])?>" data-desc="<?=h($r['description'])?>"
               data-perms='<?=$r['permissions']?>'><i class="fas fa-edit"></i></button>
             <?php endif; ?>
             <?php if (can('system.roles')): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>
@@ -39,8 +39,8 @@
 <!-- Create Modal -->
 <div class="modal fade" id="roleModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">新增角色</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">新增角色</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="form-row">
@@ -64,7 +64,7 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button class="btn btn-primary">创建</button><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>
@@ -72,8 +72,8 @@
 <!-- Edit Modal -->
 <div class="modal fade" id="editRoleModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">编辑角色</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">编辑角色</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="update">
         <input type="hidden" name="id" id="editId">
@@ -98,7 +98,7 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary">保存</button><button class="btn btn-secondary" data-dismiss="modal">取消</button></div>
+      <div class="modal-footer"><button class="btn btn-primary">保存</button><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button></div>
     </form>
   </div>
 </div>

@@ -21,12 +21,12 @@
               <td><small><?=h($t['created_at'])?></small></td>
               <td>
                 <?php if (can('task.view')): ?>
-                <form method="post" class="d-inline">
+                <form method="post" class="d-inline"><?=csrf_field()?>
                   <input type="hidden" name="action" value="advance">
                   <input type="hidden" name="instance_id" value="<?=$t['instance_id']?>">
                   <button class="btn btn-sm btn-outline-success"><i class="fas fa-check"></i></button>
                 </form>
-                <form method="post" class="d-inline">
+                <form method="post" class="d-inline"><?=csrf_field()?>
                   <input type="hidden" name="action" value="reject">
                   <input type="hidden" name="instance_id" value="<?=$t['instance_id']?>">
                   <input type="hidden" name="comment" value="驳回">

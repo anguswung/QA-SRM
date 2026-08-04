@@ -12,6 +12,11 @@ spl_autoload_register(function ($class) {
 
 session_start();
 if (!isset($_SESSION['user_id'])) { header('Content-Type: application/json'); echo json_encode(['error' => '未登录']); exit; }
+if (($_POST['_csrf_token'] ?? '') === '' || empty($_SESSION['_csrf_token']) || !hash_equals($_SESSION['_csrf_token'], $_POST['_csrf_token'] ?? '')) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'CSRF token validation failed']);
+    exit;
+}
 
 $result = ['success' => false, 'message' => '', 'data' => []];
 

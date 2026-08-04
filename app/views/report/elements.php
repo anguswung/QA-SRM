@@ -25,8 +25,8 @@
   <div class="card-header">
     元素含量列表
     <div class="card-actions">
-      <?php if (can('report.edit')): ?><button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#elemModal"><i class="fas fa-plus"></i></button><?php endif; ?>
-      <?php if (can('report.edit')): ?><button class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#batchModal"><i class="fas fa-edit"></i> 批量</button><?php endif; ?>
+      <?php if (can('report.edit')): ?><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#elemModal"><i class="fas fa-plus"></i></button><?php endif; ?>
+      <?php if (can('report.edit')): ?><button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#batchModal"><i class="fas fa-edit"></i> 批量</button><?php endif; ?>
     </div>
   </div>
   <div class="card-body p-0">
@@ -45,7 +45,7 @@
           <td><small><?=h($e['detection_method'] ?? '-')?></small></td>
           <td>
             <?php if (can('report.edit')): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')">
+            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="element_delete">
               <input type="hidden" name="id" value="<?=$e['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
@@ -60,8 +60,8 @@
 </div>
 <div class="modal fade" id="elemModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">添加检测元素</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">添加检测元素</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="element_add">
         <input type="hidden" name="report_id" value="<?=$reportId?>">
@@ -94,15 +94,15 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">添加</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>
 </div>
 <div class="modal fade" id="batchModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">批量编辑元素含量</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">批量编辑元素含量</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="element_batch">
         <input type="hidden" name="report_id" value="<?=$reportId?>">
@@ -126,7 +126,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">保存</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

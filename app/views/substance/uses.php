@@ -1,7 +1,7 @@
 <div class="page-header">
   <h5><i class="fas fa-tags"></i> 物质用途</h5>
   <div>
-    <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#useModal"><i class="fas fa-plus"></i> 新增用途</button>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#useModal"><i class="fas fa-plus"></i> 新增用途</button>
     <a href="/substance" class="btn btn-sm btn-outline-secondary">物质库</a>
     <a href="/substance/groups" class="btn btn-sm btn-outline-secondary">分组管理</a>
   </div>
@@ -16,7 +16,7 @@
           <td><?=h($u['name'])?></td>
           <td><?=h($u['description'] ?? '-')?></td>
           <td>
-            <form method="post" onsubmit="return confirm('确定删除？')" class="d-inline">
+            <form method="post" onsubmit="return confirm('确定删除？')" class="d-inline"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="id" value="<?=$u['id']?>">
               <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
@@ -30,8 +30,8 @@
 </div>
 <div class="modal fade" id="useModal">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">新增用途</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">新增用途</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="form-group"><label>用途名称</label><input type="text" name="name" class="form-control" required></div>
@@ -39,7 +39,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">创建</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

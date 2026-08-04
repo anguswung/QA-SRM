@@ -2,7 +2,7 @@
   <h5><i class="fas fa-flask"></i> 均质材料库</h5>
   <div>
     <?php if (can('homogeneous.create')): ?><a href="/homogeneous?action=create" class="btn btn-success"><i class="fas fa-plus"></i> 新建均质</a><?php endif; ?>
-    <?php if (can('homogeneous.create')): ?><button class="btn btn-primary" data-toggle="modal" data-target="#importHmModal"><i class="fas fa-upload"></i> 批量导入</button><?php endif; ?>
+    <?php if (can('homogeneous.create')): ?><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importHmModal"><i class="fas fa-upload"></i> 批量导入</button><?php endif; ?>
   </div>
 </div>
 <div class="row mb-3">
@@ -116,10 +116,10 @@
               <a href="/homogeneous?action=reports&id=<?=$m['id']?>" class="btn btn-outline-info" title="检测报告"><i class="fas fa-file-alt"></i></a>
               <a href="/homogeneous?action=compliance&id=<?=$m['id']?>" class="btn btn-outline-info" title="合规分析"><i class="fas fa-balance-scale"></i></a>
               <?php if (can('homogeneous.edit') && ($m['audit_status'] !== 'A' || isAdmin())): ?><a href="/homogeneous?action=edit&id=<?=$m['id']?>" class="btn btn-outline-primary" title="编辑"><i class="fas fa-edit"></i></a><?php endif; ?>
-              <?php if (can('homogeneous.delete') && ($m['audit_status'] !== 'A' || isAdmin())): ?><button class="btn btn-outline-danger" title="删除" onclick="if(confirm('确认删除？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=delete><input name=id value=<?=$m['id']?>>';document.body.appendChild(f);f.submit()}"><i class="fas fa-trash"></i></button><?php endif; ?>
+               <?php if (can('homogeneous.delete') && ($m['audit_status'] !== 'A' || isAdmin())): ?><button class="btn btn-outline-danger" title="删除" onclick="if(confirm('确认删除？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=delete><input name=id value=<?=$m['id']?>><input name=_csrf_token value=&quot;+window._csrf+&quot;>';document.body.appendChild(f);f.submit()}"><i class="fas fa-trash"></i></button><?php endif; ?>
               <?php if ($m['audit_status'] === 'S' && isAdmin()): ?>
-              <button class="btn btn-outline-success" title="批准" onclick="if(confirm('确认批准？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=audit_hm><input name=id value=<?=$m['id']?>><input name=audit_status value=A>';document.body.appendChild(f);f.submit()}"><i class="fas fa-check"></i></button>
-              <button class="btn btn-outline-danger" title="驳回" onclick="if(confirm('确认驳回？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=audit_hm><input name=id value=<?=$m['id']?>><input name=audit_status value=R>';document.body.appendChild(f);f.submit()}"><i class="fas fa-times"></i></button>
+               <button class="btn btn-outline-success" title="批准" onclick="if(confirm('确认批准？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=audit_hm><input name=id value=<?=$m['id']?>><input name=audit_status value=A><input name=_csrf_token value=&quot;+window._csrf+&quot;>';document.body.appendChild(f);f.submit()}"><i class="fas fa-check"></i></button>
+               <button class="btn btn-outline-danger" title="驳回" onclick="if(confirm('确认驳回？')){var f=document.createElement('form');f.method='post';f.innerHTML='<input name=action value=audit_hm><input name=id value=<?=$m['id']?>><input name=audit_status value=R><input name=_csrf_token value=&quot;+window._csrf+&quot;>';document.body.appendChild(f);f.submit()}"><i class="fas fa-times"></i></button>
               <?php endif; ?>
             </div>
           </td>
@@ -132,8 +132,8 @@
 </div>
 <div class="modal fade" id="copyHmModal" tabindex="-1">
   <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title"><i class="fas fa-copy mr-1"></i>复制均质材料</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title"><i class="fas fa-copy mr-1"></i>复制均质材料</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="copy">
         <input type="hidden" name="source_id" id="copySourceId" value="">
@@ -144,7 +144,7 @@
       </div>
       <div class="modal-footer">
         <button type="submit" class="btn btn-success"><i class="fas fa-copy mr-1"></i>复制</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>
@@ -165,8 +165,8 @@ document.getElementById('copyNewName').addEventListener('keydown', function(e) {
 </script>
 <div class="modal fade" id="importHmModal">
   <div class="modal-dialog">
-    <form method="post" enctype="multipart/form-data" class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">批量导入均质材料</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" enctype="multipart/form-data" class="modal-content"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">批量导入均质材料</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="import">
         <div class="alert alert-info py-2">
@@ -179,7 +179,7 @@ document.getElementById('copyNewName').addEventListener('keydown', function(e) {
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">导入</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

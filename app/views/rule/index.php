@@ -29,7 +29,7 @@
 </div>
 <script>
 function toggleRule(id) {
-  fetch('/rule', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'action=toggle&id='+id})
+  fetch('/rule', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'action=toggle&id='+id+'&_csrf_token='+encodeURIComponent(window._csrf)})
     .then(function(){ location.reload(); });
 }
 </script>

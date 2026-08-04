@@ -57,10 +57,10 @@
 <div class="card">
   <div class="card-header">
     <ul class="nav nav-tabs card-header-tabs" id="materialTabs">
-      <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tabComposition">均质材料</a></li>
-      <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tabReports">检测报告</a></li>
-      <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tabElements">检测结果</a></li>
-      <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tabAudit">审核记录</a></li>
+      <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabComposition">均质材料</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabReports">检测报告</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabElements">检测结果</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabAudit">审核记录</a></li>
     </ul>
   </div>
   <div class="card-body tab-content">
@@ -70,7 +70,7 @@
       <div class="card">
         <div class="card-header">
           均质物料
-          <div class="card-actions"><?php if (can('material.edit')): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#hmPickerModal"><i class="fas fa-plus"></i> 选择均质材料</button><?php endif; ?></div>
+          <div class="card-actions"><?php if (can('material.edit')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#hmPickerModal"><i class="fas fa-plus"></i> 选择均质材料</button><?php endif; ?></div>
         </div>
         <div class="card-body p-0">
           <form method="post" id="compForm"><?=csrf_field()?>
@@ -133,7 +133,7 @@
       <div class="card">
         <div class="card-header">
           检测报告
-          <div class="card-actions"><?php if (can('report.create')): ?><button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#reportModal"><i class="fas fa-plus"></i> 上传报告</button><?php endif; ?></div>
+          <div class="card-actions"><?php if (can('report.create')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reportModal"><i class="fas fa-plus"></i> 上传报告</button><?php endif; ?></div>
         </div>
         <div class="card-body p-0">
           <table class="table table-hover datatable">
@@ -258,8 +258,8 @@
 </div>
 <div class="modal fade" id="reportModal">
   <div class="modal-dialog modal-lg">
-    <form method="post" enctype="multipart/form-data" class="modal-content" action="/report">
-      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button class="close" data-dismiss="modal">&times;</button></div>
+    <form method="post" enctype="multipart/form-data" class="modal-content" action="/report"><?=csrf_field()?>
+      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <input type="hidden" name="material_id" value="<?=$item['id']?>">
@@ -295,7 +295,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">上传</button>
-        <button class="btn btn-secondary" data-dismiss="modal">取消</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>
@@ -305,9 +305,9 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="fas fa-flask text-success mr-1"></i> 选择均质材料</h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
       </div>
-      <form method="post" class="mb-0">
+      <form method="post" class="mb-0"><?=csrf_field()?>
         <div class="modal-body">
           <input type="hidden" name="action" value="composition_add">
           <input type="hidden" name="material_id" value="<?=$item['id']?>">

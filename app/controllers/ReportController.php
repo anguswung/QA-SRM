@@ -16,6 +16,8 @@ class ReportController extends Controller {
         $this->showList();
     }
     public function audit() {
+        $this->requirePermission('report.audit');
+        if (!isAdmin()) { flash('error', '无权操作'); header('Location: /report'); exit; }
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int)($_POST['id'] ?? 0);
@@ -34,6 +36,7 @@ class ReportController extends Controller {
         $this->render('report/audit', get_defined_vars());
     }
     public function elements() {
+        $this->requirePermission('report.view');
         $db = DB::getInstance();
         $reportId = (int)($_GET['report_id'] ?? $_POST['report_id'] ?? 0);
         $search = trim($_GET['search'] ?? '');
@@ -45,6 +48,11 @@ class ReportController extends Controller {
         }
         $reportWhere = $search ? " WHERE tr.report_no LIKE ? OR tr.file_path LIKE ?" : '';
         $reportParams = $search ? ["%$search%", "%$search%"] : [];
+        $reportWhere = $search ? " WHERE tr.report_no LIKE ? OR tr.file_path LIKE ?" : '';
+        if (isSupplier()) {
+            $sid = userSupplierId();
+            $reportWhere = ($reportWhere ? $reportWhere . ' AND ' : ' WHERE ') . " tr.material_id IN (SELECT id FROM material WHERE supplier_id=$sid)";
+        }
         $reports = $db->query("SELECT tr.id, tr.report_no, tr.file_path FROM test_report tr$reportWhere ORDER BY tr.report_no", $reportParams);
         $elements = $reportId ? $db->query("SELECT ec.*, tr.report_no FROM element_content ec JOIN test_report tr ON ec.report_id=tr.id WHERE ec.report_id=? ORDER BY ec.id", [$reportId]) : [];
         $title = '物质含量管理';
@@ -110,13 +118,13 @@ class ReportController extends Controller {
         $sql = "
             SELECT r.id, r.report_no, r.report_type, r.test_agency, r.test_date, r.expiry_date,
                    r.file_path, r.file_size, r.audit_status, r.created_at,
-                   r.source_type, r.source_id, r.supplier_name,
+                   r.source_type, r.source_id, r.supplier_name, r.supplier_name_short,
                    COALESCE(r.material_name, r.hm_name) AS item_name
             FROM (
                 SELECT tr.id, tr.report_no, tr.report_type, tr.test_agency, tr.test_date, tr.expiry_date,
                        tr.file_path, tr.file_size, tr.audit_status, tr.created_at,
                        'material' AS source_type, tr.material_id AS source_id,
-                       m.material_name, NULL AS hm_name, s.name AS supplier_name
+                       m.material_name, NULL AS hm_name, s.name AS supplier_name, s.name_short AS supplier_name_short
                 FROM test_report tr
                 LEFT JOIN material m ON tr.material_id=m.id
                 LEFT JOIN supplier s ON m.supplier_id=s.id
@@ -124,9 +132,9 @@ class ReportController extends Controller {
                 UNION ALL
 
                 SELECT hr.id, hr.report_no, hr.report_type, hr.test_agency, hr.test_date, hr.expiry_date,
-                       hr.file_path, hr.file_size, 'approved' AS audit_status, hr.created_at,
+                       hr.file_path, hr.file_size, 'N' AS audit_status, hr.created_at,
                        'hm' AS source_type, hr.hm_id AS source_id,
-                       NULL AS material_name, hm.material_name AS hm_name, s.name AS supplier_name
+                       NULL AS material_name, hm.material_name AS hm_name, s.name AS supplier_name, s.name_short AS supplier_name_short
                 FROM hm_report hr
                 LEFT JOIN homogeneous_material hm ON hr.hm_id=hm.id
                 LEFT JOIN supplier s ON hm.supplier_id=s.id
@@ -139,18 +147,26 @@ class ReportController extends Controller {
         $this->render('report/index', get_defined_vars());
     }
     private function showForm($id) {
+        $this->requirePermission('report.edit');
         $db = DB::getInstance();
         $item = $db->single("SELECT * FROM test_report WHERE id=?", [$id], true);
         if (!$item) { header('Location: /report'); exit; }
+        if (isSupplier()) {
+            $m = $db->single("SELECT supplier_id FROM material WHERE id=?", [(int)($item['material_id'] ?? 0)], true);
+            if (!$m || (int)$m['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /report'); exit; }
+        }
         $materials = $db->query("SELECT id, material_name, material_no FROM material WHERE valid_status='Valid' ORDER BY material_name");
         $title = '编辑报告';
         $this->render('report/form', get_defined_vars());
     }
     private function doCreate() {
+        $this->requirePermission('report.create');
         $db = DB::getInstance();
         $no = $_POST['report_no'] ?? '';
         if (!$no) $no = 'R' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
         $hmId = (int)($_POST['material_id'] ?? 0);
+        if (!$hmId) { flash('error', '请选择均质材料'); header('Location: /report'); exit; }
+        $this->requireUserRecord('homogeneous_material', $hmId, 'created_by', '/report');
         $testDate = $_POST['test_date'] ?? '';
         $expiryDate = $_POST['expiry_date'] ?? ($testDate ? date('Y-m-d', strtotime($testDate . ' +1 year')) : '');
         $filePath = '';
@@ -175,10 +191,16 @@ class ReportController extends Controller {
         header('Location: /report'); exit;
     }
     private function doUpdate() {
+        $this->requirePermission('report.edit');
         $id = (int)($_POST['id'] ?? 0);
         if (!$id) return;
         $db = DB::getInstance();
         $item = $db->single("SELECT * FROM test_report WHERE id=?", [$id], true);
+        if (!$item) { flash('error', '记录不存在'); header('Location: /report'); exit; }
+        if (isSupplier()) {
+            $m = $db->single("SELECT supplier_id FROM material WHERE id=?", [(int)($item['material_id'] ?? 0)], true);
+            if (!$m || (int)$m['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /report'); exit; }
+        }
         $materialId = (int)($_POST['material_id'] ?? 0);
         $filePath = $item['file_path'] ?? '';
         if (!empty($_FILES['report_file']['name'])) {
@@ -197,10 +219,16 @@ class ReportController extends Controller {
         header('Location: /report'); exit;
     }
     private function doDelete() {
+        $this->requirePermission('report.delete');
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $db = DB::getInstance();
             $r = $db->single("SELECT * FROM test_report WHERE id=?", [$id], true);
+            if (!$r) { flash('error', '记录不存在'); header('Location: /report'); exit; }
+            if (isSupplier()) {
+                $m = $db->single("SELECT supplier_id FROM material WHERE id=?", [(int)($r['material_id'] ?? 0)], true);
+                if (!$m || (int)$m['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /report'); exit; }
+            }
             if ($r && $r['file_path'] && file_exists($r['file_path'])) unlink($r['file_path']);
             $db->execute("DELETE FROM element_content WHERE report_id=?", [$id]);
             $db->execute("DELETE FROM warning_record WHERE report_id=?", [$id]);
@@ -218,10 +246,22 @@ class ReportController extends Controller {
         move_uploaded_file($file['tmp_name'], $dest);
         return $dest;
     }
+    private function requireSupplierTestReport(int $reportId): void {
+        if (!isSupplier()) return;
+        $db = DB::getInstance();
+        $m = $db->single("SELECT m.supplier_id FROM test_report tr LEFT JOIN material m ON tr.material_id=m.id WHERE tr.id=?", [$reportId], true);
+        if (!$m || (int)$m['supplier_id'] !== userSupplierId()) {
+            flash('error', '无权操作');
+            header('Location: /report/elements');
+            exit;
+        }
+    }
     private function elementAdd() {
+        $this->requirePermission('report.edit');
         $db = DB::getInstance();
         $reportId = (int)($_POST['report_id'] ?? 0);
         if ($reportId) {
+            $this->requireSupplierTestReport($reportId);
             $value = (float)($_POST['content_value'] ?? 0);
             $limitVal = (float)($_POST['limit_value'] ?? 0);
             $isOver = ($limitVal > 0 && $value > $limitVal) ? 1 : 0;
@@ -242,18 +282,22 @@ class ReportController extends Controller {
         header('Location: /report/elements?report_id=' . $reportId); exit;
     }
     private function elementDelete() {
+        $this->requirePermission('report.edit');
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $e = DB::getInstance()->single("SELECT report_id FROM element_content WHERE id=?", [$id], true);
+            if ($e) $this->requireSupplierTestReport($e['report_id']);
             DB::getInstance()->execute("DELETE FROM element_content WHERE id=?", [$id]);
             if ($e) { header('Location: /report/elements?report_id=' . $e['report_id']); exit; }
         }
         header('Location: /report/elements'); exit;
     }
     private function elementBatch() {
+        $this->requirePermission('report.edit');
         $reportId = (int)($_POST['report_id'] ?? 0);
         if ($reportId && isset($_POST['substances'])) {
             $db = DB::getInstance();
+            $this->requireSupplierTestReport($reportId);
             $db->execute("DELETE FROM element_content WHERE report_id=?", [$reportId]);
             foreach ($_POST['substances'] as $i => $name) {
                 if (empty($name)) continue;

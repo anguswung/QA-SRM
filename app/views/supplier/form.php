@@ -3,7 +3,7 @@
     <div class="card">
       <div class="card-header"><i class="fas fa-<?=$id ? 'edit' : 'plus'?>"></i> <?=h($title)?></div>
       <div class="card-body">
-        <form method="post">
+        <form method="post"><?=csrf_field()?>
           <input type="hidden" name="action" value="<?=$id ? 'update' : 'create'?>">
           <?php if ($id): ?><input type="hidden" name="id" value="<?=$id?>"><?php endif; ?>
           <?php if (isSupplier() && (int)$item['id'] === userSupplierId()): ?>
