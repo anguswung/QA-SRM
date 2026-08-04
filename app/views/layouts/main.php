@@ -65,7 +65,29 @@ $logoPath ??= '/assets/images/logo.png';
 <script src="/assets/vendor/jquery/jquery.min.js"></script>
 <script>if(typeof $==='undefined')document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"><\/script>');</script>
 <script src="/assets/vendor/tabler/js/tabler.min.js"></script>
-<script>if(typeof $==='undefined'||!$.fn.modal)document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"><\/script>');</script>
+<script>
+(function(){
+  // tabler.min.js 已内置 Bootstrap 5.3.7（含 dropdown/modal/collapse 的 data-api），
+  // 无需再从 CDN 加载第二份 bootstrap.bundle，否则两个 Bootstrap 会同时响应
+  // [data-bs-toggle="dropdown"]，导致侧边栏菜单"点击展开又立即收起"。
+  var bs = window.tabler && window.tabler.bootstrap;
+  if (bs) {
+    window.bootstrap = bs;
+    if (window.$ && !window.$.fn.modal) {
+      window.$.fn.modal = function(method){
+        var el = this[0];
+        if (el && bs.Modal) {
+          var inst = bs.Modal.getInstance(el) || bs.Modal.getOrCreateInstance(el);
+          if (method === 'show' || method === 'hide' || method === 'toggle') inst[method]();
+        }
+        return this;
+      };
+    }
+  } else if (typeof $ === 'undefined' || !$.fn.modal) {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/js/bootstrap.bundle.min.js"><\/script>');
+  }
+})();
+</script>
 <script src="/assets/vendor/datatables/js/jquery.dataTables.min.js"></script>
 <script>if(typeof $==='undefined'||!$.fn.dataTable)document.write('<script src="https://cdn.jsdelivr.net/npm/datatables.net@3.0.1/js/jquery.dataTables.min.js"><\/script>');</script>
 <script src="/assets/vendor/datatables/js/dataTables.bootstrap5.min.js"></script>

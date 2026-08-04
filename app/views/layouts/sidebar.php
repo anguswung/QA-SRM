@@ -81,27 +81,35 @@ unset($m);
     </h1>
     <div class="collapse navbar-collapse" id="navbar-menu">
       <ul class="navbar-nav pt-lg-3">
+        <?php $cPath = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/'); ?>
         <?php foreach ($menu as $k => $m): ?>
         <?php $hasChildren = !empty($m['children']); ?>
-        <?php $mActive = menuOpen($m['url']) || ($k === 'material' && menuOpen('/homogeneous')) || ($k === 'regulation' && menuOpen('/substance')) || ($k === 'task' && menuOpen('/bpm')) || ($k === 'query' && menuOpen('/query')); ?>
-        <?php $cPath = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/'); ?>
+        <?php
+        $mActive = menuOpen($m['url'])
+            || ($k === 'material' && menuOpen('/homogeneous'))
+            || ($k === 'regulation' && menuOpen('/substance'))
+            || ($k === 'task' && menuOpen('/bpm'))
+            || ($k === 'query' && menuOpen('/query'));
+        $cActive = '';
+        if ($hasChildren) {
+            foreach ($m['children'] as $c) {
+                if ($cPath === rtrim($c['url'], '/')) { $cActive = $c['url']; break; }
+            }
+            if ($cActive !== '' && $cActive === $m['url']) $mActive = true;
+        }
+        ?>
         <?php if ($hasChildren): ?>
-        <li class="nav-item <?=$mActive ? 'active' : ''?>">
-          <a class="nav-link" href="#navbar-<?=$k?>" data-bs-toggle="collapse" data-bs-target="#navbar-<?=$k?>" role="button" aria-expanded="<?=$mActive ? 'true' : 'false'?>" aria-controls="navbar-<?=$k?>">
+        <li class="nav-item dropdown <?=$mActive ? 'active' : ''?>">
+          <a class="nav-link dropdown-toggle" href="#navbar-<?=$k?>" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="<?=$mActive ? 'true' : 'false'?>">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="fas <?=h($m['icon'])?>"></i>
             </span>
             <span class="nav-link-title"><?=h($m['label'])?></span>
-            <span class="nav-link-toggle"></span>
           </a>
-          <div class="collapse submenu <?=$mActive ? 'show' : ''?>" id="navbar-<?=$k?>" data-bs-parent="#navbar-menu">
-            <ul class="nav nav-pills">
-              <?php foreach ($m['children'] as $c): ?>
-              <li class="nav-item">
-                <a href="<?=h($c['url'])?>" class="nav-link <?=$cPath === rtrim($c['url'], '/') ? 'active' : ''?>"><?=h($c['label'])?></a>
-              </li>
-              <?php endforeach; ?>
-            </ul>
+          <div class="dropdown-menu <?=$mActive ? 'show' : ''?>">
+            <?php foreach ($m['children'] as $c): ?>
+            <a href="<?=h($c['url'])?>" class="dropdown-item <?=$cActive !== '' && $cActive === $c['url'] ? 'active' : ''?>"><?=h($c['label'])?></a>
+            <?php endforeach; ?>
           </div>
         </li>
         <?php else: ?>
