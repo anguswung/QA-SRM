@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h5><i class="fas fa-tasks"></i> <?=h($instance['title'])?></h5>
+  <h4><i class="fas fa-tasks"></i> <?=h($instance['title'])?></h4>
   <div>
     <a href="/task" class="btn btn-sm btn-outline-secondary"><i class="fas fa-list"></i> 返回</a>
   </div>
@@ -10,13 +10,14 @@
       <div class="card-header">任务信息</div>
       <div class="card-body">
         <table class="table table-sm">
-          <tr><td class="td-label">优先级</td><td><?=priorityBadge($instance['priority'] ?? 0)?></td></tr>
-          <tr><td>模板</td><td><?=h($instance['template_name'])?></td></tr>
-          <tr><td>状态</td><td><?=statusBadge($instance['status'])?></td></tr>
-          <tr><td>发起人</td><td><?=h($instance['initiator_name'] ?? '-')?></td></tr>
-          <tr><td>截止日期</td><td><?php if (!empty($instance['due_date'])): ?><span class="<?=$instance['due_date'] < date('Y-m-d') && $instance['status'] === 'active' ? 'text-danger font-weight-bold' : ''?>"><?=h($instance['due_date'])?></span><?php else: ?>-<?php endif; ?></td></tr>
-          <tr><td>创建时间</td><td><?=h($instance['created_at'])?></td></tr>
-          <tr><td>完成时间</td><td><?=h($instance['completed_at'] ?? '-')?></td></tr>
+        <?php $__rnum = 0; ?>
+          <tr><td class="row-num"><?=++$__rnum?></td><td class="td-label">优先级</td><td><?=priorityBadge($instance['priority'] ?? 0)?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>模板</td><td><?=h($instance['template_name'])?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>状态</td><td><?=statusBadge($instance['status'])?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>发起人</td><td><?=h($instance['initiator_name'] ?? '-')?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>截止日期</td><td><?php if (!empty($instance['due_date'])): ?><span class="<?=$instance['due_date'] < date('Y-m-d') && $instance['status'] === 'active' ? 'text-danger fw-bold' : ''?>"><?=h($instance['due_date'])?></span><?php else: ?>-<?php endif; ?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>创建时间</td><td><?=h($instance['created_at'])?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>完成时间</td><td><?=h($instance['completed_at'] ?? '-')?></td></tr>
         </table>
       </div>
     </div>
@@ -29,7 +30,7 @@
           <?php foreach ($attachments as $att): ?>
           <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
             <div>
-              <i class="fas fa-paperclip text-muted mr-1"></i>
+              <i class="fas fa-paperclip text-muted ms-1"></i>
               <a href="<?=h(fileUrl($att['file_path']))?>" target="_blank"><?=h($att['file_name'])?></a>
               <br><small class="text-muted">上传: <?=h($att['uploader_name'] ?? '-')?> / <?=h($att['created_at'])?></small>
             </div>
@@ -53,10 +54,8 @@
           <input type="hidden" name="action" value="upload_attachment">
           <input type="hidden" name="instance_id" value="<?=$instance['id']?>">
           <div class="input-group input-group-sm">
-            <div class="custom-file">
-              <input type="file" name="attachment" class="custom-file-input" id="attFile" onchange="this.form.submit()">
-              <label class="custom-file-label" for="attFile">上传附件</label>
-            </div>
+            <input type="file" name="attachment" class="form-control" id="attFile" onchange="this.form.submit()">
+            <span class="input-group-text">上传附件</span>
           </div>
         </form>
         <?php endif; ?>
@@ -82,7 +81,7 @@
             $isEnd = $n['node_type'] === 'end' || $n['node_type'] === 'completed';
           ?>
           <div class="flow-step d-flex <?=$isCurrent ? 'flow-current' : ''?>">
-            <div class="flow-dot mr-3 text-center">
+            <div class="flow-dot ms-3 text-center">
               <?php if ($isEnd && $instance['status'] === 'completed'): ?>
               <i class="fas fa-check-circle text-success"></i>
               <?php elseif ($isProcessed && $processedNodes[$n['id']]['status'] === 'processed'): ?>
@@ -110,7 +109,7 @@
               <div class="text-muted small mt-1 p-1 bg-light rounded"><?=h($pt['comment'])?></div>
               <?php endif; ?>
               <?php elseif ($isCurrent): ?>
-              <small class="text-primary font-weight-bold">当前节点</small>
+              <small class="text-primary fw-bold">当前节点</small>
               <?php endif; ?>
             </div>
           </div>
@@ -123,11 +122,12 @@
       <div class="card-header">流转记录</div>
       <div class="card-body p-0">
         <table class="table table-sm table-hover">
-          <thead><tr><th>节点</th><th>处理人</th><th>状态</th><th>处理时间</th><th>意见</th></tr></thead>
+          <thead><tr><th style="width:40px" class="col-id">ID</th><th>节点</th><th>处理人</th><th>状态</th><th>处理时间</th><th>意见</th></tr></thead>
           <tbody>
+<?php $__rnum = 0; ?>
             <?php foreach ($tasks as $t): ?>
             <tr>
-              <td><?=h($t['node_name'])?></td>
+              <td class="col-id"><?=h($t['id'] ?? '')?></td><td><?=h($t['node_name'])?></td>
               <td><?=h($t['assignee_name'] ?? '-')?></td>
               <td><?=statusBadge($t['status'])?></td>
               <td><small><?=h($t['processed_at'] ?? $t['created_at'])?></small></td>
@@ -146,14 +146,11 @@
         <form method="post" enctype="multipart/form-data"><?=csrf_field()?>
           <input type="hidden" name="action" value="submit">
           <input type="hidden" name="instance_id" value="<?=$instance['id']?>">
-          <div class="form-group"><label>处理意见</label>
+          <div class="mb-3"><label>处理意见</label>
             <textarea name="comment" class="form-control" rows="3" placeholder="请说明完成情况..."></textarea>
           </div>
-          <div class="form-group"><label>上传附件（可选）</label>
-            <div class="custom-file">
-              <input type="file" name="attachment" class="custom-file-input" id="submitAttach">
-              <label class="custom-file-label" for="submitAttach">选择文件...</label>
-            </div>
+          <div class="mb-3"><label>上传附件（可选）</label>
+            <input type="file" name="attachment" class="form-control" id="submitAttach">
           </div>
           <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> 提交</button>
         </form>

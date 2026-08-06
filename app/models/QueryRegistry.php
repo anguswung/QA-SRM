@@ -8,10 +8,6 @@ class QueryRegistry {
         return self::$db;
     }
 
-    public static function reset(): void {
-        self::$cache = [];
-    }
-
     public static function supplierDropdown(): array {
         $k = 'supplier_dropdown';
         if (!isset(self::$cache[$k])) {
@@ -42,39 +38,6 @@ class QueryRegistry {
         if (!array_key_exists($k, self::$cache)) {
             $row = self::db()->single("SELECT id FROM supplier WHERE name=? OR name_short=?", [$name]);
             self::$cache[$k] = $row ? (int)$row['id'] : null;
-        }
-        return self::$cache[$k];
-    }
-
-    public static function materialStats(?int $supplierId = null): array {
-        $k = "mstats_" . ($supplierId ?? 'all');
-        if (!isset(self::$cache[$k])) {
-            $db = self::db();
-            if ($supplierId) {
-                $w = "WHERE m.supplier_id=$supplierId AND m.valid_status='Valid'";
-            } else {
-                $w = "WHERE m.valid_status='Valid'";
-            }
-            self::$cache[$k] = [
-                'total'        => (int)$db->single("SELECT COUNT(*) FROM material $w", [], false),
-                'compliant'    => (int)$db->single("SELECT COUNT(*) FROM material m $w AND m.env_status='compliant'", [], false),
-                'non_compliant'=> (int)$db->single("SELECT COUNT(*) FROM material m $w AND m.env_status='non_compliant'", [], false),
-                'pending'      => (int)$db->single("SELECT COUNT(*) FROM material m $w AND m.env_status='pending'", [], false),
-            ];
-        }
-        return self::$cache[$k];
-    }
-
-    public static function hmStats(): array {
-        $k = 'hm_stats';
-        if (!isset(self::$cache[$k])) {
-            $db = self::db();
-            self::$cache[$k] = [
-                'total'        => (int)$db->single("SELECT COUNT(*) FROM homogeneous_material", [], false),
-                'compliant'    => (int)$db->single("SELECT COUNT(*) FROM homogeneous_material WHERE env_status='compliant'", [], false),
-                'non_compliant'=> (int)$db->single("SELECT COUNT(*) FROM homogeneous_material WHERE env_status='non_compliant'", [], false),
-                'pending'      => (int)$db->single("SELECT COUNT(*) FROM homogeneous_material WHERE env_status='pending'", [], false),
-            ];
         }
         return self::$cache[$k];
     }

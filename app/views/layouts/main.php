@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <?php
 $companyName ??= '';
 $sysName ??= '绿色产品管理系统GPM';
@@ -12,12 +14,13 @@ $logoPath ??= '/assets/images/logo.png';
 ?>
 <title><?=h($title ?? '仪表盘')?> — <?=h($companyName ?: $sysName)?></title>
 <script>window._csrf=<?=json_encode(csrf_token())?>;</script>
+<script>function getCsrfToken(){try{var x=new XMLHttpRequest();x.open('GET','/api/csrf-token',false);x.send();var t=JSON.parse(x.responseText).token;if(t)return t;}catch(e){}return window._csrf||'';}</script>
 <script>if(typeof $==='undefined'){window.$=function(a){if(typeof a==='function'){if(typeof jQuery!=='undefined'){a(jQuery)}else{var i=setInterval(function(){if(typeof jQuery!=='undefined'){a(jQuery);clearInterval(i)}},5)}}else{return typeof jQuery==='undefined'?{each:function(){return this},on:function(){return this},off:function(){return this},find:function(){return this},closest:function(){return this},hide:function(){return this},show:function(){return this},addClass:function(){return this},removeClass:function(){return this},toggleClass:function(){return this},html:function(){return this},text:function(){return this},val:function(){return this},attr:function(){return this},data:function(){return this},css:function(){return this},length:0,selector:a||''}:jQuery(a)}};window.$.fn={};window.$.extend=function(){return arguments[1]||{}};window.$.each=function(a,f){for(var i=0;i<(a||[]).length;i++)f(i,a[i])}}</script>
 <link href="/assets/vendor/tabler/css/tabler.min.css" rel="stylesheet">
 <link href="/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
 <link href="/assets/vendor/datatables/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="/assets/vendor/toastr/toastr.min.css" rel="stylesheet">
-<link href="/assets/css/app.css?v=4" rel="stylesheet">
+<link href="/assets/css/app.css?v=38" rel="stylesheet">
 <link href="/assets/css/icomoon.css" rel="stylesheet">
   <link href="/assets/vendor/quill/quill.snow.css" rel="stylesheet">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -39,11 +42,11 @@ $logoPath ??= '/assets/images/logo.png';
       </div>
       <footer class="footer footer-transparent d-print-none">
         <div class="container-xl">
-          <div class="row text-center align-items-center flex-row-reverse">
-            <div class="col-lg-auto ms-lg-auto">
+          <div class="row align-items-center">
+            <div class="col-12 text-center text-lg-end">
               <?=h($sysName)?> - v<?=h($version)?>
             </div>
-            <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+            <div class="col-12 mt-1 text-center text-lg-end">
               <?=h($companyName ?: $sysName)?> - 版权所有，翻录必究。
             </div>
           </div>
@@ -116,7 +119,7 @@ toastr.options.newestOnTop=true;
     toastr.info=function(m,t,o){max3('info',m,t,o)};
 })();
 </script>
-<script src="/assets/js/app.js"></script>
+<script src="/assets/js/app.js?v=4"></script>
 <script src="/assets/vendor/quill/quill.min.js"></script>
 <div class="app-watermark"><img src="<?=h($logoPath)?>" alt="logo"></div>
 <?php if (isset($_SESSION['_flash'])): ?>

@@ -9,31 +9,31 @@
           <?php if (isSupplier() && (int)$item['id'] === userSupplierId()): ?>
           <div class="row">
             <div class="col-md-6">
-              <div class="form-group"><label>供应商编码</label><input type="text" class="form-control" value="<?=h($item['code'] ?? '')?>" readonly></div>
+              <div class="mb-3"><label>供应商编码</label><input type="text" class="form-control" value="<?=h($item['code'] ?? '')?>" readonly></div>
             </div>
             <div class="col-md-6">
-              <div class="form-group"><label>供应商名称</label><input type="text" class="form-control" value="<?=h($item['name'] ?? '')?>" readonly></div>
+              <div class="mb-3"><label>供应商名称</label><input type="text" class="form-control" value="<?=h($item['name'] ?? '')?>" readonly></div>
             </div>
           </div>
           <?php else: ?>
           <div class="row">
             <div class="col-md-6">
-              <div class="form-group">
+              <div class="mb-3">
                 <label>供应商编码<span class="text-danger">*</span></label>
                 <input type="text" name="code" class="form-control" value="<?=h($item['code'] ?? '')?>" <?=$id ? 'readonly' : 'required'?> placeholder="输入ERP编码">
                 <?php if (!$id): ?><small class="text-muted">编码同时也是登录账号和初始密码</small><?php endif; ?>
               </div>
             </div>
             <div class="col-md-6">
-              <div class="form-group"><label>供应商名称<span class="text-danger">*</span></label><input type="text" name="name" class="form-control" value="<?=h($item['name'] ?? '')?>" required></div>
+              <div class="mb-3"><label>供应商名称<span class="text-danger">*</span></label><input type="text" name="name" class="form-control" value="<?=h($item['name'] ?? '')?>" required></div>
             </div>
           </div>
           <div class="row">
             <div class="col-md-4">
-              <div class="form-group"><label>统一信用代码</label><input type="text" name="credit_code" class="form-control" value="<?=h($item['credit_code'] ?? '')?>"></div>
+              <div class="mb-3"><label>统一信用代码</label><input type="text" name="credit_code" class="form-control" value="<?=h($item['credit_code'] ?? '')?>"></div>
             </div>
             <div class="col-md-4">
-              <div class="form-group"><label>初始等级</label>
+              <div class="mb-3"><label>初始等级</label>
                 <select name="level" class="form-control">
                   <option value="A" <?=($item['level'] ?? 'C') === 'A' ? 'selected' : ''?>>A级</option>
                   <option value="B" <?=($item['level'] ?? 'C') === 'B' ? 'selected' : ''?>>B级</option>
@@ -45,21 +45,21 @@
           <?php endif; ?>
           <div class="row">
             <div class="col-md-4">
-              <div class="form-group"><label>简称</label><input type="text" name="name_short" class="form-control" value="<?=h($item['name_short'] ?? '')?>"></div>
+              <div class="mb-3"><label>简称</label><input type="text" name="name_short" class="form-control" value="<?=h($item['name_short'] ?? '')?>"></div>
             </div>
             <div class="col-md-4">
-              <div class="form-group"><label>联系人</label><input type="text" name="contact_person" class="form-control" value="<?=h($item['contact_person'] ?? '')?>"></div>
+              <div class="mb-3"><label>联系人</label><input type="text" name="contact_person" class="form-control" value="<?=h($item['contact_person'] ?? '')?>"></div>
             </div>
             <div class="col-md-4">
-              <div class="form-group"><label>联系电话</label><input type="text" name="contact_phone" class="form-control" value="<?=h($item['contact_phone'] ?? '')?>"></div>
+              <div class="mb-3"><label>联系电话</label><input type="text" name="contact_phone" class="form-control" value="<?=h($item['contact_phone'] ?? '')?>"></div>
             </div>
           </div>
           <div class="row">
             <div class="col-md-4">
-              <div class="form-group"><label>邮箱</label><input type="email" name="email" class="form-control" value="<?=h($item['email'] ?? '')?>"></div>
+              <div class="mb-3"><label>邮箱</label><input type="email" name="email" class="form-control" value="<?=h($item['email'] ?? '')?>"></div>
             </div>
             <div class="col-md-8">
-              <div class="form-group"><label>地址</label><input type="text" name="address" class="form-control" value="<?=h($item['address'] ?? '')?>"></div>
+              <div class="mb-3"><label>地址</label><input type="text" name="address" class="form-control" value="<?=h($item['address'] ?? '')?>"></div>
             </div>
           </div>
           <?php if (!$id): ?>

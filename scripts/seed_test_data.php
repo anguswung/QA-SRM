@@ -38,25 +38,5 @@ foreach ($homogeneous as $h) {
 
 echo "\n";
 
-// ---- 2 个产品（零部件） ----
-$parts = [
-    ['name' => '电源适配器 DC12V/2A', 'spec' => '零部件', 'category' => '电源类'],
-    ['name' => '控制主板 V3.2', 'spec' => '零部件', 'category' => 'PCBA类'],
-];
-
-$partIds = [];
-foreach ($parts as $p) {
-    $no = 'PRT' . date('Ymd') . str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
-    $db->execute(
-        "INSERT INTO part (part_no, part_name, spec, unit, supplier_id, status, created_at) VALUES (?,?,?,?,?,?,datetime('now','localtime'))",
-        [$no, $p['name'], $p['spec'], 'PCS', 1, 'active']
-    );
-    $id = $db->lastInsertId();
-    $partIds[] = $id;
-    echo "  [产品] {$no} - {$p['name']}\n";
-}
-
 echo "\n=== 写入完成 ===\n";
 echo "均质原材料 " . count($hmIds) . " 个\n";
-echo "产品(零部件): " . count($partIds) . " 个\n";
-echo "\n提示: 请手工在 BOM 清单中绑定物料关系。\n";

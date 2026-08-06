@@ -1,33 +1,33 @@
 <div class="page-header">
-  <h5><i class="fas fa-file-alt"></i> 检测报告</h5>
+  <h4><i class="fas fa-file-alt"></i> 检测报告</h4>
   <div>
     <?php if (can('report.create')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reportModal"><i class="fas fa-plus"></i> 上传报告</button><?php endif; ?>
   </div>
 </div>
 <div class="search-bar mb-3">
-  <form method="get" class="form-inline">
-    <input type="text" name="search" class="form-control form-control-sm mr-2" placeholder="搜索编号/机构" value="<?=h($_GET['search'] ?? '')?>">
-    <select name="report_type" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
+  <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+    <input type="text" name="search" class="form-control form-control-sm w-auto ms-2" placeholder="搜索编号/机构" value="<?=h($_GET['search'] ?? '')?>">
+    <select name="report_type" class="form-control form-control-sm w-auto ms-2" onchange="this.form.submit()">
       <option value="">全部类型</option>
       <option value="RoHS" <?=($_GET['report_type'] ?? '') === 'RoHS' ? 'selected' : ''?>>RoHS</option>
       <option value="REACH" <?=($_GET['report_type'] ?? '') === 'REACH' ? 'selected' : ''?>>REACH</option>
       <option value="HF" <?=($_GET['report_type'] ?? '') === 'HF' ? 'selected' : ''?>>HF</option>
       <option value="MSDS" <?=($_GET['report_type'] ?? '') === 'MSDS' ? 'selected' : ''?>>MSDS</option>
     </select>
-    <select name="audit_status" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
+    <select name="audit_status" class="form-control form-control-sm w-auto ms-2" onchange="this.form.submit()">
       <option value="">全部状态</option>
       <option value="pending" <?=($_GET['audit_status'] ?? '') === 'pending' ? 'selected' : ''?>>待审核</option>
       <option value="approved" <?=($_GET['audit_status'] ?? '') === 'approved' ? 'selected' : ''?>>已通过</option>
       <option value="rejected" <?=($_GET['audit_status'] ?? '') === 'rejected' ? 'selected' : ''?>>已退回</option>
     </select>
-    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fas fa-search"></i></button>
+    <button type="submit" class="btn-icon btn btn-sm btn-outline-primary"><i class="fas fa-search"></i></button>
   </form>
 </div>
 <div class="card">
   <div class="card-body p-0">
     <table class="table table-hover datatable" data-options='{"autoWidth":false}'>
       <thead><tr>
-        <th style="width:14%">报告编号</th>
+        <th style="width:40px" class="col-id">ID</th><th style="width:14%">报告编号</th>
         <?php if (!$isSupplier): ?><th style="width:6%">供应商</th><?php endif; ?>
         <th style="width:5%">来源</th>
         <th style="width:6%">关联项</th>
@@ -39,9 +39,10 @@
         <th style="width:11%">操作</th>
       </tr></thead>
       <tbody>
+<?php $__rnum = 0; ?>
         <?php foreach ($reports as $r): ?>
         <tr>
-          <td><?=h($r['report_no'])?></td>
+          <td class="col-id"><?=h($r['id'] ?? '')?></td><td><?=h($r['report_no'])?></td>
           <?php if (!$isSupplier): ?><td><?=h($r['supplier_name_short'] ?: ($r['supplier_name'] ?? '-'))?></td><?php endif; ?>
           <td><span class="badge badge-soft-<?=$r['source_type'] === 'material' ? 'primary' : 'success'?>"><?=$r['source_type'] === 'material' ? '物料' : '均质'?></span></td>
           <td><?=h($r['item_name'] ?? '-')?></td>
@@ -52,18 +53,18 @@
           <td><?=statusBadge($r['audit_status'])?></td>
           <td>
             <?php if ($r['source_type'] === 'material'): ?>
-            <?php if (can('report.edit')): ?><a href="/report?action=edit&id=<?=$r['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
+            <?php if (can('report.edit')): ?><a href="/report?action=edit&id=<?=$r['id']?>" class="btn-icon btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
             <?php if (can('report.delete')): ?>
             <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>">
-              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+              <button class="btn-icon btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>
             <?php endif; ?>
             <?php else: ?>
-            <a href="/homogeneous?action=detail&id=<?=$r['source_id']?>" class="btn btn-sm btn-outline-success" title="查看均质材料"><i class="fas fa-eye"></i></a>
+            <a href="/homogeneous?action=detail&id=<?=$r['source_id']?>" class="btn-icon btn btn-sm btn-outline-success" title="查看均质材料"><i class="fas fa-eye"></i></a>
             <?php endif; ?>
             <?php if ($r['file_path']): ?>
-            <a href="<?=h(fileUrl($r['file_path']))?>" class="btn btn-sm btn-outline-info" target="_blank"><i class="fas fa-download"></i></a>
+            <a href="<?=h(fileUrl($r['file_path']))?>" class="btn-icon btn btn-sm btn-outline-info" target="_blank"><i class="fas fa-download"></i></a>
             <?php endif; ?>
           </td>
         </tr>
@@ -75,12 +76,12 @@
 <div class="modal fade" id="reportModal">
   <div class="modal-dialog modal-lg">
     <form method="post" enctype="multipart/form-data" class="modal-content"><?=csrf_field()?>
-      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <div class="row">
           <div class="col-md-6">
-            <div class="form-group"><label>关联均质材料</label>
+            <div class="mb-3"><label>关联均质材料</label>
               <input type="text" id="hmSearch" class="form-control form-control-sm mb-1" placeholder="输入名称或供应商搜索...">
               <select name="material_id" id="hmSelect" class="form-control" size="1">
                 <option value="">请选择均质材料</option>
@@ -92,12 +93,12 @@
             </div>
           </div>
           <div class="col-md-6">
-            <div class="form-group"><label>报告编号</label><input type="text" name="report_no" class="form-control" id="modReportNo"></div>
+            <div class="mb-3"><label>报告编号</label><input type="text" name="report_no" class="form-control" id="modReportNo"></div>
           </div>
         </div>
         <div class="row">
           <div class="col-md-4">
-            <div class="form-group"><label>报告类型</label>
+            <div class="mb-3"><label>报告类型</label>
               <select name="report_type" class="form-control">
                 <option value="RoHS">RoHS</option><option value="REACH">REACH</option>
                 <option value="HF">HF</option><option value="MSDS">MSDS</option>
@@ -105,20 +106,20 @@
             </div>
           </div>
           <div class="col-md-4">
-            <div class="form-group"><label>检测机构</label><input type="text" name="test_agency" class="form-control" id="modTestAgency"></div>
+            <div class="mb-3"><label>检测机构</label><input type="text" name="test_agency" class="form-control" id="modTestAgency"></div>
           </div>
           <div class="col-md-4">
-            <div class="form-group"><label>检测日期</label><input type="date" name="test_date" class="form-control" id="modTestDate"></div>
+            <div class="mb-3"><label>检测日期</label><input type="date" name="test_date" class="form-control" id="modTestDate"></div>
           </div>
         </div>
-        <div class="form-group">
+        <div class="mb-3">
           <label>报告文件 <small class="text-muted">(支持PDF自动识别)</small></label>
-          <input type="file" name="report_file" class="form-control-file" accept=".pdf,.xls,.xlsx" id="modReportFile">
+          <input type="file" name="report_file" class="form-control" accept=".pdf,.xls,.xlsx" id="modReportFile">
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">上传</button>
-        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>

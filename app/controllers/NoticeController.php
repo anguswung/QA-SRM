@@ -4,9 +4,21 @@ class NoticeController extends Controller {
         $this->requirePermission('notice.view');
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $action = $_POST['action'] ?? '';
+            if ($action === 'read') {
+                $nid = (int)($_POST['id'] ?? 0);
+                $sid = userSupplierId();
+                if ($nid && $sid > 0) {
+                    $exists = $db->single("SELECT COUNT(*) FROM notice_read_log WHERE notice_id=? AND supplier_id=? AND read_time IS NOT NULL", [$nid, $sid]);
+                    if (!$exists) {
+                        $db->execute("INSERT INTO notice_read_log (notice_id, supplier_id) VALUES (?,?)", [$nid, $sid]);
+                    }
+                }
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['ok' => true]); exit;
+            }
             $this->requirePermission('notice.edit');
             if (!isAdmin()) { flash('error', '无权操作'); header('Location: /notice'); exit; }
-            $action = $_POST['action'] ?? '';
             if ($action === 'create') {
                 $db->execute("INSERT INTO notice (title, content, publisher_id, publisher_name, publish_time) VALUES (?,?,?,?,datetime('now','localtime'))",
                     [$_POST['title'] ?? '', $_POST['content'] ?? '', userId(), $_SESSION['realname'] ?? '']);

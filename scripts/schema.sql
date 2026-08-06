@@ -135,18 +135,6 @@ CREATE TABLE IF NOT EXISTS homogeneous_material (
 );
 
 -- 物料与均质材料关联表
-CREATE TABLE IF NOT EXISTS material_homogeneous (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    material_id INTEGER NOT NULL REFERENCES material(id),
-    hm_id INTEGER NOT NULL REFERENCES homogeneous_material(id),
-    usage_mg REAL DEFAULT 0,
-    usage_unit TEXT DEFAULT 'g',
-    sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    UNIQUE(material_id, hm_id)
-);
-
--- 物料分类
 CREATE TABLE IF NOT EXISTS material_category (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -220,45 +208,6 @@ CREATE TABLE IF NOT EXISTS additive (
 );
 
 -- 产品表 (BOM)
-CREATE TABLE IF NOT EXISTS part (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    part_no TEXT NOT NULL UNIQUE,
-    part_name TEXT NOT NULL,
-    spec TEXT,
-    parent_id INTEGER REFERENCES part(id),
-    unit TEXT,
-    sort_order INTEGER DEFAULT 0,
-    supplier_id INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'active',
-    mcd_file_path TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    updated_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 产品物料关联 (BOM)
-CREATE TABLE IF NOT EXISTS part_material (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    part_id INTEGER NOT NULL REFERENCES part(id),
-    material_id INTEGER NOT NULL REFERENCES material(id),
-    quantity REAL DEFAULT 1,
-    unit TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- BOM变更记录
-CREATE TABLE IF NOT EXISTS bom_change_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    part_id INTEGER REFERENCES part(id),
-    change_type TEXT,
-    material_id INTEGER,
-    old_quantity REAL,
-    new_quantity REAL,
-    operator_id INTEGER,
-    operated_at TEXT DEFAULT (datetime('now','localtime')),
-    remark TEXT
-);
-
--- 检测报告
 CREATE TABLE IF NOT EXISTS test_report (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     material_id INTEGER REFERENCES material(id),
@@ -310,25 +259,6 @@ CREATE TABLE IF NOT EXISTS document_category (
 );
 
 -- 文档提醒配置
-CREATE TABLE IF NOT EXISTS doc_reminder (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    days_before INTEGER DEFAULT 30,
-    enabled INTEGER DEFAULT 1,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 文档对比记录
-CREATE TABLE IF NOT EXISTS document_comparison (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    material_id INTEGER REFERENCES material(id),
-    document_id INTEGER,
-    compare_type TEXT,
-    result_summary TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 法规库
 CREATE TABLE IF NOT EXISTS regulation_lib (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     regulation_no TEXT UNIQUE,
@@ -404,17 +334,6 @@ CREATE TABLE IF NOT EXISTS substance_maybe_use (
 );
 
 -- 分析配置
-CREATE TABLE IF NOT EXISTS analysis_config (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    regulation_ids TEXT,
-    focus_only INTEGER DEFAULT 0,
-    auto_calc INTEGER DEFAULT 1,
-    created_by INTEGER,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 分析记录
 CREATE TABLE IF NOT EXISTS analysis_record (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     material_id INTEGER,
@@ -522,41 +441,6 @@ CREATE TABLE IF NOT EXISTS task_attachment (
 );
 
 -- 冲突矿产调查
-CREATE TABLE IF NOT EXISTS conflict_mineral_survey (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    supplier_id INTEGER REFERENCES supplier(id),
-    survey_no TEXT NOT NULL UNIQUE,
-    survey_date TEXT,
-    status TEXT DEFAULT 'draft',
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 冶炼厂清单
-CREATE TABLE IF NOT EXISTS smelter_list (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    survey_id INTEGER REFERENCES conflict_mineral_survey(id),
-    smelter_name TEXT NOT NULL,
-    smelter_location TEXT,
-    metal_type TEXT,
-    mineral_source TEXT,
-    conflict_region INTEGER DEFAULT 0,
-    certification TEXT,
-    status TEXT DEFAULT 'pending',
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 元素供应商
-CREATE TABLE IF NOT EXISTS element_supplier (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    survey_id INTEGER REFERENCES conflict_mineral_survey(id),
-    element_type TEXT,
-    supplier_name TEXT,
-    is_smelter INTEGER DEFAULT 0,
-    smelter_id INTEGER REFERENCES smelter_list(id),
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 预警记录
 CREATE TABLE IF NOT EXISTS warning_record (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     material_id INTEGER REFERENCES material(id),
@@ -705,48 +589,3 @@ INSERT OR IGNORE INTO users (username, password, realname, role, status, passwor
 -- ==================== V2.0 新增表 ====================
 
 -- 物料分类表 (V2.0)
-CREATE TABLE IF NOT EXISTS material_categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER DEFAULT 0,
-    name TEXT NOT NULL,
-    sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    updated_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 导出任务表 (V2.0)
-CREATE TABLE IF NOT EXISTS export_tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
-    file_path TEXT,
-    file_size INTEGER,
-    error_msg TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    completed_at TEXT
-);
-
--- OCR缓存表 (V2.0)
-CREATE TABLE IF NOT EXISTS ocr_cache (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_md5 TEXT NOT NULL UNIQUE,
-    file_text TEXT,
-    ocr_method TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- ==================== V2.0 表结构变更 ====================
-
--- material 表新增 category_id 字段
-ALTER TABLE material ADD COLUMN category_id INTEGER DEFAULT 0;
-
--- test_report 表新增 ocr_method 和 file_md5 字段
-ALTER TABLE test_report ADD COLUMN ocr_method TEXT DEFAULT '';
-ALTER TABLE test_report ADD COLUMN file_md5 TEXT DEFAULT '';
-
--- users 表新增 email_notify 字段
-ALTER TABLE users ADD COLUMN email_notify INTEGER DEFAULT 0;
-
--- notice 表新增 send_email 字段
-ALTER TABLE notice ADD COLUMN send_email INTEGER DEFAULT 0;

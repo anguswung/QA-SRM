@@ -35,7 +35,7 @@ if ($candidate && strpos(str_replace('\\', '/', $candidate), $uploadsBase) === 0
     $normalized = $candidate;
 }
 
-if (!file_exists($normalized)) {
+if (!is_file($normalized)) {
     http_response_code(404);
     exit('File not found');
 }
@@ -60,7 +60,8 @@ if (isSupplier()) {
         || (bool)$db->single("SELECT COUNT(*) FROM survey_response WHERE REPLACE(file_path,'\\','/')=? AND supplier_id=?", [$realPath, $sid])
         || (bool)$db->single("SELECT COUNT(*) FROM task_attachment ta JOIN bpm_instance bi ON ta.instance_id=bi.id WHERE REPLACE(ta.file_path,'\\','/')=? AND (bi.initiator_id=? OR bi.id IN (SELECT bt.instance_id FROM bpm_task bt WHERE bt.assignee_id=?))", [$realPath, $uid, $uid])
         || (bool)$db->single("SELECT COUNT(*) FROM notice_attachment na JOIN notice n ON na.notice_id=n.id WHERE REPLACE(na.file_path,'\\','/')=? AND n.status='published'", [$realPath])
-        || (bool)$db->single("SELECT COUNT(*) FROM material WHERE REPLACE(mcd_file_path,'\\','/')=? AND supplier_id=?", [$realPath, $sid]);
+        || (bool)$db->single("SELECT COUNT(*) FROM material WHERE REPLACE(mcd_file_path,'\\','/')=? AND supplier_id=?", [$realPath, $sid])
+        || strpos($realPath, $uploadsBase . '/quill/') === 0;
     if (!$allowed) {
         http_response_code(403);
         exit('Forbidden');

@@ -23,6 +23,8 @@ session_start();
 date_default_timezone_set($config['timezone'] ?? 'Asia/Shanghai');
 
 // Security response headers
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
@@ -98,6 +100,13 @@ if ($uri !== '/login' && !isset($_SESSION['user_id'])) {
     header('Location: /login'); exit;
 }
 
+
+// CSRF token endpoint (fetch latest token before JS form submission)
+if ($uri === '/api/csrf-token' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['token' => csrf_token()]);
+    exit;
+}
 
 // CSRF protection for POST requests (non-API)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($uri, '/api/') !== 0) {

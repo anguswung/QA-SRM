@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h5><i class="fas fa-tasks"></i> 流程详情 - <?=h($instance['title'])?></h5>
+  <h4><i class="fas fa-tasks"></i> 流程详情 - <?=h($instance['title'])?></h4>
   <div>
     <a href="/bpm" class="btn btn-sm btn-outline-secondary"><i class="fas fa-list"></i> 返回</a>
   </div>
@@ -10,13 +10,14 @@
       <div class="card-header">流程信息</div>
       <div class="card-body">
         <table class="table table-sm">
-          <tr><td class="td-label">模板</td><td><?=h($instance['template_name'])?></td></tr>
-          <tr><td>状态</td><td><?=statusBadge($instance['status'])?></td></tr>
-          <tr><td>发起人</td><td><?=h($instance['initiator_name'] ?? '-')?></td></tr>
-          <tr><td>引用类型</td><td><?=h($instance['ref_type'] ?? '-')?></td></tr>
-          <tr><td>引用ID</td><td><?=h($instance['ref_id'] ?? '-')?></td></tr>
-          <tr><td>创建时间</td><td><?=h($instance['created_at'])?></td></tr>
-          <tr><td>完成时间</td><td><?=h($instance['completed_at'] ?? '-')?></td></tr>
+        <?php $__rnum = 0; ?>
+          <tr><td class="row-num"><?=++$__rnum?></td><td class="td-label">模板</td><td><?=h($instance['template_name'])?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>状态</td><td><?=statusBadge($instance['status'])?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>发起人</td><td><?=h($instance['initiator_name'] ?? '-')?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>引用类型</td><td><?=h($instance['ref_type'] ?? '-')?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>引用ID</td><td><?=h($instance['ref_id'] ?? '-')?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>创建时间</td><td><?=h($instance['created_at'])?></td></tr>
+          <tr><td class="row-num"><?=++$__rnum?></td><td>完成时间</td><td><?=h($instance['completed_at'] ?? '-')?></td></tr>
         </table>
       </div>
     </div>
@@ -39,7 +40,7 @@
             $isEnd = $n['node_type'] === 'end';
           ?>
           <div class="flow-step d-flex <?=$isCurrent ? 'flow-current' : ''?>">
-            <div class="flow-dot mr-3 text-center">
+            <div class="flow-dot ms-3 text-center">
               <?php if ($isEnd && $instance['status'] === 'completed'): ?>
               <i class="fas fa-check-circle text-success"></i>
               <?php elseif ($isProcessed): ?>
@@ -65,7 +66,7 @@
               <div class="text-muted small mt-1 p-1 bg-light rounded"><?=h($pt['comment'])?></div>
               <?php endif; ?>
               <?php elseif ($isCurrent): ?>
-              <small class="text-primary font-weight-bold">当前节点</small>
+              <small class="text-primary fw-bold">当前节点</small>
               <?php endif; ?>
             </div>
           </div>
@@ -77,11 +78,12 @@
       <div class="card-header">流转记录</div>
       <div class="card-body p-0">
         <table class="table table-sm table-hover">
-          <thead><tr><th>节点</th><th>处理人</th><th>状态</th><th>处理时间</th><th>意见</th></tr></thead>
+          <thead><tr><th style="width:60px">#</th><th>节点</th><th>处理人</th><th>状态</th><th>处理时间</th><th>意见</th></tr></thead>
           <tbody>
+<?php $__rnum = 0; ?>
             <?php foreach ($tasks as $t): ?>
             <tr>
-              <td><?=h($t['node_name'])?></td>
+              <td class="row-num"><?=++$__rnum?></td><td><?=h($t['node_name'])?></td>
               <td><?=h($t['assignee_name'] ?? '-')?></td>
               <td><?=statusBadge($t['status'])?></td>
               <td><small><?=h($t['processed_at'] ?? $t['created_at'])?></small></td>

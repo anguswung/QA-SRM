@@ -14,15 +14,15 @@
       <?php endif; ?>
       <form method="post">
         <?=csrf_field()?>
-        <div class="form-group">
+        <div class="mb-3">
           <label><i class="fas fa-user"></i> 用户名</label>
           <input type="text" name="username" class="form-control" placeholder="请输入用户名" required autofocus>
         </div>
-        <div class="form-group">
+        <div class="mb-3">
           <label><i class="fas fa-lock"></i> 密码</label>
           <input type="password" name="password" class="form-control" placeholder="请输入密码" required>
         </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg">登 录</button>
+        <button type="submit" class="btn btn-primary btn-lg d-block w-100">登 录</button>
       </form>
       <div class="text-center mt-3 text-muted-light">
         <p class="mb-0">默认管理员 admin / 123456</p>

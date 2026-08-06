@@ -20,6 +20,7 @@ class HomogeneousController extends Controller {
         if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
         if ($action === 'compliance') { $this->showCompliance((int)($_GET['id'] ?? 0)); return; }
         if ($action === 'reports') { $this->showReports((int)($_GET['id'] ?? 0), (int)($_GET['report_id'] ?? 0)); return; }
+        if ($action === 'usage') { $this->showMaterialUsage((int)($_GET['id'] ?? 0)); return; }
         if ($action === 'delete_report') { $this->doDeleteReport(); return; }
         $this->showList();
     }
@@ -27,10 +28,9 @@ class HomogeneousController extends Controller {
         $this->requirePermission('homogeneous.view');
         $db = DB::getInstance();
         $search = $_GET['search'] ?? '';
-        $where = []; $params = [];
-        if (isSupplier()) { $where[] = "m.created_by=?"; $params[] = userId(); }
-        if ($search) { $where[] = "m.material_name LIKE ?"; $params[] = "%$search%"; }
-        $materials = $db->query("SELECT m.*, COALESCE(s.name_short, s2.name_short) AS supplier_name_short,
+        $uid = isSupplier() ? userId() : 0;
+        $scopeWhere = $uid ? " WHERE m.created_by=$uid" : '';
+        $reportSelects = "
           (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='RoHS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS rohs_id,
           (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='RoHS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS rohs_expiry,
           (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='MSDS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS msds_id,
@@ -38,18 +38,72 @@ class HomogeneousController extends Controller {
           (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='REACH' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS reach_id,
           (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='REACH' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS reach_expiry,
           (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='HF' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS hf_id,
-          (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='HF' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS hf_expiry
+          (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='HF' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS hf_expiry";
+        // 统计卡片：按报告的合规规则统计（与列表环保状态列一致），不受搜索条件影响
+        $totalRows = $db->query("SELECT m.id, $reportSelects FROM homogeneous_material m$scopeWhere", []);
+        $total = count($totalRows);
+        $compliantCount = $nonCompliantCount = $pendingCount = 0;
+        foreach ($totalRows as $r) {
+            $s = $this->hmEnvStatus($r);
+            if ($s === 'compliant') $compliantCount++;
+            elseif ($s === 'non_compliant') $nonCompliantCount++;
+            else $pendingCount++;
+        }
+        $where = []; $params = [];
+        if (isSupplier()) { $where[] = "m.created_by=?"; $params[] = userId(); }
+        if ($search) { $where[] = "m.material_name LIKE ?"; $params[] = "%$search%"; }
+        $materials = $db->query("SELECT m.*, COALESCE(s.name_short, s2.name_short) AS supplier_name_short, $reportSelects
           FROM homogeneous_material m
           LEFT JOIN supplier s ON m.supplier_id=s.id
           LEFT JOIN users u ON m.created_by=u.id
           LEFT JOIN supplier s2 ON u.supplier_id=s2.id" . ($where ? " WHERE " . implode(' AND ', $where) : "") . " ORDER BY m.id DESC", $params);
-        $uid = isSupplier() ? userId() : 0;
-        $total = $db->single("SELECT COUNT(*) FROM homogeneous_material" . ($uid ? " WHERE created_by=$uid" : ''));
-        $compliantCount = $db->single("SELECT COUNT(*) FROM homogeneous_material WHERE env_status='compliant'" . ($uid ? " AND created_by=$uid" : ''));
-        $nonCompliantCount = $db->single("SELECT COUNT(*) FROM homogeneous_material WHERE env_status='non_compliant'" . ($uid ? " AND created_by=$uid" : ''));
-        $pendingCount = $db->single("SELECT COUNT(*) FROM homogeneous_material WHERE env_status='pending'" . ($uid ? " AND created_by=$uid" : ''));
+        foreach ($materials as &$m) { $m['env_status'] = $this->hmEnvStatus($m); }
+        unset($m);
         $title = '均质材料';
         $this->render('homogeneous/index', get_defined_vars());
+    }
+    private function hmEnvStatus($m): string {
+        // 与列表「环保状态」列口径一致：RoHS/REACH/HF 均有未过期报告为合规，
+        // 有任一报告但存在缺失或过期则为不合规，否则待评估
+        $envTypes = ['RoHS','REACH','HF'];
+        $allValid = true;
+        $hasEnvReport = false;
+        foreach ($envTypes as $rt) {
+            $key = strtolower($rt);
+            $hasId = $m[$key . '_id'] ?? '';
+            $expiry = $m[$key . '_expiry'] ?? '';
+            if ($expiry) {
+                $hasEnvReport = true;
+                if (strtotime($expiry) < time()) { $allValid = false; break; }
+            } elseif ($hasId) {
+                $hasEnvReport = true;
+                $allValid = false;
+            } else {
+                $allValid = false;
+            }
+        }
+        if ($hasEnvReport && $allValid) return 'compliant';
+        if ($hasEnvReport) return 'non_compliant';
+        return 'pending';
+    }
+    private function showMaterialUsage($hmId = 0) {
+        $this->requirePermission('homogeneous.view');
+        $db = DB::getInstance();
+        $item = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
+        if (!$item) { header('Location: /homogeneous'); exit; }
+        if (isSupplier() && (int)($item['created_by'] ?? 0) !== userId()) { header('Location: /homogeneous?error=no_permission'); exit; }
+        $where = "mc.substance_id=?";
+        $params = [$hmId];
+        if (isSupplier()) { $where .= " AND m.supplier_id=?"; $params[] = userSupplierId(); }
+        $materials = $db->query("SELECT m.id, m.material_no, m.material_name, m.spec, m.mpn, m.category, m.weight_mg, m.weight_unit, m.env_status, m.updated_at,
+            s.name AS supplier_name,
+            mc.min_percentage, mc.max_percentage, mc.is_main_component, mc.remark
+            FROM material_composition mc
+            JOIN material m ON m.id=mc.material_id
+            LEFT JOIN supplier s ON m.supplier_id=s.id
+            WHERE $where ORDER BY m.id", $params);
+        $title = '使用该均质材料的物料 - ' . $item['material_name'];
+        $this->render('homogeneous/material_usage', get_defined_vars());
     }
     private function showForm($id = 0) {
         $this->requirePermission($id ? 'homogeneous.edit' : 'homogeneous.create');
@@ -343,7 +397,7 @@ class HomogeneousController extends Controller {
         if ($hasAny && $allValid) $reportEnvStatus = 'compliant';
         elseif ($hasAny) $reportEnvStatus = 'non_compliant';
         // Load latest analysis records from DB
-        $records = $db->query("SELECT ar.*, rl.name AS regulation_name, rl.regulation_no FROM analysis_record ar JOIN regulation_lib rl ON ar.regulation_id=rl.id WHERE ar.hm_id=? ORDER BY ar.substance_name, ar.analyze_result DESC", [$hmId]);
+        $records = $db->query("SELECT ar.*, COALESCE(rl.name, '手工录入限值') AS regulation_name, rl.regulation_no FROM analysis_record ar LEFT JOIN regulation_lib rl ON ar.regulation_id=rl.id WHERE ar.hm_id=? ORDER BY ar.substance_name, ar.analyze_result DESC", [$hmId]);
         $results = [];
         $seen = [];
         foreach ($records as $r) {
@@ -380,6 +434,14 @@ class HomogeneousController extends Controller {
         if (!$item) { header('Location: /homogeneous'); exit; }
         $this->requireOwnership($item['created_by'] ?? 0, '/homogeneous');
         $reports = $db->query("SELECT * FROM hm_report WHERE hm_id=? ORDER BY version_group, version DESC", [$hmId]);
+        $hasReport = (int)$db->single("SELECT COUNT(*) FROM hm_report WHERE hm_id=?", [$hmId]);
+        $hasMeasured = (int)$db->single(
+            "SELECT COUNT(*) FROM hm_report_element hre
+             JOIN hm_report hr ON hre.hm_report_id = hr.id
+             WHERE hr.hm_id=? AND hre.content_value IS NOT NULL AND hre.content_value > 0",
+            [$hmId]
+        );
+        $noUploadData = !$hasReport && !$hasMeasured;
         // sort so RoHS comes first
         usort($reports, function($a, $b) {
             $order = ['RoHS' => 0, 'REACH' => 1, 'HF' => 2, 'MSDS' => 3];
@@ -454,6 +516,18 @@ class HomogeneousController extends Controller {
         $hmId = (int)($_POST['hm_id'] ?? 0);
         if ($hmId) {
             $this->requireUserRecord('homogeneous_material', $hmId, 'created_by', '/homogeneous');
+            $db = DB::getInstance();
+            $hasReport = (int)$db->single("SELECT COUNT(*) FROM hm_report WHERE hm_id=?", [$hmId]);
+            $hasMeasured = (int)$db->single(
+                "SELECT COUNT(*) FROM hm_report_element hre
+                 JOIN hm_report hr ON hre.hm_report_id = hr.id
+                 WHERE hr.hm_id=? AND hre.content_value IS NOT NULL AND hre.content_value > 0",
+                [$hmId]
+            );
+            if (!$hasReport && !$hasMeasured) {
+                flash('error', '未上传报告和无物质实测数据，请操作');
+                header('Location: /homogeneous?action=compliance&id=' . $hmId); exit;
+            }
             $engine = new ComplianceEngine();
             $results = $engine->analyzeHm($hmId);
             flash('success', '分析完成，共 ' . count($results) . ' 条');

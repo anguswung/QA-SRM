@@ -71,15 +71,6 @@ class BpmEngine {
         );
         return true;
     }
-    public function urge($instanceId) {
-        $tasks = DB::getInstance()->query(
-            "SELECT bt.*, bi.title FROM bpm_task bt
-             JOIN bpm_instance bi ON bt.instance_id = bi.id
-             WHERE bt.instance_id = ? AND bt.status = 'pending'",
-            [$instanceId]
-        );
-        return count($tasks);
-    }
     private function createTasks($instanceId, $node) {
         $db = DB::getInstance();
         $users = $db->query(

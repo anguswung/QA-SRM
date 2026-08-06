@@ -108,6 +108,7 @@ class ComplianceEngine {
         $elements = $db->query(
             "SELECT hre.substance_name, hre.cas_no,
                     MAX(hre.content_value) AS content_value,
+                    MAX(hre.limit_value) AS limit_value,
                     hre.unit, hr.hm_id AS material_id
              FROM hm_report_element hre
              JOIN hm_report hr ON hre.hm_report_id = hr.id
@@ -118,7 +119,7 @@ class ComplianceEngine {
         if (empty($elements)) {
             $elements = $db->query(
                 "SELECT hc.id, hc.substance_name, hc.cas_no, hc.percentage AS content_value,
-                        'mg/kg' AS unit, hc.hm_id AS material_id
+                        NULL AS limit_value, 'mg/kg' AS unit, hc.hm_id AS material_id
                  FROM hm_composition hc
                  WHERE hc.hm_id = ?",
                 [$hmId]
@@ -133,6 +134,28 @@ class ComplianceEngine {
         $db->execute("DELETE FROM analysis_record WHERE hm_id=? AND (?=0 OR regulation_id=?)", [$hmId, $regulationId ?? 0, $regulationId ?? 0]);
         $results = [];
         foreach ($elements as $elem) {
+            $matched = false;
+            // 优先使用手工录入限值（hm_report_element.limit_value）
+            if (isset($elem['limit_value']) && (float)$elem['limit_value'] > 0) {
+                $result = $this->judge($elem, ['limit_value' => $elem['limit_value']], null);
+                $db->execute(
+                    "INSERT INTO analysis_record (hm_id, regulation_id, analyze_result, substance_name, cas_no, detected_value, limit_value, analyzed_at)
+                     VALUES (?, 0, ?, ?, ?, ?, ?, datetime('now','localtime'))",
+                    [$hmId, $result, $elem['substance_name'], $elem['cas_no'], $elem['content_value'], $elem['limit_value']]
+                );
+                $results[] = [
+                    'substance' => $elem['substance_name'],
+                    'cas' => $elem['cas_no'],
+                    'detected' => $elem['content_value'],
+                    'limit' => $elem['limit_value'],
+                    'result' => $result,
+                    'result_text' => $this->resultText($result),
+                    'analyzed_at' => date('Y-m-d H:i:s'),
+                ];
+                $matched = true;
+            }
+            if ($matched) continue;
+            // 回退：法规库限值匹配
             foreach ($limits as $limit) {
                 if (!$this->matchSubstance($elem, $limit)) continue;
                 $result = $this->judge($elem, $limit, null);

@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['file']['tmp_name'])
             // Fallback to Tesseract OCR (for scanned PDFs)
             $tesseract = $config['poppler']['tesseract'] ?? '';
             if ($tesseract && file_exists($tesseract)) {
-                $tmpDir = sys_get_temp_dir() . '/tesseract_' . md5($file['name']);
+                $tmpDir = sys_get_temp_dir() . '/tesseract_' . md5($file['tmp_name'] . '_' . uniqid('', true));
                 if (!is_dir($tmpDir)) mkdir($tmpDir, 0755, true);
                 // Convert PDF to images using poppler pdftoppm
                 $pdftoppm = $config['poppler']['pdftoppm'] ?? '';

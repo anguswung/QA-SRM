@@ -1,7 +1,9 @@
 <?php
 class AuthController extends Controller {
     public function login() {
-        $this->checkLoginRateLimit();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->checkLoginRateLimit();
+        }
         $db = DB::getInstance();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = trim($_POST['username'] ?? '');

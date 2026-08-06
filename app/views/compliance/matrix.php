@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h5><i class="fas fa-th"></i> 合规矩阵</h5>
+  <h4><i class="fas fa-th"></i> 合规矩阵</h4>
   <div>
     <a href="/compliance" class="btn btn-sm btn-outline-secondary">分析看板</a>
     <a href="/compliance/analyze" class="btn btn-sm btn-outline-primary">合规评估</a>
@@ -9,7 +9,7 @@
   <table class="table table-sm table-bordered">
     <thead>
       <tr>
-        <th style="min-width:150px">物料</th>
+        <th style="width:60px">#</th><th style="min-width:150px">物料</th>
         <th>状态</th>
         <?php foreach ($regulations as $r): ?>
         <th title="<?=h($r['name'])?>"><?=h($r['regulation_no'])?></th>
@@ -17,12 +17,13 @@
       </tr>
     </thead>
     <tbody>
+<?php $__rnum = 0; ?>
       <?php foreach ($matrix as $row): $m = $row['material']; ?>
       <tr>
-        <td><small><?=h($m['material_no'])?></small><br><?=h($m['material_name'])?></td>
+        <td class="row-num"><?=++$__rnum?></td><td><small><?=h($m['material_no'])?></small><br><?=h($m['material_name'])?></td>
         <td><?=statusBadge($m['env_status'])?></td>
         <?php foreach ($regulations as $r): $rec = $row['results'][$r['id']] ?? null; ?>
-        <td class="text-center">
+        <td class="">
           <?php if ($rec): ?>
             <?php if ($rec['is_manual']): ?>
               <span class="status-tag warning" title="人工设定"><?=$rec['manual_result'] == '9' ? '合规' : '违规'?></span>

@@ -65,21 +65,21 @@
         <div class="d-flex justify-content-around text-center">
           <a href="/material" class="text-decoration-none">
             <div class="p-3">
-              <div class="h3 mb-1 font-weight-bold <?=$todoPendingSubmit > 0 ? 'text-danger' : 'text-muted'?>"><?=(int)($todoPendingSubmit ?? 0)?></div>
+              <div class="h3 mb-1 fw-bold <?=$todoPendingSubmit > 0 ? 'text-danger' : 'text-muted'?>"><?=(int)($todoPendingSubmit ?? 0)?></div>
               <div class="small text-muted">待提交审核</div>
             </div>
           </a>
-          <div class="border-right"></div>
+          <div class="border-end"></div>
           <a href="/material" class="text-decoration-none">
             <div class="p-3">
-              <div class="h3 mb-1 font-weight-bold <?=$todoExpiringReports > 0 ? 'text-warning' : 'text-muted'?>"><?=(int)($todoExpiringReports ?? 0)?></div>
+              <div class="h3 mb-1 fw-bold <?=$todoExpiringReports > 0 ? 'text-warning' : 'text-muted'?>"><?=(int)($todoExpiringReports ?? 0)?></div>
               <div class="small text-muted">报告即将过期</div>
             </div>
           </a>
-          <div class="border-right"></div>
+          <div class="border-end"></div>
           <a href="/notice" class="text-decoration-none">
             <div class="p-3">
-              <div class="h3 mb-1 font-weight-bold <?=$todoUnreadNotices > 0 ? 'text-primary' : 'text-muted'?>"><?=(int)($todoUnreadNotices ?? 0)?></div>
+              <div class="h3 mb-1 fw-bold <?=$todoUnreadNotices > 0 ? 'text-primary' : 'text-muted'?>"><?=(int)($todoUnreadNotices ?? 0)?></div>
               <div class="small text-muted">未读通知</div>
             </div>
           </a>
@@ -94,9 +94,9 @@
         <ul class="list-group list-group-flush">
           <?php if (!empty($recentNotices)): $snum = 0; foreach ($recentNotices as $n): if (++$snum > 5) break; ?>
           <li class="list-group-item py-2 px-3">
-            <span class="text-muted mr-2"><?=$snum?>.</span>
+            <span class="text-muted ms-2"><?=$snum?>.</span>
             <a href="javascript:;" onclick='showDashboardNotice(<?=htmlspecialchars(json_encode($n['title']), ENT_QUOTES)?>,<?=htmlspecialchars(json_encode($n['content']), ENT_QUOTES)?>,"<?=h($n['publisher_name'])?>","<?=h($n['publish_time'] ?: $n['created_at'])?>")'><?=h($n['title'])?></a>
-            <small class="text-muted float-right"><?=h(substr($n['publish_time'] ?: $n['created_at'], 0, 10))?></small>
+            <small class="text-muted float-end"><?=h(substr($n['publish_time'] ?: $n['created_at'], 0, 10))?></small>
           </li>
           <?php endforeach; else: ?>
           <li class="list-group-item py-3 text-center text-muted">暂无通知</li>
@@ -108,7 +108,7 @@
 </div>
 <?php endif; ?>
 
-<div class="row">
+<div class="row mb-3">
   <div class="col-md-6">
     <div class="card">
       <div class="card-header"><i class="fas fa-chart-pie"></i> 状态分布</div>
@@ -133,7 +133,7 @@
     <table class="table table-hover mb-0">
       <thead>
         <tr>
-          <th>物料</th>
+          <th style="width:40px" class="col-id">ID</th><th>物料</th>
           <th>超标物质</th>
           <th>含量</th>
           <th>限值</th>
@@ -142,17 +142,18 @@
         </tr>
       </thead>
       <tbody>
+<?php $__rnum = 0; ?>
         <?php if (!empty($warnings)): $idx = 0; foreach ($warnings as $w): if (++$idx > 10) break; ?>
         <tr>
-          <td><?=h($w['material_name'] ?? '')?></td>
+          <td class="col-id"><?=h($w['id'] ?? '')?></td><td><?=h($w['material_name'] ?? '')?></td>
           <td><?=h($w['substance_name'] ?? '')?></td>
-          <td class="text-danger font-weight-bold"><?=h($w['content_value'] ?? '')?></td>
+          <td class="text-danger fw-bold"><?=h($w['content_value'] ?? '')?></td>
           <td><?=h($w['limit_value'] ?? '')?></td>
           <td><?=h($w['report_no'] ?? '')?></td>
           <td><?=h($w['test_date'] ?? $w['created_at'] ?? '')?></td>
         </tr>
         <?php endforeach; else: ?>
-        <tr><td colspan="6" class="text-center text-muted py-4">暂无预警数据</td></tr>
+        <tr><td colspan="6" class="text-muted py-4">暂无预警数据</td></tr>
         <?php endif; ?>
       </tbody>
     </table>
@@ -164,10 +165,10 @@
     <div class="modal-content">
       <div class="modal-header">
         <h4 class="modal-title" id="dashboardNoticeTitle"></h4>
-        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="text-right text-muted mb-3 pb-2 border-bottom fs-13">
+        <div class="text-end text-muted mb-3 pb-2 border-bottom fs-13">
           <span id="dashboardNoticePubInfo"></span>
         </div>
         <div id="dashboardNoticeContent" class="ql-editor p-0-force"></div>

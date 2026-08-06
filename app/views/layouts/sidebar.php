@@ -99,8 +99,8 @@ unset($m);
         }
         ?>
         <?php if ($hasChildren): ?>
-        <li class="nav-item dropdown <?=$mActive ? 'active' : ''?>">
-          <a class="nav-link dropdown-toggle" href="#navbar-<?=$k?>" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="<?=$mActive ? 'true' : 'false'?>">
+        <li class="nav-item dropdown <?=$mActive ? 'active' : ''?>" data-sidebar-sub>
+          <a class="nav-link dropdown-toggle" href="#navbar-<?=$k?>" data-bs-toggle="sidebar-sub" role="button" aria-expanded="<?=$mActive ? 'true' : 'false'?>" aria-haspopup="true">
             <span class="nav-link-icon d-md-none d-lg-inline-block">
               <i class="fas <?=h($m['icon'])?>"></i>
             </span>

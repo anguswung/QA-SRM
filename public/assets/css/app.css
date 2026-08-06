@@ -1,51 +1,49 @@
+/* ==========================================================================
+   app.css — 与 Tabler 主题对齐的补充层
+   - Tabler 原生组件（card/.btn/.form-control/.table/.modal/.pagination/
+     .badge/.page-header 等）样式由 tabler.min.css 接管，本文件不覆盖原生组件。
+   - 仅保留：Tabler 未提供的业务组件、必要的布局微调、与 Tabler 色板（--tblr-* 变量）同源的自定义类。自定义颜色一律引用 --tblr-*，保证全站同色系。   ========================================================================== */
+
+/* 自定义配色统一映射到 Tabler 色板变量，业务组件随主题变色 */
 :root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --bg: #f1f5f9;
-    --sidebar-bg: #0f172a;
-    --sidebar-hover: #1e293b;
-    --text-light: #94a3b8;
-    --radius: 8px;
-    --success: #22c55e;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --info: #3b82f6
+    --primary: var(--tblr-primary, #066fd1);
+    --primary-dark: #045aad;
+    --success: var(--tblr-success, #2fb344);
+    --danger: var(--tblr-danger, #d63939);
+    --warning: var(--tblr-warning, #f59f00);
+    --info: var(--tblr-info, #4299e1);
 }
 
 * {
     box-sizing: border-box;
-    font-size: 14px;
-    font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Helvetica Neue", sans-serif
 }
 
+/* 根元素水平偏移归零：防止滚动条出现时浏览器给 html/body 加左右外边距，导致 sticky 侧边栏整体右移、左侧出现空白。*/
+html,
 body {
-    background: var(--bg);
-    color: #1e293b;
+    margin: 0;
+    padding: 0;
 }
 
-/* ===== Tabler page wrapper ===== */
-.page-wrapper {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+html {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
+/* ===== 登录页（独立布局，Tabler 无对应类） ===== */
 .page-wrapper:has(.login-page) {
     padding: 0;
 }
+
 .page-wrapper:has(.login-page) .page-body {
     padding-top: 0;
 }
+
 .page-wrapper:has(.login-page) .container-xl,
 .page-wrapper:has(.login-page) .container-fluid {
     max-width: 100%;
     padding-left: 0;
     padding-right: 0;
-}
-
-.page-body {
-    flex: 1;
-    padding-top: 0.5rem;
 }
 
 .login-page {
@@ -66,7 +64,7 @@ body {
 }
 
 .login-header {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background: linear-gradient(135deg, var(--tblr-primary), #045aad);
     color: #fff;
     padding: 32px 30px;
     text-align: center
@@ -100,9 +98,11 @@ body {
     }
 }
 
+/* ===== 顶栏 / 侧边栏品牌 ===== */
 .topbar-title {
     font-weight: 600;
-    color: #1e293b;
+    font-size: 1.125rem;
+    color: var(--tblr-body-color, #1e293b);
     padding-left: 0.25rem;
 }
 
@@ -116,7 +116,7 @@ body {
 
 .navbar-brand-autodark .icon-zh-w {
     font-size: 20px;
-    color: var(--success);
+    color: var(--tblr-success);
 }
 
 .sidebar-title {
@@ -125,36 +125,94 @@ body {
     white-space: nowrap;
 }
 
-/* ===== Card (Bootstrap5/Tabler) ===== */
-.card {
-    border: none;
-    border-radius: var(--radius);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
-    margin-bottom: 16px;
-    background: #fff
+/* ===== 报告 tab 导航加粗 + 激活蓝底高亮（homogeneous/reports、material/detail 页面） ===== */
+#reportTabs,
+#materialTabs {
+    border-bottom: 3px solid var(--tblr-primary, #0054a6);
 }
 
-.card-header {
-    background: #fff;
-    border-bottom: 1px solid #f1f5f9;
-    font-weight: 600;
-    padding: 14px 20px;
-    font-size: 14px;
-    display: flex;
+#reportTabs .nav-link,
+#materialTabs .nav-link {
+    font-weight: 700;
+    color: var(--tblr-primary, #0054a6);
+}
+
+#reportTabs .nav-link:hover,
+#materialTabs .nav-link:hover {
+    background-color: var(--tblr-primary-bg-subtle, #e6effb);
+}
+
+#reportTabs .nav-link.active,
+#materialTabs .nav-link.active {
+    background-color: var(--tblr-primary, #0054a6) !important;
+    color: #fff !important;
+    border-color: var(--tblr-primary, #0054a6) !important;
+}
+
+/* ===== 页面上下相邻卡片统一间隔（1.5rem，与 page-header 间隔一致） ===== */
+.card+.card {
+    margin-top: 1.5rem;
+}
+
+/* 统计卡 grid 布局由 gap 控制间距，排除相邻卡片规则 */
+.summary-cards .card+.card {
+    margin-top: 0;
+}
+
+/* ID 列：强制 40px（auto 布局下 min/max 双约束，内容不换行），收窄左右 padding 把多余宽度释放给其他列。*/
+.table .col-id {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    white-space: nowrap;
+}
+
+/* 序号列（row-num）：信息、明细在 fixed 布局下收窄为固定窄宽度 */
+.table td.row-num {
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    color: var(--tblr-secondary);
+}
+
+/* ===== 图标按钮尺寸规范化（列表操作按钮统一紧凑尺寸） ===== */
+.btn-icon {
+    display: inline-flex;
     align-items: center;
-    gap: 8px
+    justify-content: center;
 }
 
+.btn-icon i {
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+.btn-icon.btn-sm {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.btn-icon.btn-sm i {
+    font-size: 0.8125rem;
+}
+
+/* ===== DataTables 布局微调 ===== */
 .card-header .card-actions {
     margin-left: auto
 }
 
-.card-body {
-    padding: 20px
+.card-body .dataTables_wrapper {
+    padding: 0 0 8px
 }
 
-.card-body .dataTables_wrapper {
-    padding: 0 8px 8px
+/* 隐藏 DataTables 自带搜索框（各页面已提供搜索输入，搜索功能保留给 API/即时过滤使用） */
+.dt-search,
+.dataTables_filter {
+    display: none !important;
 }
 
 .card-body.p-0 .dataTables_wrapper .dataTables_info,
@@ -162,38 +220,37 @@ body {
     padding: 4px 8px
 }
 
-.card-footer {
-    background: #fafbfc;
-    border-top: 1px solid #f1f5f9;
-    padding: 12px 20px
-}
-
-/* ===== Tables ===== */
-.table {
-    font-size: 14px;
-    margin-bottom: 0
-}
-
-.table th {
-    font-weight: 600;
-    color: #64748b;
-    background: #f8fafc;
-    padding: 6px 5px;
-    text-indent: 0.5em;
-}
-
-.table td {
-    padding: 3px 8px;
-    vertical-align: middle;
-    border-bottom: 1px solid #f1f5f9
-}
-
-.table-hover tbody tr:hover {
-    background: #f8fafc
-}
-
+/* 表格：自动布局——列宽按内容按需显示，width 仅作初始分配，内容溢出自动扩展不截断 */
 table.datatable {
-    table-layout: fixed;
+    table-layout: auto;
+}
+
+/* 表格统一行高与单元格纵向留白（上下 0.5rem，Tabler 默认 0.75rem 收窄） */
+.table> :not(caption)>*>* {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+/* 表格数据默认左对齐（个别右对齐列后续按需加 text-end 类） */
+.table th,
+.table td {
+    text-align: left;
+    vertical-align: middle;
+}
+
+.table th.text-start,
+.table td.text-start,
+.table th.text-left,
+.table td.text-left {
+    text-align: left;
+}
+
+.table th.text-end,
+.table td.text-end,
+.table th.text-right,
+.table td.text-right {
+    text-align: right;
 }
 
 .dataTables_paginate {
@@ -205,7 +262,7 @@ table.datatable {
 }
 
 .table-pagination {
-    padding: 8px 12px
+    padding: 6px 12px
 }
 
 .table-pagination .page-link {
@@ -220,188 +277,63 @@ table.datatable {
     outline: none
 }
 
-/* ===== Forms (Bootstrap4 compatibility until views are migrated) ===== */
-.form-group {
-    margin-bottom: 16px
+/* DataTables 3 bootstrap5 布局行顶部间隔去除：
+表格外层 div 为 "row mt-2 justify-content-between dt-layout-table"（mt-2 造成表格顶部 8px 间隔），
+   底部信息/分页行为 "row mt-2 justify-content-between [dt-layout-row|dt-layout-full]"，一并清零。同时抵消 BS5 .row 的左右负 margin（0.75rem，DataTables 官方 CSS 未处理，导致容器左右溢出）。*/
+.dt-container .dt-layout-table,
+.dt-container .dt-layout-row,
+.dt-container .dt-layout-full,
+.dt-container .row.mt-2 {
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
-.form-group label {
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 4px;
-    color: #374151
+/* 全站 datatable 溢出防护：DataTables 容器内容超宽时内部横向滚动，不撑破页面布局 */
+.dt-container {
+    overflow-x: auto;
 }
 
-.form-control {
-    height: 36px;
-    border-radius: 6px;
-    border: 1px solid #d1d5db;
-    transition: border-color .15s, box-shadow .15s;
-    line-height: 1.5
+/* ===== 软徽章（Tabler 未提供，用 Tabler 色板浅色派生） ===== */
+.badge-soft-success,
+.status-tag.success {
+    background: color-mix(in srgb, var(--tblr-success) 14%, #fff);
+    color: var(--tblr-success);
 }
 
-.form-control:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, .1)
+.badge-soft-danger,
+.status-tag.danger {
+    background: color-mix(in srgb, var(--tblr-danger) 14%, #fff);
+    color: var(--tblr-danger);
 }
 
-textarea.form-control {
-    height: auto
+.badge-soft-warning,
+.status-tag.warning {
+    background: color-mix(in srgb, var(--tblr-warning) 20%, #fff);
+    color: #7a4d00;
 }
 
-select.form-control {
-    height: 36px
+.badge-soft-info,
+.status-tag.info {
+    background: color-mix(in srgb, var(--tblr-info) 14%, #fff);
+    color: var(--tblr-info);
 }
 
-select.form-control.form-control-sm {
-    height: 32px
+.badge-soft-secondary,
+.status-tag.secondary {
+    background: color-mix(in srgb, var(--tblr-secondary) 12%, #fff);
+    color: var(--tblr-secondary);
 }
 
-select.form-control-sm {
-    height: 32px
-}
-
-.input-group-sm .form-control,
-.input-group-sm select,
-.input-group-sm .btn,
-select.form-control-sm,
-.form-control-sm {
-    height: 32px !important;
-    font-size: 14px;
-}
-
-.input-group-sm .input-group-text {
-    height: 32px;
-    padding: 4px 10px;
-    font-size: 14px;
-}
-
-.input-group .form-control,
-.input-group select,
-.input-group .btn {
-    height: 36px
-}
-
-.input-group-text {
-    height: 36px;
-    padding: 6px 12px
-}
-
-/* ===== Buttons ===== */
-.btn {
-    padding: 7px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    transition: all .15s;
-    line-height: 1.5;
-    height: 36px;
-    vertical-align: middle;
-}
-
-.btn-sm {
-    padding: 4px 12px;
-    font-size: 14px;
-    height: 32px;
-    vertical-align: middle;
-}
-
-.btn-lg {
-    padding: 10px 20px;
-    height: 44px;
-    vertical-align: middle;
-}
-
-.btn-group-sm>.btn,
-.btn-sm {
-    font-size: 14px;
-    padding: 2px 8px;
-    height: 26px
-}
-
-.btn-group {
-    display: inline-flex;
-    align-items: stretch;
-}
-
-.btn-group .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-primary {
-    background: var(--primary);
-    border-color: var(--primary)
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark)
-}
-
-.btn-outline-primary {
-    color: var(--primary);
-    border-color: var(--primary)
-}
-
-.btn-outline-primary:hover {
-    background: var(--primary);
-    color: #fff
-}
-
-/* ===== Badges ===== */
-.badge {
-    font-size: inherit
-}
-
-.badge-soft-success {
-    background: #dcfce7;
-    color: #166534;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 500
-}
-
-.badge-soft-danger {
-    background: #fee2e2;
-    color: #991b1b;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 500
-}
-
-.badge-soft-warning {
-    background: #fef3c7;
-    color: #92400e;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 500
-}
-
-.badge-soft-info {
-    background: #dbeafe;
-    color: #1e40af;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 500
-}
-
+.badge-soft-success,
+.badge-soft-danger,
+.badge-soft-warning,
+.badge-soft-info,
 .badge-soft-secondary {
-    background: #f1f5f9;
-    color: #475569;
     padding: 3px 10px;
     border-radius: 12px;
     font-weight: 500
 }
-
-/* Bootstrap4 badge color compat */
-.badge-info { background-color: #3b82f6; color: #fff; }
-.badge-danger { background-color: #ef4444; color: #fff; }
-.badge-primary { background-color: #2563eb; color: #fff; }
-.badge-success { background-color: #22c55e; color: #fff; }
-.badge-warning { background-color: #f59e0b; color: #fff; }
-.badge-secondary { background-color: #64748b; color: #fff; }
-.badge-dark { background-color: #1e293b; color: #fff; }
 
 .status-tag {
     display: inline-block;
@@ -411,57 +343,75 @@ select.form-control-sm,
     letter-spacing: .3px
 }
 
-.status-tag.success { background: #dcfce7; color: #166534 }
-.status-tag.danger { background: #fee2e2; color: #991b1b }
-.status-tag.warning { background: #fef3c7; color: #92400e }
-.status-tag.info { background: #dbeafe; color: #1e40af }
-.status-tag.secondary { background: #f1f5f9; color: #475569 }
-
-/* ===== Font size normalization ===== */
-.small,
-small,
-.text-muted,
-.h1, .h2, .h3, .h4, .h5, .h6,
-h1, h2, h3, h4, h5, h6,
-p, li, a, span, div, label, th, td,
-.btn, .btn-sm, .btn-lg, .btn-link,
-.form-control, .form-control-sm, .form-control-lg,
-.input-group-text,
-.breadcrumb, .list-group-item, .dropdown-item,
-.nav-link, .card-title, .card-text, .card-header, .card-footer,
-.modal-title, .modal-header, .modal-body, .modal-footer,
-.alert, .progress, .tooltip, .popover,
-.badge, .badge-soft-success, .badge-soft-danger, .badge-soft-warning, .badge-soft-info, .badge-soft-secondary {
-    font-size: 14px
+/* 已读状态不再加粗 */
+td[id^="read-"] .status-tag {
+    font-weight: 400;
 }
 
-/* ===== Page header & search ===== */
+/* ===== 页头 =====
+   Tabler 官方 .page-header 为纵向排列（flex-direction: column），
+本系统的页头采用"标题靠左、操作区靠右"的横向布局，故在此覆盖布局方向。*/
 .page-header {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
+    justify-content: flex-start;
     flex-wrap: wrap;
-    gap: 12px
+    gap: 12px;
+    margin-top: 0 !important;
+    margin-bottom: 1.5rem !important;
+    max-width: 100%;
 }
 
 .page-header h5 {
     margin: 0;
     font-weight: 600;
-    font-size: 14px;
 }
 
-.page-header .btn {
-    padding: 7px 18px;
-    height: 36px;
-    display: inline-flex;
+/* 页头：标题靠左，操作按钮组整体靠右 */
+.page-header h5,
+.page-header h4,
+.page-header h3,
+.page-header>h2 {
+    margin-right: auto;
+}
+
+.page-header>div:last-child {
+    margin-left: auto;
+    display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 8px
 }
 
-.page-header .btn-sm {
-    padding: 5px 14px;
-    height: 32px
+/* 主内容区左右间隔对称（与右侧滚动条侧一致，由 Tabler --tblr-gutter-x 控制） */
+.page-body>.container-xl {
+    padding-left: calc(var(--tblr-gutter-x) * .5);
+}
+
+/* 顶栏左右间隔对称（与右侧一致） */
+.navbar .container-xl {
+    padding-left: calc(var(--tblr-gutter-x) * .5);
+}
+
+/* 顶栏页标题区不再占满剩余宽度，让右侧用户区获得充足空间并单行显示 */
+#navbar-mobile {
+    flex-grow: 0;
+}
+
+.navbar .navbar-nav.flex-row.order-md-last {
+    margin-left: auto;
+    flex-wrap: nowrap;
+}
+
+.navbar .navbar-nav.flex-row.order-md-last .nav-link,
+.navbar .navbar-nav.flex-row.order-md-last .nav-item {
+    white-space: nowrap;
+}
+
+/* 用户区 nav-item 内名称与角色徽章并行显示（避免垂直堆叠撑高顶栏） */
+.navbar .navbar-nav.flex-row.order-md-last .nav-item {
+    flex-direction: row;
+    align-items: center;
 }
 
 .search-bar {
@@ -484,21 +434,7 @@ p, li, a, span, div, label, th, td,
     height: 32px
 }
 
-.filter-bar {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    padding: 12px 0;
-    margin-bottom: 12px
-}
-
-.filter-bar .form-control {
-    width: auto;
-    min-width: 140px
-}
-
-/* ===== Summary / stat cards ===== */
+/* ===== 统计卡片 ===== */
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -530,52 +466,16 @@ p, li, a, span, div, label, th, td,
 }
 
 .stat-card .stat-label {
-    color: #64748b;
+    color: var(--tblr-secondary);
     margin-top: 4px;
     font-weight: 500
 }
 
-/* ===== Pagination ===== */
-.pagination {
-    margin: 0
-}
-
-.page-link {
-    padding: 6px 12px;
-    font-size: 14px;
-    color: var(--primary)
-}
-
-.page-item.active .page-link {
-    background: var(--primary);
-    border-color: var(--primary)
-}
-
-/* ===== Modals ===== */
-.modal-header {
-    background: #f8fafc;
-    padding: 14px 20px;
-    border-bottom: 1px solid #e2e8f0
-}
-
-.modal-title {
-    font-weight: 600
-}
-
-.modal-footer {
-    padding: 12px 20px;
-    border-top: 1px solid #e2e8f0
-}
-
-.modal-body {
-    padding: 20px
-}
-
-/* ===== Misc ===== */
+/* ===== 杂项 ===== */
 .empty-state {
     text-align: center;
     padding: 60px 20px;
-    color: #94a3b8
+    color: var(--tblr-secondary)
 }
 
 .empty-state i {
@@ -584,197 +484,506 @@ p, li, a, span, div, label, th, td,
     opacity: .5
 }
 
-.tree-view { padding: 8px 0 }
-.tree-node { padding: 4px 0; display: flex; align-items: center; gap: 8px }
-.tree-toggle { cursor: pointer; margin-right: 4px; transition: transform .2s; color: #94a3b8; font-size: 14px; }
-.tree-toggle.expanded { transform: rotate(90deg) }
-.tree-children { padding-left: 28px; display: none }
-.tree-children.open { display: block }
+.pointer {
+    cursor: pointer
+}
 
-.tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px }
-.tab-item { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; font-size: 14px; color: #64748b; transition: .2s; margin-bottom: -2px; font-weight: 500 }
-.tab-item:hover { color: #1e293b }
-.tab-item.active { color: #fff; background: var(--primary); border-bottom-color: var(--primary); border-radius: 4px 4px 0 0 }
+/* ===== 步骤条（自定义标记，Tabler 无对应） ===== */
+.steps {
+    display: flex;
+    margin: 0 -8px 20px;
+    padding: 0;
+    list-style: none;
+    counter-reset: step
+}
 
-.pointer { cursor: pointer }
+.steps li {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 0 8px
+}
 
-.text-success { color: var(--success) !important }
-.text-danger { color: var(--danger) !important }
-.text-warning { color: var(--warning) !important }
-.text-info { color: var(--info) !important }
+.steps li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: calc(50% + 24px);
+    right: calc(-50% + 24px);
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 0
+}
 
-/* ===== Steps ===== */
-.steps { display: flex; margin: 0 -8px 20px; padding: 0; list-style: none; counter-reset: step }
-.steps li { flex: 1; text-align: center; position: relative; padding: 0 8px }
-.steps li:not(:last-child)::after { content: ''; position: absolute; top: 18px; left: calc(50% + 24px); right: calc(-50% + 24px); height: 2px; background: #e2e8f0; z-index: 0 }
-.steps li.active:not(:last-child)::after, .steps li.done:not(:last-child)::after { background: var(--primary) }
-.steps li .step-circle { width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 14px; font-weight: 600; color: #94a3b8; position: relative; z-index: 1; transition: .2s }
-.steps li.active .step-circle { background: var(--primary); border-color: var(--primary); color: #fff }
-.steps li.done .step-circle { background: #dcfce7; border-color: #22c55e; color: #166534 }
-.steps li .step-label { color: #94a3b8; font-weight: 500 }
-.steps li.active .step-label { color: var(--primary); font-weight: 600 }
-.steps li.done .step-label { color: #166534 }
+.steps li.active:not(:last-child)::after,
+.steps li.done:not(:last-child)::after {
+    background: var(--primary)
+}
 
-/* ===== Nav tabs (Bootstrap4 style kept for compat) ===== */
-.nav-tabs .nav-link {
+.steps li .step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 6px;
     font-size: 14px;
-    color: #64748b;
-    border: none;
-    margin-bottom: 0;
-    padding: 8px 16px;
+    font-weight: 600;
+    color: var(--tblr-secondary);
+    position: relative;
+    z-index: 1;
+    transition: .2s
+}
+
+.steps li.active .step-circle {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff
+}
+
+.steps li.done .step-circle {
+    background: color-mix(in srgb, var(--tblr-success) 20%, #fff);
+    border-color: var(--tblr-success);
+    color: var(--tblr-success)
+}
+
+.steps li .step-label {
+    color: var(--tblr-secondary);
+    font-weight: 500
+}
+
+.steps li.active .step-label {
+    color: var(--primary);
     font-weight: 600
 }
-.nav-tabs { border-bottom: 3px solid var(--primary-dark) }
-.card-header-tabs { border-bottom: none; margin-bottom: 0 }
-.card-header-tabs .nav-item { margin-bottom: 0 }
-.card-header-tabs .nav-link.active { margin-bottom: 0 }
-.card-header:has(.card-header-tabs) { border-bottom: 3px solid var(--primary-dark); padding: 0 20px; align-items: stretch }
-.nav-tabs .nav-link.active { color: #fff; background: var(--primary-dark); border-radius: 6px 6px 0 0 }
-.nav-tabs .nav-link.active:hover { background: var(--primary-dark) }
-.nav-tabs .nav-link:hover { background: #f1f5f9; border-bottom-color: #cbd5e1 }
 
-/* ===== Progress & avatar ===== */
-.progress { height: 6px; border-radius: 3px; background: #f1f5f9 }
-.progress-bar { border-radius: 3px }
-.avatar { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; color: #fff }
-.avatar-sm { width: 24px; height: 24px; font-size: 14px }
+.steps li.done .step-label {
+    color: var(--tblr-success)
+}
 
-/* ===== Toast ===== */
-.toast { font-size: 14px }
-.toast-top-center { top: 50px; left: 50%; transform: translateX(-50%) }
+/* ===== Toast 定位 ===== */
+.toast-top-center {
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%)
+}
 
-/* ===== Watermark / footer ===== */
+/* ===== 水印 ===== */
 .app-watermark {
     position: fixed;
-    bottom: 60px;
-    right: 100px;
+    bottom: 90px;
+    right: 60px;
     z-index: -1;
     pointer-events: none;
     user-select: none;
     opacity: .1;
     filter: grayscale(1) brightness(.6);
 }
-.app-watermark img { max-width: 160px; max-height: 120px; }
+
+.app-watermark img {
+    max-width: 160px;
+    max-height: 120px;
+}
 
 /* ===== Quill ===== */
-#notice-editor, #survey-editor, #edit-notice-editor, #edit-survey-editor { height: 200px }
-#notice-editor .ql-editor, #survey-editor .ql-editor, #edit-notice-editor .ql-editor, #edit-survey-editor .ql-editor { min-height: 180px }
-#viewContent img, #dashboardNoticeContent img, .notice-view-content img { max-width: 100%; height: auto; border-radius: 4px }
-#hmPickerModal .modal-body { max-height: 65vh; overflow-y: auto }
-
-/* ===== Consolidated utility classes ===== */
-.fs-10 { font-size: 10px !important; }
-.fs-11 { font-size: 11px !important; }
-.fs-13 { font-size: 13px !important; }
-.fs-15 { font-size: 15px !important; }
-.w-32 { width: 32px !important; }
-.w-60 { width: 60px !important; }
-.w-64 { width: 64px !important; }
-.w-70 { width: 70px !important; }
-.w-80 { width: 80px !important; }
-.w-100 { width: 100px !important; }
-.w-120 { width: 120px !important; }
-.w-200 { width: 200px !important; }
-.w-220 { width: 220px !important; }
-.w-260 { width: 260px !important; }
-.w-400 { max-width: 400px !important; }
-.h-64 { height: 64px !important; }
-.h-80 { height: 80px !important; }
-.h-4 { height: 4px !important; }
-.h-8 { height: 8px !important; }
-.scrollbox { max-height: 400px; overflow-y: auto; }
-.text-muted-light { color: #94a3b8; }
-.p-0-force { padding: 0 !important; }
-.td-label { width: 100px; color: #64748b; }
-.word-break { word-break: break-word; white-space: normal; }
-.nowrap { white-space: nowrap; }
-.va-middle { vertical-align: middle !important; }
-.inline-form { display: inline; }
-.badge-compact { font-size: 10px; }
-.badge-lg { font-size: 15px; padding: 6px 20px; }
-.badge-label { font-size: 13px; padding: 4px 12px; }
-.custom-file-label-sm { font-size: 13px; }
-.circle-icon-wrap { width: 64px; height: 64px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
-.circle-success { width: 80px; height: 80px; border-radius: 50%; background: #f0fdf4; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-.summary-img { max-height: 60px; border: 1px solid #ddd; padding: 4px; border-radius: 4px; }
-.select-max-400 { max-width: 400px; }
-.comp-input { width: 80px; }
-.inline-progress { height: 4px; width: 120px; display: inline-block; vertical-align: middle; margin-left: 8px; }
-.flow-dot { width: 32px; }
-.flow-content { padding-left: 12px; }
-.fw-normal { font-weight: 400; }
-.overflow-x-auto { overflow-x: auto; }
-
-/* Bootstrap4 margin/padding utility compat */
-.mr-1 { margin-right: 0.25rem !important; }
-.ml-1 { margin-left: 0.25rem !important; }
-.mt-1 { margin-top: 0.25rem !important; }
-.mb-1 { margin-bottom: 0.25rem !important; }
-.mx-1 { margin-right: 0.25rem !important; margin-left: 0.25rem !important; }
-.my-1 { margin-top: 0.25rem !important; margin-bottom: 0.25rem !important; }
-.mr-2 { margin-right: 0.5rem !important; }
-.ml-2 { margin-left: 0.5rem !important; }
-.mt-2 { margin-top: 0.5rem !important; }
-.mb-2 { margin-bottom: 0.5rem !important; }
-.mr-3 { margin-right: 1rem !important; }
-.ml-3 { margin-left: 1rem !important; }
-.mt-3 { margin-top: 1rem !important; }
-.mb-3 { margin-bottom: 1rem !important; }
-.mb-0 { margin-bottom: 0 !important; }
-.mt-0 { margin-top: 0 !important; }
-.mt-2 { margin-top: 0.5rem !important; }
-.p-0 { padding: 0 !important; }
-.p-1 { padding: 0.25rem !important; }
-.px-1 { padding-right: 0.25rem !important; padding-left: 0.25rem !important; }
-.py-1 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
-.pr-1 { padding-right: 0.25rem !important; }
-.pl-1 { padding-left: 0.25rem !important; }
-.pr-2 { padding-right: 0.5rem !important; }
-.pl-2 { padding-left: 0.5rem !important; }
-.pt-3 { padding-top: 1rem !important; }
-.pb-3 { padding-bottom: 1rem !important; }
-.d-inline-block { display: inline-block !important; }
-.d-inline { display: inline !important; }
-.d-flex { display: flex !important; }
-.d-none { display: none !important; }
-
-/* Bootstrap4 form/layout compat */
-.form-inline { display: flex; flex-flow: row wrap; align-items: center; }
-.form-inline .form-control { display: inline-block; width: auto; vertical-align: middle; }
-.btn-block { display: block; width: 100%; }
-.form-control-file { display: block; width: 100%; padding: 0.375rem 0; }
-.thead-light th { background-color: #f8fafc; color: #64748b; }
-.float-right { float: right !important; }
-.float-left { float: left !important; }
-.text-left { text-align: left !important; }
-.text-right { text-align: right !important; }
-.text-center { text-align: center !important; }
-.font-weight-bold { font-weight: 700 !important; }
-.rounded { border-radius: 6px !important; }
-.bg-light { background-color: #f8fafc !important; }
-.border-bottom-0 { border-bottom: 0 !important; }
-.table-bordered th, .table-bordered td { border-color: #e2e8f0 !important; }
-.table-bordered { border-color: #e2e8f0 !important; }
-.justify-content-between { justify-content: space-between !important; }
-.align-items-center { align-items: center !important; }
-.flex-grow-1 { flex-grow: 1 !important; }
-
-/* Hide number input spinners */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
+#notice-editor,
+#survey-editor,
+#edit-notice-editor,
+#edit-survey-editor {
+    height: 200px
 }
 
-/* Bootstrap4 tab compatibility (panes carry only .active, not .show) */
-.tab-content > .tab-pane { display: none; }
-.tab-content > .tab-pane.active { display: block !important; }
+#notice-editor .ql-editor,
+#survey-editor .ql-editor,
+#edit-notice-editor .ql-editor,
+#edit-survey-editor .ql-editor {
+    min-height: 180px
+}
 
-/* Tabler responsive tweaks */
+#viewContent img,
+#dashboardNoticeContent img,
+.notice-view-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px
+}
+
+#hmPickerModal .modal-body {
+    max-height: 65vh;
+    overflow-y: auto
+}
+
+/* ===== 工具条 ===== */
+.fs-11 {
+    font-size: 11px !important;
+}
+
+.fs-13 {
+    font-size: 13px !important;
+}
+
+.w-100px {
+    width: 100px !important;
+}
+
+.w-200 {
+    width: 200px !important;
+}
+
+.w-220 {
+    width: 220px !important;
+}
+
+.w-260 {
+    width: 260px !important;
+}
+
+.h-8 {
+    height: 8px !important;
+}
+
+.scrollbox {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.text-muted-light {
+    color: var(--tblr-secondary);
+}
+
+.p-0-force {
+    padding: 0 !important;
+}
+
+.td-label {
+    width: 100px;
+    color: var(--tblr-secondary);
+}
+
+.word-break {
+    word-break: break-word;
+    white-space: normal;
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+.va-middle {
+    vertical-align: middle !important;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.badge-compact {
+    font-size: 10px;
+}
+
+.badge-lg {
+    font-size: 15px;
+    padding: 6px 20px;
+}
+
+.badge-label {
+    font-size: 13px;
+    padding: 4px 12px;
+}
+
+.circle-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--tblr-primary) 10%, #fff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+}
+
+.circle-success {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--tblr-success) 12%, #fff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.summary-img {
+    max-height: 60px;
+    border: 1px solid var(--tblr-border-color, #ddd);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.select-max-400 {
+    max-width: 400px;
+}
+
+.comp-input {
+    width: 80px;
+}
+
+.inline-progress {
+    height: 4px;
+    width: 120px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+.flow-dot {
+    width: 32px;
+}
+
+.flow-content {
+    padding-left: 12px;
+}
+
+.fw-normal {
+    font-weight: 400;
+}
+
+.overflow-x-auto {
+    overflow-x: auto;
+}
+
+/* ===== BS4 tab 兼容（material/supplier 详情页沿用 .tab-pane.active 切换） ===== */
+.tab-content>.tab-pane {
+    display: none;
+}
+
+.tab-content>.tab-pane.active {
+    display: block !important;
+}
+
+/* ===== Tabler 响应式微调 ===== */
 @media(max-width: 991px) {
-    .navbar-vertical .navbar-collapse { max-height: 80vh; overflow-y: auto; }
+    .navbar-vertical .navbar-collapse {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+}
+
+/* ===== 侧边栏二级菜单手风琴动画（展开态平滑展开/收缩） ===== */
+body:not(.sidebar-collapsed) .navbar-vertical .navbar-collapse .dropdown-menu {
+    display: block;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    opacity: 0;
+    border-width: 0;
+    box-shadow: none;
+    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+}
+
+body:not(.sidebar-collapsed) .navbar-vertical .navbar-collapse .dropdown-menu.show {
+    max-height: 500px;
+    padding-top: var(--tblr-dropdown-padding-y, 0.25rem);
+    padding-bottom: var(--tblr-dropdown-padding-y, 0.25rem);
+    opacity: 1;
+}
+
+/* 展开/收缩时下拉箭头旋转 */
+.navbar-vertical .navbar-collapse .dropdown-toggle::after {
+    transition: transform 0.2s ease;
+}
+
+.navbar-vertical .navbar-collapse .dropdown-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+}
+
+/* ===== 侧边栏二级菜单高亮（Tabler 默认 --tblr-navbar-active-bg 在深色侧边栏上不可见） ===== */
+.navbar-vertical.navbar-expand-lg .navbar-collapse .dropdown-menu .dropdown-item.active,
+.navbar-vertical.navbar-expand-lg .navbar-collapse .dropdown-menu .dropdown-item:active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.navbar-vertical.navbar-expand-lg .navbar-collapse .dropdown-menu .dropdown-item.active {
+    box-shadow: inset 5px 0 0 var(--tblr-primary);
+}
+
+/* 激活菜单项左侧蓝色色块加宽到 5px（覆盖 Tabler 默认 3px） */
+.navbar-vertical.navbar-expand-lg .navbar-collapse .nav-item.active:after,
+.navbar-vertical.navbar-expand-lg .navbar-nav .nav-item.active:after {
+    border-left-width: 5px;
+}
+
+.navbar-vertical .navbar-collapse .nav-item.dropdown.active>.dropdown-toggle {
+    color: #ffffff;
+}
+
+/* ===== 侧边栏整体折叠（桌面端） ===== */
+.sidebar-collapse-toggle {
+    display: none;
+}
+
+@media(min-width: 992px) {
+    .sidebar-collapse-toggle {
+        display: inline-flex;
+    }
+
+    .page {
+        display: flex;
+        flex-direction: row;
+    }
+
+    .navbar-vertical.navbar-expand-lg {
+        position: sticky;
+        top: 0;
+        bottom: auto;
+        height: 100vh;
+        flex: 0 0 auto;
+        width: 200px;
+        margin-right: 8px;
+    }
+
+    .navbar-vertical.navbar-expand-lg~.page-wrapper {
+        margin-left: 0;
+        flex: 1;
+        min-width: 0;
+    }
+
+    body.sidebar-collapsed .navbar-vertical {
+        width: 4.5rem;
+    }
+
+    body.sidebar-collapsed .navbar-vertical~.page-wrapper {
+        margin-left: 0;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .navbar-brand {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .sidebar-title,
+    body.sidebar-collapsed .navbar-vertical .nav-link-title,
+    body.sidebar-collapsed .navbar-vertical .dropdown-toggle:after {
+        display: none;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .navbar-collapse .navbar-nav .nav-link {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .nav-link-icon {
+        margin-right: 0;
+        width: auto;
+        height: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .nav-link-icon i {
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .dropdown-menu {
+        display: none;
+        position: fixed;
+        z-index: 1045;
+        margin: 0;
+        background: #1f2937;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+        padding: 4px;
+        min-width: 200px;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .dropdown-menu.show {
+        display: block;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .dropdown-menu .dropdown-item {
+        color: rgba(255, 255, 255, 0.7);
+        border-radius: 6px;
+        padding: 6px 10px;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .dropdown-menu .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+    }
+
+    body.sidebar-collapsed .navbar-vertical .dropdown-menu .dropdown-item.active {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        box-shadow: inset 5px 0 0 var(--tblr-primary);
+    }
+
+    body.sidebar-collapsed .navbar-vertical .navbar-collapse {
+        align-items: stretch;
+    }
+
+    .navbar-vertical {
+        transition: width .25s ease;
+    }
+
+    .navbar-vertical~.page-wrapper {
+        transition: margin-left .25s ease;
+    }
+}
+
+/* ===== 全局统一：图标与相邻文字间距 ===== */
+.btn i,
+.badge i,
+.dropdown-item i,
+.nav-link i,
+.page-title i,
+label i,
+h1 i,
+h2 i,
+h3 i,
+h4 i,
+h5 i,
+h6 i,
+.card-header i,
+.card-title i,
+.status-tag i,
+.input-group-text i,
+.table td i,
+.table th i,
+.fw-bold i,
+.list-group-item i,
+.small i {
+    margin-right: .45em;
+}
+
+a:not(.nav-link):not(.dropdown-item):not(.btn) i {
+    margin-right: .35em;
+}
+
+/* ===== 侧边栏折叠：飞出菜单必须脱离文档流置顶（覆盖 Tabler .dropdown-menu 的 static 定位） ===== */
+@media (min-width: 992px) {
+    body.sidebar-collapsed .navbar-vertical .navbar-collapse .dropdown-menu.show {
+        position: fixed !important;
+        display: block !important;
+        left: 4.5rem;
+        top: 0;
+        margin: 0 !important;
+        min-width: 220px !important;
+        max-width: 340px;
+        background: #1f2937 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+        padding: 4px;
+        z-index: 1045 !important;
+    }
 }

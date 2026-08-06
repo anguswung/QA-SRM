@@ -7,18 +7,6 @@ class RuleEngine {
         $this->rules = QueryRegistry::complianceRules();
     }
     
-    public function checkMaterial($materialId) {
-        $material = $this->db->single("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id WHERE m.id=?", [$materialId], true);
-        if (!$material) return ['pass'=>true, 'mandatory'=>[], 'warnings'=>[]];
-        return $this->runChecks($material, 'material');
-    }
-    
-    public function checkHm($hmId) {
-        $hm = $this->db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
-        if (!$hm) return ['pass'=>true, 'mandatory'=>[], 'warnings'=>[]];
-        return $this->runChecks($hm, 'hm');
-    }
-    
     public function checkSupplierAll($supplierId) {
         $results = ['pass'=>true, 'mandatory'=>[], 'warnings'=>[], 'overall'=>'ok'];
         $materials = $this->db->query("SELECT * FROM material WHERE supplier_id=?", [$supplierId]);

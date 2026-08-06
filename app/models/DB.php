@@ -28,8 +28,6 @@ class DB {
         if (self::$instance === null) self::$instance = new self();
         return self::$instance;
     }
-    public function getDriver() { return $this->driver; }
-    public function now() { return $this->driver === 'mysql' ? 'NOW()' : "datetime('now','localtime')"; }
     public function query($sql, $params = []) {
         $sql = $this->translate($sql);
         $stmt = $this->pdo->prepare($sql);
@@ -55,20 +53,6 @@ class DB {
         return $result;
     }
     public function lastInsertId() { return $this->pdo->lastInsertId(); }
-    public function vacuum(): void {
-        if ($this->driver === 'sqlite') {
-            $this->pdo->exec('VACUUM');
-        }
-    }
-    public function incrementalVacuum(int $pages = 0): void {
-        if ($this->driver === 'sqlite') {
-            $this->pdo->exec($pages > 0 ? "PRAGMA incremental_vacuum($pages)" : 'PRAGMA incremental_vacuum');
-        }
-    }
-    public function freelistCount(): int {
-        if ($this->driver !== 'sqlite') return 0;
-        return (int)$this->pdo->query('PRAGMA freelist_count')->fetchColumn();
-    }
     private function translate($sql) {
         if ($this->driver === 'mysql') {
             $sql = preg_replace("/datetime\('now','localtime'\)/i", 'NOW()', $sql);

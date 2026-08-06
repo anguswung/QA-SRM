@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h5><i class="fas fa-boxes"></i> <?=h($item['material_name'])?> <small class="text-muted">[<?=h($item['material_no'])?>]</small></h5>
+  <h4><i class="fas fa-boxes"></i> <?=h($item['material_name'])?> <small class="text-muted">[<?=h($item['material_no'])?>]</small></h4>
   <div>
     <?php if (can('material.edit')): ?><a href="/material?action=edit&id=<?=$item['id']?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> 编辑</a><?php endif; ?>
     <a href="/compliance/analyze?material_id=<?=$item['id']?>" class="btn btn-outline-info"><i class="fas fa-balance-scale"></i> 合规分析</a>
@@ -16,37 +16,38 @@
         <span class="status-tag <?=$item['env_status'] === 'compliant' ? 'success' : ($item['env_status'] === 'non_compliant' ? 'danger' : 'warning')?>"><?=$item['env_status'] === 'compliant' ? '合规' : ($item['env_status'] === 'non_compliant' ? '不合规' : '待评估')?></span>
       </div>
       <div class="col-md-7">
+<?php $__rnum = 0; ?>
         <table class="table table-sm mb-0" style="table-layout:fixed">
           <tr>
-            <td class="td-label">编号</td>
+            <td class="row-num"><?=++$__rnum?></td><td class="td-label">编号</td>
             <td class="w-200"><?=h($item['material_no'])?></td>
             <td class="td-label">供应商</td>
             <td><?=h($item['supplier_name'] ?? '-')?></td>
           </tr>
           <tr>
-            <td style="color:#64748b">审核状态</td>
+            <td class="row-num"><?=++$__rnum?></td><td style="color:#64748b">审核状态</td>
             <td><?=statusBadge($item['audit_status'])?></td>
             <td style="color:#64748b">单重</td>
             <td><?=h($item['unit_weight'] ?? 0)?> g</td>
           </tr>
           <tr>
-            <td style="color:#64748b">创建时间</td>
+            <td class="row-num"><?=++$__rnum?></td><td style="color:#64748b">创建时间</td>
             <td><?=h($item['created_at'])?></td>
           </tr>
         </table>
       </div>
-      <div class="col-md-3 border-left">
+      <div class="col-md-3 border-start">
         <div class="d-flex justify-content-around text-center pt-2">
           <div>
-            <div class="text-success font-weight-bold h5 mb-0"><?=count($composition)?></div>
+            <div class="text-success fw-bold h5 mb-0"><?=count($composition)?></div>
             <small class="text-muted">成分</small>
           </div>
           <div>
-            <div class="text-info font-weight-bold h5 mb-0"><?=$totalReports?></div>
+            <div class="text-info fw-bold h5 mb-0"><?=$totalReports?></div>
             <small class="text-muted">报告</small>
           </div>
           <div>
-            <div class="text-warning font-weight-bold h5 mb-0"><?=$totalElements?></div>
+            <div class="text-warning fw-bold h5 mb-0"><?=$totalElements?></div>
             <small class="text-muted">检测项</small>
           </div>
         </div>
@@ -77,25 +78,26 @@
             <input type="hidden" name="action" value="composition_batch_update">
             <input type="hidden" name="material_id" value="<?=$item['id']?>">
           <table class="table table-sm table-bordered mb-0" id="compTable">
-            <thead class="thead-light">
-              <tr><th style="width:22%">均质材料名称</th><th width="70">RoHS</th><th width="70">REACH</th><th width="70">HF</th><th width="70">MSDS</th><th style="width:9%">含量%</th><th style="width:9%">重量(g)</th><th style="width:8%">最小%</th><th style="width:8%">最大%</th><th style="width:8%">主成分</th><th style="width:8%">操作</th></tr>
+            <thead>
+              <tr><th style="width:60px">#</th><th style="width:20%">均质材料名称</th><th style="width:6%">RoHS</th><th style="width:6%">REACH</th><th style="width:6%">HF</th><th style="width:6%">MSDS</th><th style="width:9%">含量%</th><th style="width:9%">重量(g)</th><th style="width:8%">最小%</th><th style="width:8%">最大%</th><th style="width:8%">主成分</th><th style="width:8%">操作</th></tr>
             </thead>
             <tbody>
+<?php $__rnum = 0; ?>
 <?php foreach ($composition as $c):
   $wt = round(($item['unit_weight'] ?? 0) * ($c['min_percentage'] ?? 0) / 100, 4);
 ?>
               <tr class="comp-row" data-substance="<?=h($c['substance_name'])?>" data-hm-id="<?=$c['substance_id'] ?: 0?>">
-                <td class="font-weight-bold word-break"><a href="javascript:void(0)" class="text-primary" onclick="toggleHmDetail(<?=$c['substance_id'] ?: 0?>, this)"><?=h($c['substance_name'])?></a></td>
+                <td class="row-num"><?=++$__rnum?></td><td class="fw-bold word-break"><a href="javascript:void(0)" class="text-primary" onclick="toggleHmDetail(<?=$c['substance_id'] ?: 0?>, this)"><?=h($c['substance_name'])?></a></td>
                 <?php foreach (['RoHS','REACH','HF','MSDS'] as $rt):
                   $hasId = $c[strtolower($rt).'_id'] ?? '';
                   $expiry = $c[strtolower($rt).'_expiry'] ?? '';
                 ?>
-                <td class="text-center small px-1"><?php
+                <td class="small px-1"><?php
                   if (!$hasId || !$expiry): ?><span class="text-muted">无</span><?php
                   elseif ($rt === 'MSDS'): ?><span class="text-success" title="有MSDS">✓</span><?php
-                  elseif (strtotime($expiry) < time()): ?><a href="/homogeneous?action=edit&id=<?=$c['substance_id']?>&step=3" class="badge badge-danger text-white" title="点击重新上传">过期</a><?php
-                  elseif (strtotime($expiry) <= strtotime('+30 days')): ?><a href="/homogeneous?action=edit&id=<?=$c['substance_id']?>&step=3" class="badge badge-warning text-white" title="点击更新">将到期</a><?php
-                  else: ?><span class="badge badge-success" title="<?=h($expiry)?>"><?=h(substr($expiry,5))?></span><?php
+                  elseif (strtotime($expiry) < time()): ?><a href="/homogeneous?action=edit&id=<?=$c['substance_id']?>&step=3" class="badge bg-danger text-white" title="点击重新上传">过期</a><?php
+                  elseif (strtotime($expiry) <= strtotime('+30 days')): ?><a href="/homogeneous?action=edit&id=<?=$c['substance_id']?>&step=3" class="badge bg-warning" title="点击更新">将到期</a><?php
+                  else: ?><span class="badge bg-success text-white" title="<?=h($expiry)?>"><?=h(substr($expiry,5))?></span><?php
                   endif; ?>
                 </td>
                 <?php endforeach; ?>
@@ -108,22 +110,22 @@
                 <td><?=h($c['max_percentage'])?></td>
                 <td><?=$c['is_main_component'] ? '<span class="status-tag success">主成分</span>' : ''?></td>
                 <td>
-                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="if(confirm('确定删除？')){deleteComposition(<?=$c['id']?>,this)}"><i class="fas fa-trash"></i></button>
+                  <button type="button" class="btn-icon btn btn-sm btn-outline-danger" onclick="if(confirm('确定删除？')){deleteComposition(<?=$c['id']?>,this)}"><i class="fas fa-trash"></i></button>
                 </td>
               </tr>
               <?php endforeach; ?>
             </tbody>
             <tfoot>
-              <tr class="bg-light font-weight-bold">
-                <td></td>
+              <tr class="bg-light fw-bold">
+                <td class="row-num"><?=++$__rnum?></td><td></td>
                 <td></td><td></td><td></td><td></td>
-                <td class="text-center py-2">合计: <span id="totalPct">0.00</span>% <span id="totalStatus"></span></td>
-                <td class="text-center py-2"><span id="totalWt">0</span> g</td>
+                <td class="py-2">合计: <span id="totalPct">0.00</span>% <span id="totalStatus"></span></td>
+                <td class="py-2"><span id="totalWt">0</span> g</td>
                 <td></td><td></td><td></td><td></td>
               </tr>
             </tfoot>
           </table>
-          <div class="card-footer text-right">
+          <div class="card-footer text-end">
           </div>
           </form>
         </div>
@@ -137,20 +139,23 @@
         </div>
         <div class="card-body p-0">
           <table class="table table-hover datatable">
-            <thead><tr><th>报告编号</th><th>类型</th><th>检测机构</th><th>检测日期</th><th>有效期</th><th>审核</th><th>文件</th></tr></thead>
+            <thead><tr><th style="width:40px" class="col-id">ID</th><th>报告编号</th><th>均质材料</th><th>类型</th><th>检测机构</th><th>检测日期</th><th>有效期</th><th>审核</th><th>文件</th></tr></thead>
             <tbody>
+<?php $__rnum = 0; ?>
               <?php
               $reportSubstances = [];
               foreach ($elements as $e) { $reportSubstances[$e['report_id']][] = $e['substance_name']; }
               ?>
               <?php foreach ($reports as $r): $subsList = array_unique($reportSubstances[$r['id']] ?? []); ?>
               <tr class="<?=strtotime($r['expiry_date'] ?? '') < time() && $r['expiry_date'] ? 'table-danger' : ''?>" data-report-id="<?=$r['id']?>" data-substances="<?=h(implode('||', $subsList))?>">
+                <td class="col-id"><?=h($r['id'] ?? '')?></td>
                 <td><?=h($r['report_no'])?></td>
+                <td><?=h($r['hm_name'] ?? $item['material_name'] ?? '-')?></td>
                 <td><span class="badge badge-soft-info"><?=h($r['report_type'])?></span></td>
-                <td><?=h($r['test_agency'])?></td>
-                <td><?=h($r['test_date'])?></td>
+                <td><?=h($r['test_agency'] ?? '')?></td>
+                <td><?=h($r['test_date'] ?? '')?></td>
                 <td>
-                  <?=h($r['expiry_date'] ?? '-')?>
+                  <?=h($r['expiry_date'] ?: '-')?>
                   <?php if ($r['expiry_date'] && strtotime($r['expiry_date']) < time()): ?>
                   <span class="status-tag danger">已过期</span>
                   <?php elseif ($r['expiry_date'] && strtotime($r['expiry_date']) < strtotime('+30 days')): ?>
@@ -160,9 +165,9 @@
                 <td><?=statusBadge($r['audit_status'])?></td>
                 <td>
                   <?php if ($r['file_path']): ?>
-                  <a href="<?=h(fileUrl($r['file_path']))?>" class="btn btn-sm btn-outline-info" target="_blank" title="下载文件"><i class="fas fa-download"></i></a>
+                  <a href="<?=h(fileUrl($r['file_path']))?>" class="btn-icon btn btn-sm btn-outline-info" target="_blank" title="下载文件"><i class="fas fa-download"></i></a>
                   <?php endif; ?>
-                  <a href="/report/elements?report_id=<?=$r['id']?>" class="btn btn-sm btn-outline-success" title="查看含量"><i class="fas fa-flask"></i></a>
+                  <a href="/report/elements?report_id=<?=$r['id']?>" class="btn-icon btn btn-sm btn-outline-success" title="查看含量"><i class="fas fa-flask"></i></a>
                 </td>
               </tr>
               <?php endforeach; ?>
@@ -182,15 +187,17 @@
       <div class="card-body p-0">
         <table class="table table-hover datatable">
           <thead>
-            <tr><th>报告编号</th><th>物质</th><th>CAS</th><th>含量</th><th>单位</th><th>限值</th><th>超标</th></tr>
+            <tr><th style="width:40px" class="col-id">ID</th><th>报告编号</th><th>物质</th><th>CAS</th><th>含量</th><th>单位</th><th>限值</th><th>超标</th></tr>
           </thead>
           <tbody>
+<?php $__rnum = 0; ?>
             <?php foreach ($elements as $e): ?>
             <tr class="<?=$e['is_over_limit'] ? 'table-danger' : ''?>" data-substance="<?=h($e['substance_name'])?>">
+              <td class="col-id"><?=h($e['id'] ?? '')?></td>
               <td><small><?=h($e['report_no'])?></small></td>
-              <td class="font-weight-bold"><?=h($e['substance_name'])?></td>
+              <td class="fw-bold"><?=h($e['substance_name'])?></td>
               <td><?=h($e['cas_no'])?></td>
-              <td class="font-weight-bold <?=$e['is_over_limit'] ? 'text-danger' : ''?>"><?=h($e['content_value'])?></td>
+              <td class="fw-bold <?=$e['is_over_limit'] ? 'text-danger' : ''?>"><?=h($e['content_value'])?></td>
               <td><?=h($e['unit'])?></td>
               <td><?=h($e['limit_value'] ?? '-')?> <?=h($e['limit_unit'] ?? '')?></td>
               <td><?=$e['is_over_limit'] ? '<span class="status-tag danger">超标</span>' : '<span class="status-tag success">正常</span>'?></td>
@@ -206,6 +213,7 @@
         <table class="table table-sm">
           <thead><tr><th>物质</th><th>超标次数</th><th>最高含量</th><th>限值</th></tr></thead>
           <tbody>
+<?php $__rnum = 0; ?>
             <?php
             $overLimit = array_filter($elements, fn($e) => $e['is_over_limit']);
             $grouped = [];
@@ -220,11 +228,11 @@
             <tr>
               <td><span class="badge badge-soft-danger"><?=h($name)?></span></td>
               <td><?=$g['count']?>次</td>
-              <td class="text-danger font-weight-bold"><?=$g['max']?></td>
+              <td class="text-danger fw-bold"><?=$g['max']?></td>
               <td><?=h($g['limit'])?></td>
             </tr>
             <?php endforeach; else: ?>
-            <tr><td colspan="4" class="text-center text-muted py-3">暂无超标数据</td></tr>
+            <tr><td colspan="4" class="text-muted py-3">暂无超标数据</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -236,18 +244,19 @@
       <div class="card-header">审核记录</div>
       <div class="card-body p-0">
         <table class="table table-hover">
-          <thead><tr><th>操作</th><th>意见</th><th>操作人</th><th>时间</th></tr></thead>
+          <thead><tr><th style="width:40px" class="col-id">ID</th><th>操作</th><th>意见</th><th>操作人</th><th>时间</th></tr></thead>
           <tbody>
+<?php $__rnum = 0; ?>
             <?php foreach ($auditLogs as $l): ?>
             <tr>
-              <td><span class="status-tag <?=$l['action'] === 'approve' ? 'success' : 'danger'?>"><?=h($l['action'])?></span></td>
+              <td class="col-id"><?=h($l['id'] ?? '')?></td><td><span class="status-tag <?=$l['action'] === 'approve' ? 'success' : 'danger'?>"><?=h($l['action'])?></span></td>
               <td><?=h($l['comment'] ?? '-')?></td>
               <td><?=h($l['operator_id'])?></td>
               <td><small><?=h($l['operated_at'])?></small></td>
             </tr>
             <?php endforeach; ?>
             <?php if (empty($auditLogs)): ?>
-            <tr><td colspan="4" class="text-center text-muted py-3">暂无审核记录</td></tr>
+            <tr><td colspan="5" class="text-muted py-3">暂无审核记录</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -259,16 +268,16 @@
 <div class="modal fade" id="reportModal">
   <div class="modal-dialog modal-lg">
     <form method="post" enctype="multipart/form-data" class="modal-content" action="/report"><?=csrf_field()?>
-      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
+      <div class="modal-header"><h5 class="modal-title">上传检测报告</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <input type="hidden" name="action" value="create">
         <input type="hidden" name="material_id" value="<?=$item['id']?>">
         <div class="row">
           <div class="col-md-6">
-            <div class="form-group"><label>报告编号</label><input type="text" name="report_no" class="form-control" id="reportNo"></div>
+            <div class="mb-3"><label>报告编号</label><input type="text" name="report_no" class="form-control" id="reportNo"></div>
           </div>
           <div class="col-md-6">
-            <div class="form-group"><label>报告类型</label>
+            <div class="mb-3"><label>报告类型</label>
               <select name="report_type" class="form-control">
                 <option value="RoHS">RoHS</option><option value="REACH">REACH</option>
                 <option value="HF">HF</option><option value="MSDS">MSDS</option>
@@ -279,23 +288,23 @@
         </div>
         <div class="row">
           <div class="col-md-4">
-            <div class="form-group"><label>检测机构</label><input type="text" name="test_agency" class="form-control" id="testAgency"></div>
+            <div class="mb-3"><label>检测机构</label><input type="text" name="test_agency" class="form-control" id="testAgency"></div>
           </div>
           <div class="col-md-4">
-            <div class="form-group"><label>检测日期</label><input type="date" name="test_date" class="form-control" id="testDate"></div>
+            <div class="mb-3"><label>检测日期</label><input type="date" name="test_date" class="form-control" id="testDate"></div>
           </div>
           <div class="col-md-4">
-            <div class="form-group"><label>有效期</label><input type="date" name="expiry_date" class="form-control" id="expiryDate"></div>
+            <div class="mb-3"><label>有效期</label><input type="date" name="expiry_date" class="form-control" id="expiryDate"></div>
           </div>
         </div>
-        <div class="form-group">
+        <div class="mb-3">
           <label>报告文件 <small class="text-muted">(PDF/Excel，自动识别报告内容)</small></label>
-          <input type="file" name="report_file" class="form-control-file" accept=".pdf,.xls,.xlsx" id="reportFile">
+          <input type="file" name="report_file" class="form-control" accept=".pdf,.xls,.xlsx" id="reportFile">
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary">上传</button>
-        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
       </div>
     </form>
   </div>
@@ -304,23 +313,25 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-flask text-success mr-1"></i> 选择均质材料</h5>
+        <h5 class="modal-title"><i class="fas fa-flask text-success ms-1"></i> 选择均质材料</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
       </div>
-      <form method="post" class="mb-0"><?=csrf_field()?>
+      <form method="post" class="mb-0" id="hmPickForm"><?=csrf_field()?>
         <div class="modal-body">
           <input type="hidden" name="action" value="composition_add">
           <input type="hidden" name="material_id" value="<?=$item['id']?>">
           <input type="hidden" name="hm_id" id="pickHmId" value="">
-          <input type="text" class="form-control mb-3" id="hmFilter" placeholder="搜索均质材料名称..." onkeyup="filterHM(this.value)">
+          <input type="text" class="form-control mb-3" id="hmFilter" placeholder="搜索均质材料名称..." oninput="filterHM(this.value)" onkeyup="filterHM(this.value)">
           <table class="table table-hover table-sm mb-0" id="hmPickerTable">
-            <thead><tr><th>名称</th><th>供应商</th><th class="w-80">操作</th></tr></thead>
+            <thead><tr><th style="width:40px" class="col-id">ID</th><th class="text-start">名称</th><th>供应商</th><th class="nowrap" style="width:12%">操作</th></tr></thead>
             <tbody>
+<?php $__rnum = 0; ?>
               <?php foreach ($hmMaterials as $hm): $spName = $hm['supplier_name'] ?: (QueryRegistry::supplierNameMap()[$hm['supplier_id']] ?? '第三方'); ?>
               <tr data-hmid="<?=$hm['id']?>" data-name="<?=h($hm['material_name'])?>" data-supplier="<?=h($spName)?>">
-                <td class="font-weight-bold"><?=h($hm['material_name'])?></td>
+                <td class="col-id"><?=h($hm['id'] ?? '')?></td>
+                <td class="text-start fw-bold"><?=h($hm['material_name'])?></td>
                 <td class="small"><?=h($spName)?></td>
-                <td><button type="submit" class="btn btn-sm btn-success" onclick="document.getElementById('pickHmId').value=<?=$hm['id']?>">选择</button></td>
+                <td><button type="button" class="btn btn-sm btn-success" onclick="document.getElementById('pickHmId').value=<?=$hm['id']?>;document.getElementById('hmPickForm').submit()">选择</button></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -336,7 +347,7 @@
 </div>
 <script>
 document.getElementById("hmFilter").addEventListener("keydown", function(e) {
-  if (e.key === "Enter") { e.preventDefault(); return false; }
+  if (e.key ==="Enter") { e.preventDefault(); return false; }
 });
 
 var hmPageSize = 10;
@@ -348,7 +359,7 @@ function filterHM(val) {
   hmFilteredRows = [];
   rows.forEach(function(r) {
     var match = r.getAttribute("data-name").toLowerCase().indexOf(val.toLowerCase()) > -1;
-    r.style.display = match ? "" : "none";
+    r.style.display = match ?"" :"none";
     if (match) hmFilteredRows.push(r);
   });
   hmCurrentPage = 1;
@@ -362,9 +373,9 @@ function renderHmPage() {
   var start = (hmCurrentPage - 1) * hmPageSize;
   var end = start + hmPageSize;
   hmFilteredRows.forEach(function(r, i) {
-    r.style.display = (i >= start && i < end) ? "" : "none";
+    r.style.display = (i >= start && i < end) ?"" :"none";
   });
-  document.getElementById("hmPageInfo").textContent = "共" + total + "条，第" + hmCurrentPage + "/" + totalPages + "页";
+  document.getElementById("hmPageInfo").textContent ="共" + total +"条，第" + hmCurrentPage +"/" + totalPages +"页";
   var nav = document.getElementById("hmPageNav");
   var h = '';
   h += '<li class="page-item ' + (hmCurrentPage <= 1 ? 'disabled' : '') + '"><a class="page-link" href="#" onclick="hmGoPage(' + (hmCurrentPage - 1) + ');return false;">上一页</a></li>';
@@ -391,9 +402,9 @@ document.getElementById("hmPickerModal").addEventListener("show.bs.modal", funct
 
 var _hmCache = {};
 var _activeHmId = 0;
-var _origReportsHtml = "";
-var _origElementsHtml = "";
-var _origSummaryHtml = "";
+var _origReportsHtml ="";
+var _origElementsHtml ="";
+var _origSummaryHtml ="";
 var _csrf = '<?=csrf_token()?>';
 
 function calcTotal() {
@@ -417,9 +428,9 @@ function calcTotal() {
   var st = document.getElementById('totalStatus');
   if (st) {
     if (total >= 99.99 && total <= 100.01) {
-      st.innerHTML = '<span class="badge badge-success">正确</span>';
+      st.innerHTML = '<span class="badge bg-success text-white">正确</span>';
     } else {
-      st.innerHTML = '<span class="badge badge-danger">需100%</span>';
+      st.innerHTML = '<span class="badge bg-danger text-white">需100%</span>';
     }
   }
 }
@@ -436,7 +447,7 @@ function deleteComposition(id, btn) {
       calcTotal();
     }
   };
-  xhr.send('action=composition_delete&_csrf_token=' + encodeURIComponent(window._csrf || '') + '&id=' + id);
+  xhr.send('action=composition_delete&_csrf_token=' + encodeURIComponent(getCsrfToken() || '') + '&id=' + id);
 }
 
 
@@ -479,7 +490,7 @@ function toggleHmDetail(hmId, linkEl) {
 function loadHmData(hmId) {
   if (_hmCache[hmId]) { renderHmData(hmId, _hmCache[hmId]); return; }
   var xhr = new XMLHttpRequest();
-  xhr.open("GET", "/material?action=hm_data&hm_id=" + hmId, true);
+  xhr.open("GET","/material?action=hm_data&hm_id=" + hmId, true);
   xhr.onload = function() {
     if (xhr.status === 200) {
       var data = JSON.parse(xhr.responseText);
@@ -503,22 +514,22 @@ function renderHmReports(reports) {
     var r = reports[i];
     var expired = r.expiry_date && new Date(r.expiry_date) < new Date();
     var expiring = r.expiry_date && !expired && new Date(r.expiry_date) < new Date(Date.now() + 30*86400000);
-    var rowClass = expired ? "table-danger" : "";
-    html += "<tr class=\"" + rowClass + "\">";
-    html += "<td>" + escHtml(r.report_no) + "</td>";
-    html += "<td><span class=\"badge badge-soft-info\">" + escHtml(r.report_type) + "</span></td>";
-    html += "<td>" + escHtml(r.test_agency || "-") + "</td>";
-    html += "<td>" + escHtml(r.test_date || "-") + "</td>";
-    html += "<td>" + escHtml(r.expiry_date || "-");
-    if (expired) html += " <span class=\"status-tag danger\">已过期</span>";
-    else if (expiring) html += " <span class=\"status-tag warning\">即将到期</span>";
-    html += "</td>";
-    html += "<td>v" + r.version + "</td>";
-    html += "<td>";
-    if (r.file_path) html += "<a href=\"/" + r.file_path.replace(/\\/g, "/") + "\" class=\"btn btn-sm btn-outline-info\" target=\"_blank\" title=\"下载\"><i class=\"fas fa-download\"></i></a>";
-    html += "</td></tr>";
+    var rowClass = expired ?"table-danger" :"";
+    html +="<tr class=\"" + rowClass +"\">";
+    html +="<td>" + escHtml(r.report_no) +"</td>";
+    html +="<td><span class=\"badge badge-soft-info\">" + escHtml(r.report_type) +"</span></td>";
+    html +="<td>" + escHtml(r.test_agency ||"-") +"</td>";
+    html +="<td>" + escHtml(r.test_date ||"-") +"</td>";
+    html +="<td>" + escHtml(r.expiry_date ||"-");
+    if (expired) html +=" <span class=\"status-tag danger\">已过期</span>";
+    else if (expiring) html +=" <span class=\"status-tag warning\">即将到期</span>";
+    html +="</td>";
+    html +="<td>v" + r.version +"</td>";
+    html +="<td>";
+    if (r.file_path) html +="<a href=\"/" + r.file_path.replace(/\\/g,"/") +"\" class=\"btn btn-sm btn-outline-info\" target=\"_blank\" title=\"下载\"><i class=\"fas fa-download\"></i></a>";
+    html +="</td></tr>";
   }
-  html += "</tbody></table>";
+  html +="</tbody></table>";
   var body = document.querySelector("#tabReports .card-body");
   if (body) body.innerHTML = html;
   destroyDatatable("#tabReports table");
@@ -528,9 +539,9 @@ function renderHmReports(reports) {
 function renderHmAnalysis(analysis, hm) {
   if (!analysis.length) {
     var body = document.querySelector("#tabElements .card-body");
-    if (body) body.innerHTML = "<div class=\"text-center text-muted py-4\">暂无检测数据</div>";
+    if (body) body.innerHTML ="<div class=\"text-center text-muted py-4\">暂无检测数据</div>";
     var summary = document.querySelector("#tabElements .card.mt-3");
-    if (summary) summary.style.display = "none";
+    if (summary) summary.style.display ="none";
     return;
   }
   var html = "<table class=\"table table-hover datatable\"><thead><tr><th>物质</th><th>CAS</th><th>检测值</th><th>限值</th><th>结果</th><th>法规</th></tr></thead><tbody>";
@@ -538,39 +549,39 @@ function renderHmAnalysis(analysis, hm) {
   for (var i = 0; i < analysis.length; i++) {
     var a = analysis[i];
     var over = parseFloat(a.detected_value) > parseFloat(a.limit_value || 0);
-    var rowClass = over ? "table-danger" : "";
-    html += "<tr class=\"" + rowClass + "\">";
-    html += "<td class=\"font-weight-bold\">" + escHtml(a.substance_name || "-") + "</td>";
-    html += "<td>" + escHtml(a.cas_no || "-") + "</td>";
-    html += "<td class=\"" + (over ? "text-danger font-weight-bold" : "") + "\">" + escHtml(a.detected_value || "-") + "</td>";
-    html += "<td>" + escHtml(a.limit_value || "-") + "</td>";
-    html += "<td>" + (over ? "<span class=\"status-tag danger\">超标</span>" : "<span class=\"status-tag success\">正常</span>") + "</td>";
-    html += "<td><small>" + escHtml(a.regulation_name || a.regulation_no || "-") + "</small></td>";
-    html += "</tr>";
+    var rowClass = over ?"table-danger" :"";
+    html +="<tr class=\"" + rowClass +"\">";
+    html +="<td class=\"fw-bold\">" + escHtml(a.substance_name ||"-") +"</td>";
+    html +="<td>" + escHtml(a.cas_no ||"-") +"</td>";
+    html +="<td class=\"" + (over ?"text-danger fw-bold" :"") +"\">" + escHtml(a.detected_value ||"-") +"</td>";
+    html +="<td>" + escHtml(a.limit_value ||"-") +"</td>";
+    html +="<td>" + (over ?"<span class=\"status-tag danger\">超标</span>" :"<span class=\"status-tag success\">正常</span>") +"</td>";
+    html +="<td><small>" + escHtml(a.regulation_name || a.regulation_no ||"-") +"</small></td>";
+    html +="</tr>";
     if (over) {
-      var k = a.substance_name || "-";
+      var k = a.substance_name ||"-";
       if (!overMap[k]) overMap[k] = {count:0, max:0, limit:a.limit_value};
       overMap[k].count++;
       overMap[k].max = Math.max(overMap[k].max, parseFloat(a.detected_value || 0));
     }
   }
-  html += "</tbody></table>";
+  html +="</tbody></table>";
   var body = document.querySelector("#tabElements .card-body");
   if (body) body.innerHTML = html;
 
   var keys = Object.keys(overMap);
-  var summaryHtml = "<div class=\"card-header\">超标物质汇总</div><div class=\"card-body p-0\"><table class=\"table table-sm\"><thead><tr><th>物质</th><th>超标次数</th><th>最高含量</th><th>限值</th></tr></thead><tbody>";
+  var summaryHtml ="<div class=\"card-header\">超标物质汇总</div><div class=\"card-body p-0\"><table class=\"table table-sm\"><thead><tr><th>物质</th><th>超标次数</th><th>最高含量</th><th>限值</th></tr></thead><tbody>";
   if (keys.length) {
     for (var k in overMap) {
       var g = overMap[k];
-      summaryHtml += "<tr><td><span class=\"badge badge-soft-danger\">" + escHtml(k) + "</span></td><td>" + g.count + "次</td><td class=\"text-danger font-weight-bold\">" + g.max + "</td><td>" + escHtml(g.limit) + "</td></tr>";
+      summaryHtml +="<tr><td><span class=\"badge badge-soft-danger\">" + escHtml(k) +"</span></td><td>" + g.count +"次</td><td class=\"text-danger fw-bold\">" + g.max +"</td><td>" + escHtml(g.limit) +"</td></tr>";
     }
   } else {
-    summaryHtml += "<tr><td colspan=\"4\" class=\"text-center text-muted py-3\">暂无超标数据</td></tr>";
+    summaryHtml +="<tr><td colspan=\"4\" class=\"text-muted py-3\">暂无超标数据</td></tr>";
   }
-  summaryHtml += "</tbody></table></div>";
+  summaryHtml +="</tbody></table></div>";
   var summaryCard = document.querySelector("#tabElements .card.mt-3");
-  if (summaryCard) { summaryCard.innerHTML = summaryHtml; summaryCard.style.display = ""; }
+  if (summaryCard) { summaryCard.innerHTML = summaryHtml; summaryCard.style.display =""; }
 
   destroyDatatable("#tabElements table.datatable");
   initDatatable("#tabElements table.datatable");
@@ -590,7 +601,7 @@ function restoreMaterialData() {
 }
 
 function escHtml(s) {
-  if (!s) return "";
+  if (!s) return"";
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 

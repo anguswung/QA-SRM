@@ -88,11 +88,32 @@ class MaterialController extends Controller {
         // Aggregate HM reports & analysis counts from composition substances
         $hmIds = array_column($composition, 'substance_id');
         $hmIds = array_filter(array_map('intval', $hmIds));
+        if ($hmIds) {
+            $hmList = implode(',', $hmIds);
+            // 汇总各均质材料的报告，作为物料检测报告清单（默认展示）
+            $hmReports = $db->query("SELECT hr.*, hm.material_name AS hm_name FROM hm_report hr JOIN homogeneous_material hm ON hm.id=hr.hm_id WHERE hr.hm_id IN ($hmList) ORDER BY hr.created_at DESC");
+            foreach ($hmReports as &$hr) {
+                $hr['audit_status'] = $hr['status'];
+                $hr['hm_id'] = (int)$hr['hm_id'];
+            }
+            unset($hr);
+            $reports = array_merge($reports, $hmReports);
+            usort($reports, fn($a, $b) => strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? '')));
+            // 合并各均质材料当前报告录入的元素测试数据，供“检测结果”tab 展示
+            $hmElementRows = $db->query("SELECT hre.id, hre.substance_name, hre.cas_no, hre.content_value, hre.unit, hre.limit_value, hre.limit_unit, hr.report_no
+                FROM hm_report_element hre JOIN hm_report hr ON hre.hm_report_id=hr.id
+                WHERE hr.hm_id IN ($hmList) AND hr.status='current' ORDER BY hre.id");
+            foreach ($hmElementRows as &$he) {
+                $he['report_id'] = null;
+                $he['is_over_limit'] = ($he['content_value'] !== null && $he['limit_value'] !== null && (float)$he['limit_value'] > 0 && (float)$he['content_value'] > (float)$he['limit_value']) ? 1 : 0;
+            }
+            unset($he);
+            $elements = array_merge($elements, $hmElementRows);
+        }
         $totalReports = count($reports);
         $totalElements = count($elements);
         if ($hmIds) {
             $hmList = implode(',', $hmIds);
-            $totalReports += (int)$db->single("SELECT COUNT(*) FROM hm_report WHERE hm_id IN ($hmList)");
             $totalElements += (int)$db->single("SELECT COUNT(*) FROM analysis_record WHERE hm_id IN ($hmList)");
         }
         $hmMaterials = $db->query("SELECT id, material_name, supplier_id, supplier_name, weight_mg FROM homogeneous_material ORDER BY material_name");

@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h5><i class="fas fa-balance-scale"></i> 合规分析看板</h5>
+  <h4><i class="fas fa-balance-scale"></i> 合规分析看板</h4>
   <div>
     <a href="/compliance/analyze" class="btn btn-sm btn-primary"><i class="fas fa-flask"></i> 合规评估</a>
     <a href="/compliance/matrix" class="btn btn-sm btn-outline-info"><i class="fas fa-th"></i> 合规矩阵</a>
@@ -19,16 +19,17 @@
       <div class="card-header"><i class="fas fa-trophy"></i> 超标物质 Top 10</div>
       <div class="card-body p-0">
         <table class="table table-sm">
-          <thead><tr><th>物质</th><th>超标次数</th></tr></thead>
+          <thead><tr><th style="width:60px">#</th><th>物质</th><th style="width:20%">超标次数</th></tr></thead>
           <tbody>
+<?php $__rnum = 0; ?>
             <?php foreach ($topViolations as $v): ?>
             <tr>
-              <td><span class="badge badge-soft-danger"><?=h($v['substance_name'])?></span></td>
+              <td class="row-num"><?=++$__rnum?></td><td><span class="badge badge-soft-danger"><?=h($v['substance_name'])?></span></td>
               <td><span class="badge badge-soft-danger"><?=h($v['violation_count'])?></span></td>
             </tr>
             <?php endforeach; ?>
             <?php if (empty($topViolations)): ?>
-            <tr><td colspan="2" class="text-center text-muted py-3">暂无超标数据</td></tr>
+            <tr><td colspan="2" class="text-muted py-3">暂无超标数据</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -40,12 +41,13 @@
   <div class="card-header"><i class="fas fa-building"></i> 供应商合规率排行</div>
   <div class="card-body p-0">
     <table class="table table-hover">
-      <thead><tr><th>编码</th><th>名称</th><th>评级</th><th>物料数</th><th>合规数</th><th>不合规数</th></tr></thead>
+      <thead><tr><th style="width:40px" class="col-id">ID</th><th style="width:10%">编码</th><th class="text-start">名称</th><th style="width:8%">评级</th><th style="width:9%">物料数</th><th style="width:9%">合规数</th><th style="width:10%">不合规数</th></tr></thead>
       <tbody>
+<?php $__rnum = 0; ?>
         <?php foreach ($supplierCompliance as $s): ?>
         <tr>
-          <td><?=h($s['code'])?></td>
-          <td><?=h($s['name'])?></td>
+          <td class="col-id"><?=h($s['id'] ?? '')?></td><td><?=h($s['code'])?></td>
+          <td class="text-start"><?=h($s['name'])?></td>
           <td><?=statusBadge($s['level'] . '_')?></td>
           <td><?=(int)$s['material_count']?></td>
           <td><span class="text-success"><?=(int)$s['compliant_count']?></span></td>

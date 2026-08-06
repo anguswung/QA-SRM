@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h5><i class="fas fa-file-alt"></i> 检测报告 - <?=h($item['material_name'])?></h5>
+  <h4><i class="fas fa-file-alt"></i> 检测报告 - <?=h($item['material_name'])?></h4>
   <div>
     <a href="/homogeneous" class="btn btn-sm btn-outline-secondary"><i class="fas fa-list"></i> 返回列表</a>
   </div>
@@ -7,7 +7,14 @@
 
 <?php if (empty($reports)): ?>
 <div class="card">
-  <div class="card-body text-center text-muted py-4">暂无报告，点击上传报告添加</div>
+  <div class="card-body text-center text-muted py-4">
+    暂无报告，点击上传报告添加
+    <?php if (!empty($noUploadData)): ?>
+    <div class="mt-3">
+      <a href="/homogeneous?action=edit&id=<?=h($item['id'])?>&step=3" class="btn btn-primary"><i class="fas fa-upload"></i> 上传资料</a>
+    </div>
+    <?php endif; ?>
+  </div>
 </div>
 <?php else: ?>
 <div class="card">
@@ -17,7 +24,7 @@
       <li class="nav-item">
         <a class="nav-link <?=($activeReportId ?? 0) == $r['id'] ? 'active' : ($i === 0 && !$activeReportId ? 'active' : '')?>" id="tab-<?=$r['id']?>" data-bs-toggle="tab" href="#report-<?=$r['id']?>" role="tab">
           <?=h($r['report_type'] ?: '报告')?> v<?=(int)($r['version'] ?? 1)?>
-          <?php if (($r['status'] ?? 'current') === 'superseded'): ?><span class="badge badge-secondary">旧版</span><?php endif; ?>
+          <?php if (($r['status'] ?? 'current') === 'superseded'): ?><span class="badge bg-secondary text-white">旧版</span><?php endif; ?>
         </a>
       </li>
       <?php endforeach; ?>
@@ -88,7 +95,8 @@
               <div class="card-header">报告信息</div>
               <div class="card-body p-0">
                 <table class="table table-sm table-bordered mb-0">
-                  <colgroup><col class="w-100"><col></colgroup>
+                  <colgroup><col class="w-100px"><col></colgroup>
+                  
                 <tr><th>报告编号</th><td><?=h($r['report_no'] ?: '-')?></td></tr>
                 <tr><th>报告版本</th><td>v<?=(int)($r['version'] ?? 1)?></td></tr>
                 <?php if ($r['report_type'] !== 'MSDS'): ?>
@@ -116,27 +124,29 @@
             <div class="card-body p-0">
               <?php if (in_array($r['report_type'], ['RoHS', 'REACH', 'HF'])): ?>
               <table class="table table-hover table-sm mb-0">
-                <thead><tr><th class="w-60 nowrap">序号</th><th>物质名称</th><th>CAS</th><th>检测值(mg/kg)</th><th>限值(mg/kg)</th></tr></thead>
+                <thead><tr><th style="width:40px" class="col-id">ID</th><th>物质名称</th><th>CAS</th><th>检测值(mg/kg)</th><th>限值(mg/kg)</th></tr></thead>
                 <tbody>
+
                   <?php if ($elems): ?>
                   <?php foreach ($elems as $j => $e): ?>
-                  <tr><td class="text-center"><?=$j+1?></td><td><?=h($e['substance_name'])?></td><td><?=h($e['cas_no'] ?: '-')?></td><td class="text-center"><?=h($e['content_value'] ?? '-')?></td><td class="text-center"><?=h($e['limit_value'])?></td></tr>
+                  <tr><td class="col-id"><?=h($e['id'] ?? '')?></td><td><?=h($e['substance_name'])?></td><td><?=h($e['cas_no'] ?: '-')?></td><td class=""><?=h($e['content_value'] ?? '-')?></td><td class=""><?=h($e['limit_value'])?></td></tr>
                   <?php endforeach; ?>
                   <?php else: ?>
-                  <tr><td colspan="5" class="text-center text-muted">暂无测试元素数据</td></tr>
+                  <tr><td colspan="5" class="text-muted">暂无测试元素数据</td></tr>
                   <?php endif; ?>
                 </tbody>
               </table>
               <?php else: ?>
               <table class="table table-hover table-sm mb-0">
-                <thead><tr><th class="w-60 nowrap">序号</th><th>物质中文</th><th>物质名称</th><th>CAS</th><th>含量(%)</th></tr></thead>
+                <thead><tr><th style="width:40px" class="col-id">ID</th><th>物质中文</th><th>物质名称</th><th>CAS</th><th>含量(%)</th></tr></thead>
                 <tbody>
+
                   <?php if ($composition): ?>
                   <?php foreach ($composition as $j => $c): ?>
-                  <tr><td class="text-center"><?=$j+1?></td><td><?=h($c['name_cn'] ?: '-')?></td><td><?=h($c['substance_name'])?></td><td><?=h($c['cas_no'] ?: '-')?></td><td><?=h($c['percentage'])?>%</td></tr>
+                  <tr><td class="col-id"><?=h($c['id'] ?? '')?></td><td><?=h($c['name_cn'] ?: '-')?></td><td><?=h($c['substance_name'])?></td><td><?=h($c['cas_no'] ?: '-')?></td><td><?=h($c['percentage'])?>%</td></tr>
                   <?php endforeach; ?>
                   <?php else: ?>
-                  <tr><td colspan="5" class="text-center text-muted">暂无成分数据</td></tr>
+                  <tr><td colspan="5" class="text-muted">暂无成分数据</td></tr>
                   <?php endif; ?>
                 </tbody>
               </table>
@@ -151,7 +161,7 @@
       <div class="card mt-3">
         <div class="card-header">测试数据 — 手工录入</div>
         <div class="card-body p-0">
-          <form method="post" action="/homogeneous?action=reports&id=<?=$item['id']?><?=csrf_field()?>">
+          <form method="post" action="/homogeneous?action=reports&id=<?=$item['id']?>"><?=csrf_field()?>
             <input type="hidden" name="action" value="save_elements">
             <input type="hidden" name="hm_report_id" value="<?=$r['id']?>">
             <input type="hidden" name="hm_id" value="<?=$item['id']?>">
@@ -162,11 +172,14 @@
                     <th style="width:70px"></th>
                     <?php foreach ($elems as $j => $e):
                       $name = $e['substance_name'] ?? '';
+                      // 表头两行显示：从第一个括号（中英文）处裁断
+                      $nm1 = $name; $nm2 = '';
+                      if (preg_match('/^(.+?)([（(].*)$/u', $name, $mm)) { $nm1 = $mm[1]; $nm2 = $mm[2]; }
                       $len = mb_strlen($name, 'UTF-8');
                       $w = max(65, min(120, $len * 8));
                     ?>
                     <th style="width:<?=$w?>px;text-align:center;vertical-align:top;line-height:1.3">
-                      <?=h($name)?>
+                      <?=h($nm1)?><?php if ($nm2): ?><br><?=h($nm2)?><?php endif; ?>
                       <input type="hidden" name="substance_name[<?=$j?>]" value="<?=h($name)?>">
                       <input type="hidden" name="cas_no[<?=$j?>]" value="<?=h($e['cas_no'] ?? '')?>">
                       <input type="hidden" name="limit_value[<?=$j?>]" value="<?=h($e['limit_value'])?>">
@@ -177,6 +190,7 @@
                   </tr>
                 </thead>
                 <tbody>
+
                   <tr>
                     <th class="text-muted va-middle" style="font-size:12px">检测值</th>
                     <?php foreach ($elems as $j => $e): ?>
@@ -186,13 +200,13 @@
                   <tr>
                     <th class="text-muted va-middle" style="font-size:12px">限值</th>
                     <?php foreach ($elems as $j => $e): ?>
-                    <td class="text-center text-muted" style="font-size:11px;vertical-align:middle"><?=h($e['limit_value'])?></td>
+                    <td class="text-muted" style="font-size:11px;vertical-align:middle"><?=h($e['limit_value'])?></td>
                     <?php endforeach; ?>
                   </tr>
                   <tr>
                     <th class="text-muted va-middle" style="font-size:12px">单位</th>
                     <?php foreach ($elems as $j => $e): ?>
-                    <td class="text-center text-muted va-middle" style="font-size:11px">mg/kg</td>
+                    <td class="text-muted va-middle" style="font-size:11px">mg/kg</td>
                     <?php endforeach; ?>
                   </tr>
                 </tbody>
@@ -201,7 +215,7 @@
             <div class="p-3 d-flex justify-content-between border-top">
               <div>
                 <?php if (can('homogeneous.edit')): ?><button type="button" class="btn btn-sm btn-outline-primary" onclick="addReachCol(<?=$r['id']?>)"><i class="fas fa-plus"></i> 添加元素</button><?php endif; ?>
-                <small class="text-muted ml-2">检测值可输入数字或ND（未检出）</small>
+                <small class="text-muted me-2">检测值可输入数字或ND（未检出）</small>
               </div>
               <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save"></i> 保存</button>
             </div>

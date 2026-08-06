@@ -79,7 +79,6 @@ $(function() {
                 emptyTable: '没有数据'
             },
             pageLength: pl,
-            searching: false,
             lengthChange: false,
             lengthMenu: [
                 [10, 20, 30, 40, 50, 100],
@@ -87,10 +86,14 @@ $(function() {
             ],
             stateSave: true,
             stateDuration: -1,
+            stateSaveParams: function(settings, data) {
+                // 不持久化排序状态：避免旧排序干扰，保证点击表头第一次即生效
+                data.order = [];
+            },
             stateLoadParams: function(settings, data) {
                 data.start = 0;
                 data.length = settings._iDisplayLength;
-                if (data.columns && data.columns.length !== settings.aoColumns.length) {
+                if (data.columns && settings.aoColumns && data.columns.length !== settings.aoColumns.length) {
                     data.columns = [];
                     data.order = [];
                 }
@@ -116,6 +119,12 @@ $(function() {
             if ($.fn.DataTable && !$.fn.DataTable.isDataTable(this)) {
                 var opts = $.extend({}, $(this).data('options'));
                 opts.pageLength = pl;
+                // 首列若为多选框（th 内含 checkbox input）则禁止排序，避免勾选/点击触发排序
+                var $firstTh = $(this).find('thead th:first');
+                if ($firstTh.find('input[type=checkbox]').length) {
+                    opts.columnDefs = opts.columnDefs || [];
+                    opts.columnDefs.push({ targets: 0, orderable: false });
+                }
                 $(this).DataTable(opts);
             }
         });
@@ -140,25 +149,127 @@ $(function() {
             }
         });
     });
-    $(document).on('click', '[data-confirm]', function(e) {
-        if (!confirm($(this).data('confirm') || '确定执行此操作？')) e.preventDefault();
-    });
     $('.alert-auto').delay(3000).fadeOut(500);
-    $(document).on('click', '.tree-toggle', function() {
-        $(this).toggleClass('expanded');
-        $(this).closest('.tree-node').find('.tree-children:first').toggleClass('open');
+
+    // ===== 即时搜索：输入即客户端过滤 DataTables，无需刷新页面 =====
+    $('input[name="search"]').each(function() {
+        var $input = $(this);
+        var $form = $input.closest('form');
+        var timer = null;
+        function getTable() {
+            var $scope = $input.closest('.container-fluid');
+            if (!$scope.length) $scope = $(document.body);
+            var $t = $scope.find('table.datatable').filter(':visible').first();
+            if (!$t.length) $t = $scope.find('table.datatable').first();
+            return $t;
+        }
+        function apply() {
+            var $t = getTable();
+            if (!$t.length || !$.fn.DataTable || !$.fn.DataTable.isDataTable($t[0])) return;
+            $t.DataTable().search($input.val().trim()).draw();
+        }
+        // 中文输入法组合期间不实时过滤，避免拼音片段干扰
+        $input.on('compositionstart', function() { $(this).data('composing', true); });
+        $input.on('compositionend', function() { $(this).data('composing', false); apply(); });
+        $input.on('input', function() {
+            if ($(this).data('composing')) return;
+            clearTimeout(timer);
+            timer = setTimeout(apply, 250);
+        });
+        // 纯搜索表单（无筛选下拉/隐藏项）拦截提交，回车/按钮不再整页刷新
+        $form.on('submit', function(e) {
+            if (!$form.find('select, input[type="hidden"]').length) {
+                e.preventDefault();
+                clearTimeout(timer);
+                apply();
+            }
+        });
     });
-    $(document).on('change', '.auto-submit', function() { $(this).closest('form').submit(); });
-    $(document).on('click', '.tab-item', function() {
-        $(this).closest('.tab-bar').find('.tab-item').removeClass('active');
-        $(this).addClass('active');
-        var target = $(this).data('target');
-        if (target) $(target).show().siblings('.tab-pane').hide();
+});
+
+// ===== 侧边栏二级菜单（accordion）与整体折叠（独立 ready，页面其他 JS 异常不影响侧边栏） =====
+$(function() {
+    var $body = $('body');
+    var $sidebar = $('.navbar-vertical');
+
+    function sidebarCollapsed() { return $body.hasClass('sidebar-collapsed'); }
+
+    function resetSidebarMenu($menu) {
+        $menu.css({ position: '', left: '', top: '', margin: '', zIndex: '' });
+    }
+
+    function closeAllSidebarSubs() {
+        $sidebar.find('.dropdown-menu.show').removeClass('show').each(function() { resetSidebarMenu($(this)); });
+        $sidebar.find('.nav-item.dropdown').find('[aria-expanded]').attr('aria-expanded', 'false');
+    }
+
+    function openSidebarSub($li) {
+        var $menu = $li.find('.dropdown-menu').first();
+        $menu.addClass('show');
+        $li.find('[aria-expanded]').attr('aria-expanded', 'true');
+        if (sidebarCollapsed()) {
+            var rect = $li[0].getBoundingClientRect();
+            $menu.css({
+                position: 'fixed',
+                left: rect.right + 'px',
+                top: rect.top + 'px',
+                margin: 0,
+                zIndex: 1045
+            });
+        } else {
+            resetSidebarMenu($menu);
+        }
+    }
+
+    // 点击切换：展开态 = 手风琴；折叠态 = 点击总是打开飞出菜单（hover/移出负责关闭）
+    $(document).on('click', '.navbar-vertical .dropdown-toggle[data-bs-toggle="sidebar-sub"]', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = $(this).closest('.nav-item.dropdown');
+        var wasOpen = $li.find('.dropdown-menu').first().hasClass('show');
+        if (sidebarCollapsed()) {
+            closeAllSidebarSubs();
+            openSidebarSub($li);
+        } else {
+            closeAllSidebarSubs();
+            if (!wasOpen) openSidebarSub($li);
+        }
     });
-    if ($.fn.select2) {
-        $('.select2').each(function() {
-            if ($(this).data('select2')) return;
-            $(this).select2({ width: '100%', placeholder: $(this).attr('placeholder') || '请选择' });
+
+    // 折叠态：hover 打开飞出菜单，移开关闭（避免固定的飞出面板遮挡其他一级菜单图标）
+    // 加 hover-intent 延迟：鼠标从图标移到飞出菜单要跨过间隙，直接 mouseleave 关闭会来不及到达
+    var closeTimer = null;
+    if ($sidebar.length) {
+        $sidebar.on('mouseenter', '.nav-item.dropdown', function() {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            if (!sidebarCollapsed()) return;
+            closeAllSidebarSubs();
+            openSidebarSub($(this));
+        });
+        $sidebar.on('mouseleave', '.nav-item.dropdown', function() {
+            if (!sidebarCollapsed()) return;
+            var $menu = $(this).find('.dropdown-menu').first();
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            closeTimer = setTimeout(function() { $menu.removeClass('show'); }, 250);
+        });
+        // 进入飞出菜单即取消关闭，鼠标可顺畅从图标移动到菜单
+        $sidebar.on('mouseenter', '.dropdown-menu', function() {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+        });
+        $sidebar.on('mouseleave', '.dropdown-menu', function() {
+            if (!sidebarCollapsed()) return;
+            var $menu = $(this);
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            closeTimer = setTimeout(function() { $menu.removeClass('show'); }, 250);
         });
     }
+
+    $(document).on('click', '.sidebar-collapse-toggle', function() {
+        $body.toggleClass('sidebar-collapsed');
+        closeAllSidebarSubs();
+        try { localStorage.setItem('sidebar-collapsed', sidebarCollapsed() ? '1' : '0'); } catch (e) {}
+    });
+    try { if (localStorage.getItem('sidebar-collapsed') === '1') $body.addClass('sidebar-collapsed'); } catch (e) {}
+    if (sidebarCollapsed()) closeAllSidebarSubs();
+    $(window).on('resize', closeAllSidebarSubs);
 });

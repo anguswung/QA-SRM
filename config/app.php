@@ -25,7 +25,6 @@ function env($key, $default = null) {
 
 return [
     'version'   => env('APP_VERSION', '2.0.0'),
-    'debug'     => filter_var(env('APP_DEBUG', 'true'), FILTER_VALIDATE_BOOLEAN),
     'timezone'  => env('APP_TIMEZONE', 'Asia/Shanghai'),
     'database'  => [
         'driver'   => env('DB_DRIVER', 'sqlite'),
@@ -50,30 +49,11 @@ return [
     ],
     'upload' => [
         'path'     => dirname(__DIR__) . '/' . env('UPLOAD_PATH', './uploads'),
-        'max_size' => (int)env('UPLOAD_MAX_SIZE', 52428800),
-        'allowed'  => explode(',', env('UPLOAD_ALLOWED', 'pdf,doc,docx,xls,xlsx,jpg,jpeg,png,zip')),
     ],
     'poppler' => [
         'pdftotext' => dirname(__DIR__) . '/' . env('POPPLER_PDFTEXT', './poppler/poppler-26.02.0/Library/bin/pdftotext.exe'),
-        'pdfinfo'   => dirname(__DIR__) . '/' . env('POPPLER_PDFINFO', './poppler/poppler-26.02.0/Library/bin/pdfinfo.exe'),
         'pdftoppm'  => dirname(__DIR__) . '/' . env('POPPLER_PDFPPM', './poppler/poppler-26.02.0/Library/bin/pdftoppm.exe'),
         'tesseract' => dirname(__DIR__) . '/' . env('TESSERACT_PATH', './tesseract/tesseract.exe'),
-    ],
-    'ocr' => [
-        'api_key' => env('OCR_API_KEY', ''),
-        'api_url' => env('OCR_API_URL', 'https://api.ocr.space/parse/image'),
-    ],
-    'smtp' => [
-        'host'       => env('SMTP_HOST', ''),
-        'port'       => (int)env('SMTP_PORT', 587),
-        'username'   => env('SMTP_USERNAME', ''),
-        'password'   => env('SMTP_PASSWORD', ''),
-        'from'       => env('SMTP_FROM', ''),
-        'encryption' => env('SMTP_ENCRYPTION', 'tls'),
-    ],
-    'rate_limit' => [
-        'login' => (int)env('RATE_LIMIT_LOGIN', 5),
-        'api'   => (int)env('RATE_LIMIT_API', 60),
     ],
     'warning' => [
         'yellow' => (int)env('WARNING_YELLOW', 30),
