@@ -1,8 +1,7 @@
 <div class="page-header">
   <h4><i class="fas fa-flask"></i> 合规评估</h4>
   <div>
-    <a href="/compliance" class="btn btn-sm btn-outline-secondary">分析看板</a>
-    <a href="/compliance/matrix" class="btn btn-sm btn-outline-info">合规矩阵</a>
+    <a href="/compliance" class="btn btn-success">分析看板</a>
   </div>
 </div>
 <div class="row">

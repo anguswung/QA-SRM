@@ -39,10 +39,49 @@ class RegulationController extends Controller {
         if ($search) { $where[] = "(r.name LIKE ? OR r.regulation_no LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if ($category) { $where[] = "r.category=?"; $params[] = $category; }
         if ($status) { $where[] = "r.status=?"; $params[] = $status; }
-        $regs = $db->query("SELECT r.*, (SELECT COUNT(*) FROM regulation_content WHERE regulation_id=r.id) AS article_count FROM regulation_lib r" . ($where ? " WHERE " . implode(' AND ', $where) : "") . " ORDER BY r.id DESC", $params);
+        $action = $_GET['action'] ?? '';
+        if ($action === 'data') { $this->data($where, $params); return; }
         $cats = $db->query("SELECT DISTINCT category FROM regulation_lib WHERE category IS NOT NULL AND category!='' ORDER BY category");
         $title = '法规管理';
         $this->render('regulation/index', get_defined_vars());
+    }
+
+    /** 服务端分页数据接口（action=data） */
+    private function data($where = null, $params = null) {
+        $this->requirePermission('regulation.view');
+        $db = DB::getInstance();
+        if ($where === null) {
+            $search = $_GET['search'] ?? '';
+            $category = $_GET['category'] ?? '';
+            $status = $_GET['status'] ?? '';
+            $where = []; $params = [];
+            if ($search) { $where[] = "(r.name LIKE ? OR r.regulation_no LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+            if ($category) { $where[] = "r.category=?"; $params[] = $category; }
+            if ($status) { $where[] = "r.status=?"; $params[] = $status; }
+        }
+        [$page, $perPage] = $this->pageParams();
+        $whereSql = $where ? " WHERE " . implode(' AND ', $where) : '';
+        $total = (int)$db->single("SELECT COUNT(*) FROM regulation_lib r" . $whereSql, $params);
+        $offset = ($page - 1) * $perPage;
+        $rows = $db->query("SELECT r.*, (SELECT COUNT(*) FROM regulation_content WHERE regulation_id=r.id) AS article_count FROM regulation_lib r" . $whereSql . " ORDER BY r.id DESC LIMIT ? OFFSET ?", array_merge($params, [$perPage, $offset]));
+        $html = '';
+        foreach ($rows as $r) {
+            $html .= '<tr>';
+            $html .= colId($r['id'] ?? '') . '<td>' . h($r['regulation_no']) . '</td>';
+            $html .= '<td class="text-start"><a href="/regulation/' . $r['id'] . '/detail">' . h($r['name']) . '</a></td>';
+            $html .= '<td>' . badge($r['category'], 'info') . '</td>';
+            $html .= '<td>' . h($r['issuing_body']) . '</td>';
+            $html .= '<td>' . h($r['effective_date']) . '</td>';
+            $html .= '<td>' . statusBadge($r['status']) . '</td>';
+            $html .= '<td><a href="javascript:;" class="toggle-focus" data-id="' . $r['id'] . '" data-focus="' . $r['is_focus'] . '"><i class="fas fa-star ' . ($r['is_focus'] ? 'text-warning' : 'text-muted') . '"></i></a></td>';
+            $html .= '<td>';
+            if (can('regulation.edit')) { $html .= '<a href="/regulation?action=edit&id=' . $r['id'] . '" class="btn-icon btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>'; }
+            if ($r['status'] === 'draft') {
+                $html .= '<form method="post" class="d-inline inline-form">' . csrf_field() . '<input type="hidden" name="action" value="publish"><input type="hidden" name="id" value="' . $r['id'] . '"><input type="hidden" name="status" value="published"><button class="btn-icon btn btn-sm btn-outline-success"><i class="fas fa-check"></i></button></form>';
+            }
+            $html .= '</td></tr>';
+        }
+        $this->paginationResponse($total, $html);
     }
     private function showForm($id = 0) {
         $db = DB::getInstance();

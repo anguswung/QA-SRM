@@ -2,40 +2,16 @@
   <h4><i class="fas fa-bullhorn"></i> 通知公告</h4>
   <?php if (canManage('notice.create')): ?>
   <div>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#noticeModal"><i class="fas fa-plus"></i> 发布通知</button>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#noticeModal"><i class="fas fa-plus"></i> 发布通知</button>
   </div>
   <?php endif; ?>
 </div>
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover mb-0" data-server="1" data-url="/notice?action=data">
       <thead><tr><th style="width:40px" class="col-id">ID</th><th class="text-start">标题</th><th style="width:9%">发布人</th><th style="width:15%">发布时间</th><?php if (isSupplier()): ?><th style="width:7%">状态</th><?php endif; ?><?php if (isAdmin()): ?><th style="width:11%">操作</th><?php endif; ?></tr></thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php $seq = 0; foreach ($notices as $n):
-          $attachments = $attachmentsByNotice[$n['id']] ?? [];
-        ?>
-        <tr>
-          <td class="col-id"><?=h($n['id'] ?? '')?></td>
-          <td class="text-start"><a href="javascript:;" onclick="showNotice(<?=(int)$n['id']?>,<?=htmlspecialchars(json_encode($n['title']), ENT_QUOTES)?>,<?=htmlspecialchars(json_encode($n['content']), ENT_QUOTES)?>,'<?=h($n['publisher_name'])?>','<?=h($n['publish_time'] ?: $n['created_at'])?>',<?=htmlspecialchars(json_encode($attachments), ENT_QUOTES)?>)"><?=h($n['title'])?></a></td>
-          <td><?=h($n['publisher_name'])?></td>
-          <td><small><?=h($n['publish_time'] ?: $n['created_at'])?></small></td>
-          <?php if (isSupplier()): ?>
-          <td id="read-<?=(int)$n['id']?>"><?=$n['is_read'] ? '<span class="status-tag success">已读</span>' : '<span class="status-tag warning">未读</span>'?></td>
-          <?php endif; ?>
-          <?php if (canManage('notice.delete')): ?>
-          <td>
-            <button class="btn-icon btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editNoticeModal"
-              data-id="<?=$n['id']?>" data-title="<?=h($n['title'])?>" data-content="<?=h($n['content'])?>"
-              data-has-attachment="<?=!empty($attachments) ? 1 : 0?>"><i class="fas fa-edit"></i></button>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$n['id']?>">
-              <button class="btn-icon btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-            </form>
-          </td>
-          <?php endif; ?>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="8" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
   </div>

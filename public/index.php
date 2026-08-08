@@ -63,19 +63,14 @@ $routes = [
     '/homogeneous'       => ['HomogeneousController', 'index'],
     '/report'           => ['ReportController', 'index'],
     '/report/audit'     => ['ReportController', 'audit'],
-    '/report/elements'  => ['ReportController', 'elements'],
-    '/report/categories' => ['ReportController', 'categories'],
     '/compliance'       => ['ComplianceController', 'index'],
     '/compliance/analyze'  => ['ComplianceController', 'analyze'],
     '/compliance/detail'   => ['ComplianceController', 'detail'],
     '/compliance/manual'   => ['ComplianceController', 'manual'],
     '/compliance/exemption' => ['ComplianceController', 'exemption'],
-    '/compliance/matrix'   => ['ComplianceController', 'matrix'],
     '/regulation'       => ['RegulationController', 'index'],
     '/regulation/focus' => ['RegulationController', 'focus'],
     '/substance'        => ['SubstanceController', 'index'],
-    '/substance/groups' => ['SubstanceController', 'groups'],
-    '/substance/uses'   => ['SubstanceController', 'uses'],
     '/supplier'         => ['SupplierController', 'index'],
     '/supplier/rating'  => ['SupplierController', 'rating'],
     '/bpm'              => ['BpmController', 'index'],
@@ -93,6 +88,7 @@ $routes = [
     '/system/roles'     => ['SystemController', 'roles'],
     '/system/config'    => ['SystemController', 'config'],
     '/system/logs'      => ['SystemController', 'logs'],
+    '/system/internal-standard' => ['SystemController', 'internalStandard'],
 ];
 
 // Auth check

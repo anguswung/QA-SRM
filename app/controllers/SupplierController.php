@@ -10,8 +10,6 @@ class SupplierController extends Controller {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pa = $_POST['action'] ?? '';
                 if ($pa === 'update' && (int)($_POST['id'] ?? 0) === userSupplierId()) { $this->doUpdate(); return; }
-                if ($pa === 'contact_create' && (int)($_POST['supplier_id'] ?? 0) === userSupplierId()) { $this->contactCreate(); return; }
-                if ($pa === 'contact_delete') { $this->contactDelete(); return; }
                 header('Location: /supplier/rating'); exit;
             }
             if ($action === 'detail' && $isOwn) { $this->detail($id); return; }
@@ -26,16 +24,14 @@ class SupplierController extends Controller {
             $pa = $_POST['action'] ?? '';
             if ($pa === 'create') { $this->doCreate(); return; }
             if ($pa === 'update') { $this->doUpdate(); return; }
-            if ($pa === 'delete') { $this->doDelete(); return; }
             if ($pa === 'blacklist') { $this->toggleBlacklist(); return; }
-            if ($pa === 'contact_create') { $this->contactCreate(); return; }
-            if ($pa === 'contact_delete') { $this->contactDelete(); return; }
             if ($pa === 'rating_create') { $this->ratingCreate(); return; }
             if ($pa === 'import') { $this->doImport(); return; }
         }
         if ($action === 'create') { $this->showForm(); return; }
         if ($action === 'edit') { $this->showForm($id); return; }
         if ($action === 'detail') { $this->detail($id); return; }
+        if ($action === 'data') { $this->data(); return; }
         if ($action === 'import_template') { $this->importTemplate(); return; }
         $this->showList();
     }
@@ -56,13 +52,53 @@ class SupplierController extends Controller {
         $search = $_GET['search'] ?? '';
         $level = $_GET['level'] ?? '';
         $blacklist = $_GET['blacklist'] ?? '';
+        $title = '供应商管理';
+        $this->render('supplier/index', get_defined_vars());
+    }
+
+    /** 服务端分页数据接口（action=data）：返回 JSON { total, html } */
+    private function data() {
+        $this->requirePermission('supplier.view');
+        $db = DB::getInstance();
+        [$page, $perPage] = $this->pageParams();
+        $search = $_GET['search'] ?? '';
+        $level = $_GET['level'] ?? '';
+        $blacklist = $_GET['blacklist'] ?? '';
         $where = []; $params = [];
         if ($search) { $where[] = "(s.code LIKE ? OR s.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if ($level) { $where[] = "s.level=?"; $params[] = $level; }
         if ($blacklist !== '') { $where[] = "s.blacklist=?"; $params[] = (int)$blacklist; }
-        $suppliers = $db->query("SELECT s.*, (SELECT COUNT(*) FROM material WHERE supplier_id=s.id) AS material_count FROM supplier s" . ($where ? " WHERE " . implode(' AND ', $where) : "") . " ORDER BY s.code", $params);
-        $title = '供应商管理';
-        $this->render('supplier/index', get_defined_vars());
+        $whereSql = $where ? " WHERE " . implode(' AND ', $where) : '';
+        $total = (int)$db->single("SELECT COUNT(*) FROM supplier s" . $whereSql, $params);
+        $offset = ($page - 1) * $perPage;
+        $rows = $db->query(
+            "SELECT s.*, (SELECT COUNT(*) FROM material WHERE supplier_id=s.id) AS material_count FROM supplier s" . $whereSql . " ORDER BY s.code LIMIT ? OFFSET ?",
+            array_merge($params, [$perPage, $offset])
+        );
+        $html = '';
+        foreach ($rows as $s) $html .= $this->supplierRowHtml($s);
+        $this->paginationResponse($total, $html);
+    }
+
+    private function supplierRowHtml($s): string {
+        $html = '<tr>';
+        $html .= colId($s['id'] ?? '') . '<td>' . h($s['code']) . '</td>';
+        $html .= '<td class="text-start"><a href="/supplier?action=detail&id=' . $s['id'] . '">' . h($s['name']) . '</a></td>';
+        $html .= '<td>' . h($s['contact_person']) . '</td>';
+        $html .= '<td>' . h($s['contact_phone']) . '</td>';
+        $html .= '<td><small>' . h($s['email'] ?: '-') . '</small></td>';
+        $html .= '<td>' . statusBadge($s['level'] . '_') . '</td>';
+        $html .= '<td>' . ($s['blacklist'] ? '<span class="status-tag danger">黑名单</span>' : '<span class="status-tag success">正常</span>') . '</td>';
+        $html .= '<td><span class="badge badge-soft-info">' . (int)$s['material_count'] . '</span></td>';
+        $html .= '<td>';
+        if (can('supplier.edit')) {
+            $html .= '<a href="/supplier?action=edit&id=' . $s['id'] . '" class="btn-icon btn btn-sm btn-outline-primary" title="编辑"><i class="fas fa-edit"></i></a>';
+            $html .= '<form method="post" class="d-inline" onsubmit="return confirm(\'确定' . ($s['blacklist'] ? '移出' : '加入') . '黑名单？\')">' . csrf_field()
+                . '<input type="hidden" name="action" value="blacklist"><input type="hidden" name="id" value="' . $s['id'] . '">'
+                . '<button class="btn btn-sm btn-' . ($s['blacklist'] ? 'success' : 'danger') . '"><i class="fas fa-' . ($s['blacklist'] ? 'check-circle' : 'ban') . '"></i> ' . ($s['blacklist'] ? '移出黑名单' : '禁用账号') . '</button></form>';
+        }
+        $html .= '</td></tr>';
+        return $html;
     }
     private function showForm($id = 0) {
         $db = DB::getInstance();
@@ -81,6 +117,7 @@ class SupplierController extends Controller {
         $contacts = $db->query("SELECT * FROM supplier_contact WHERE supplier_id=?", [$id]);
         $ratings = $db->query("SELECT * FROM supplier_rating WHERE supplier_id=? ORDER BY rating_date DESC", [$id]);
         $materials = $db->query("SELECT id, material_name, material_no, env_status, audit_status FROM material WHERE supplier_id=? ORDER BY material_name", [$id]);
+        $linkedUsers = $db->query("SELECT id, username, realname, role, email, status FROM users WHERE supplier_id=? ORDER BY username", [$id]);
         // 按月分组       $ratingGroups = [];
         foreach ($ratings as $r) {
             $monthKey = substr($r['rating_date'], 0, 7);
@@ -209,19 +246,18 @@ class SupplierController extends Controller {
              $_POST['contact_person'] ?? '', $_POST['contact_phone'] ?? '', $_POST['email'] ?? '',
              $_POST['address'] ?? '', $_POST['level'] ?? 'C', $id]);
         $db->execute("UPDATE users SET realname=? WHERE supplier_id=? AND role='supplier'", [$_POST['name'] ?? '', $id]);
+        // 重置供应商登录密码（可选）
+        $resetPw = trim((string)($_POST['reset_password'] ?? ''));
+        if ($resetPw !== '') {
+            $db->execute("UPDATE users SET password=?, password_changed=0 WHERE supplier_id=? AND role='supplier'",
+                [password_hash($resetPw, PASSWORD_DEFAULT), $id]);
+            logOp('update', 'supplier', $id, '重置供应商登录密码');
+        }
         logOp('update', 'supplier', $id, '更新供应商' . ($_POST['name'] ?? ''));
         flash('success', '供应商更新成功');
         header('Location: /supplier'); exit;
     }
-    private function doDelete() {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) {
-            DB::getInstance()->execute("DELETE FROM supplier WHERE id=?", [$id]);
-            logOp('delete', 'supplier', $id, '删除供应商');
-            flash('success', '供应商已删除');
-        }
-        header('Location: /supplier'); exit;
-    }
+
     private function toggleBlacklist() {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
@@ -234,25 +270,8 @@ class SupplierController extends Controller {
         }
         header('Location: /supplier'); exit;
     }
-    private function contactCreate() {
-        $db = DB::getInstance();
-        $db->execute("INSERT INTO supplier_contact (supplier_id, name, position, phone, mobile, email, is_primary) VALUES (?,?,?,?,?,?,?)",
-            [(int)($_POST['supplier_id'] ?? 0), $_POST['name'] ?? '', $_POST['position'] ?? '',
-             $_POST['phone'] ?? '', $_POST['mobile'] ?? '', $_POST['email'] ?? '',
-             (int)($_POST['is_primary'] ?? 0)]);
-        flash('success', '联系人已添加');
-        header('Location: /supplier?action=detail&id=' . (int)($_POST['supplier_id'] ?? 0)); exit;
-    }
-    private function contactDelete() {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) {
-            $c = DB::getInstance()->single("SELECT supplier_id FROM supplier_contact WHERE id=?", [$id], true);
-            if ($c && isSupplier() && (int)$c['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /supplier/rating'); exit; }
-            DB::getInstance()->execute("DELETE FROM supplier_contact WHERE id=?", [$id]);
-            if ($c) { header('Location: /supplier?action=detail&id=' . $c['supplier_id']); exit; }
-        }
-        header('Location: /supplier'); exit;
-    }
+
+
     private function ratingCreate() {
         $db = DB::getInstance();
         $supplierId = (int)($_POST['supplier_id'] ?? 0);

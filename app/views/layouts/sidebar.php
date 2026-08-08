@@ -10,14 +10,11 @@ $menu = [
         'children' => [
             ['label' => '报告列表', 'url' => '/report', 'perm' => 'report.view'],
             ['label' => '报告审核', 'url' => '/report/audit', 'perm' => 'report.audit'],
-            ['label' => '物质含量', 'url' => '/report/elements', 'perm' => 'report.view'],
-            ['label' => '文档分类', 'url' => '/report/categories', 'perm' => 'document.view'],
         ]],
     'compliance' => ['icon' => 'fa-balance-scale', 'label' => '合规分析', 'url' => '/compliance', 'perm' => 'compliance.view',
         'children' => [
             ['label' => '分析看板', 'url' => '/compliance', 'perm' => 'compliance.view'],
             ['label' => '合规评估', 'url' => '/compliance/analyze', 'perm' => 'compliance.analyze'],
-            ['label' => '合规矩阵', 'url' => '/compliance/matrix', 'perm' => 'compliance.view'],
         ]],
     'regulation' => ['icon' => 'fa-gavel', 'label' => '法规管理', 'url' => '/regulation', 'perm' => 'regulation.view',
         'children' => [
@@ -46,12 +43,13 @@ if (can('query.view')) $menu['query'] = ['icon' => 'fa-search', 'label' => '查�
         ['label' => '到期查询', 'url' => '/query/expired', 'perm' => 'query.view'],
         ['label' => '变更历史', 'url' => '/query/history', 'perm' => 'query.view'],
     ]];
-if (can('system.users') || can('system.roles') || can('system.config') || can('system.logs')) {
+if (can('system.users') || can('system.roles') || can('system.config') || can('system.logs') || can('system.std_limit')) {
     $sysChildren = [];
     if (can('system.users')) $sysChildren[] = ['label' => '用户管理', 'url' => '/system/users'];
     if (can('system.roles')) $sysChildren[] = ['label' => '角色管理', 'url' => '/system/roles'];
     if (can('system.config')) $sysChildren[] = ['label' => '系统参数', 'url' => '/system/config'];
     if (can('system.logs')) $sysChildren[] = ['label' => '操作日志', 'url' => '/system/logs'];
+    if (can('system.std_limit')) $sysChildren[] = ['label' => '内部标准限值', 'url' => '/system/internal-standard'];
     $menu['system'] = ['icon' => 'fa-cog', 'label' => '系统管理', 'url' => '/system', 'children' => $sysChildren];
 }
 // Filter out items user has no permission to view

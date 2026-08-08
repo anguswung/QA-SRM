@@ -39,11 +39,40 @@ class TaskController extends Controller {
             if ($search) { $where[] = "(bi.title LIKE ? OR bi.id LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
             if ($priority) { $where[] = "bi.priority=?"; $params[] = $priority; }
             $whereClause = $where ? "WHERE " . implode(' AND ', $where) : '';
-            $instances = $db->query("SELECT bi.*, t.name AS template_name, u.realname AS initiator_name FROM bpm_instance bi JOIN bpm_template t ON bi.template_id=t.id LEFT JOIN users u ON bi.initiator_id=u.id $whereClause ORDER BY bi.priority DESC, bi.created_at DESC" . ($search ? " LIMIT 50" : ""), $params);
+            if (($_GET['action'] ?? '') === 'data') { $this->instancesData($whereClause, $params); return; }
             $pendingTasks = [];
         }
         $title = '任务管理';
         $this->render('task/index', get_defined_vars());
+    }
+
+    /** 服务端分页数据接口（action=data）：我发起的流程 */
+    private function instancesData($whereClause, $params) {
+        $this->requirePermission('task.view');
+        $db = DB::getInstance();
+        [$page, $perPage] = $this->pageParams();
+        $countWhere = $whereClause ? " WHERE " . trim(preg_replace('/^WHERE\s+/i', '', $whereClause)) : '';
+        $total = (int)$db->single("SELECT COUNT(*) FROM bpm_instance bi JOIN bpm_template t ON bi.template_id=t.id LEFT JOIN users u ON bi.initiator_id=u.id" . $countWhere, $params);
+        $offset = ($page - 1) * $perPage;
+        $rows = $db->query("SELECT bi.*, t.name AS template_name, u.realname AS initiator_name FROM bpm_instance bi JOIN bpm_template t ON bi.template_id=t.id LEFT JOIN users u ON bi.initiator_id=u.id $whereClause ORDER BY bi.priority DESC, bi.created_at DESC LIMIT ? OFFSET ?", array_merge($params, [$perPage, $offset]));
+        $html = '';
+        foreach ($rows as $i) {
+            $html .= '<tr class="' . ($i['priority'] >= 1 ? 'table-warning' : '') . '">';
+            $html .= colId($i['id'] ?? '') . '<td>' . priorityBadge($i['priority'] ?? 0) . '</td>';
+            $html .= '<td class="text-start"><a href="/task?action=detail&id=' . $i['id'] . '">' . h($i['title']) . '</a></td>';
+            $html .= '<td>' . h($i['template_name']) . '</td>';
+            if (isAdmin()) { $html .= '<td>' . h($i['initiator_name'] ?? '-') . '</td>'; }
+            $html .= '<td>' . statusBadge($i['status']) . '</td>';
+            $html .= '<td><small>';
+            if (!empty($i['due_date'])) {
+                $html .= '<span class="' . ($i['due_date'] < date('Y-m-d') && $i['status'] === 'active' ? 'text-danger' : '') . '">' . h($i['due_date']) . '</span>';
+            } else { $html .= '-'; }
+            $html .= '</small></td>';
+            $html .= '<td><small>' . h($i['created_at']) . '</small></td>';
+            $html .= '<td><a href="/task?action=detail&id=' . $i['id'] . '" class="btn-icon btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a></td>';
+            $html .= '</tr>';
+        }
+        $this->paginationResponse($total, $html);
     }
     private function showForm() {
         $this->requirePermission('task.create');

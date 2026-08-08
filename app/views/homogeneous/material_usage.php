@@ -1,7 +1,7 @@
 <div class="page-header">
-  <h4><i class="fas fa-boxes"></i> 使用本均质材料的物料</h4>
+  <h4><i class="fas fa-boxes"></i> 使用本均质材料【<span class="text-primary"><?=h($item['material_name'])?></span>】的物料</h4>
   <div>
-    <a href="/homogeneous?action=reports&id=<?=h($item['id'])?>" class="btn-icon btn btn-sm btn-outline-info"><i class="fas fa-file-alt"></i> 检测报告</a>
+    <a href="/homogeneous?action=reports&id=<?=h($item['id'])?>" class="btn btn-outline-info"><i class="fas fa-file-alt"></i> 检测报告</a>
     <a href="/homogeneous" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> 返回均质材料</a>
   </div>
 </div>
@@ -16,7 +16,7 @@
 
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover">
       <thead>
         <tr>
           <th style="width:40px" class="col-id">ID</th>

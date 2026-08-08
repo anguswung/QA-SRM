@@ -7,10 +7,8 @@ class HomogeneousController extends Controller {
             if ($action === 'update') { $this->doUpdate(); return; }
             if ($action === 'delete') { $this->doDelete(); return; }
             if ($action === 'analyze_hm') { $this->doAnalyze(); return; }
-            if ($action === 'upload_report') { $this->doUploadReport(); return; }
             if ($action === 'delete_report') { $this->doDeleteReport(); return; }
             if ($action === 'save_elements') { $this->doSaveElements(); return; }
-            if ($action === 'submit_audit') { $this->doSubmitAudit(); return; }
             if ($action === 'audit_hm') { $this->doAuditHm(); return; }
             if ($action === 'copy') { $this->doCopy(); return; }
             if ($action === 'import') { $this->doImport(); return; }
@@ -18,6 +16,7 @@ class HomogeneousController extends Controller {
         $action = $_GET['action'] ?? '';
         if ($action === 'create') { $this->showForm(); return; }
         if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
+        if ($action === 'data') { $this->data(); return; }
         if ($action === 'compliance') { $this->showCompliance((int)($_GET['id'] ?? 0)); return; }
         if ($action === 'reports') { $this->showReports((int)($_GET['id'] ?? 0), (int)($_GET['report_id'] ?? 0)); return; }
         if ($action === 'usage') { $this->showMaterialUsage((int)($_GET['id'] ?? 0)); return; }
@@ -52,15 +51,100 @@ class HomogeneousController extends Controller {
         $where = []; $params = [];
         if (isSupplier()) { $where[] = "m.created_by=?"; $params[] = userId(); }
         if ($search) { $where[] = "m.material_name LIKE ?"; $params[] = "%$search%"; }
-        $materials = $db->query("SELECT m.*, COALESCE(s.name_short, s2.name_short) AS supplier_name_short, $reportSelects
-          FROM homogeneous_material m
-          LEFT JOIN supplier s ON m.supplier_id=s.id
-          LEFT JOIN users u ON m.created_by=u.id
-          LEFT JOIN supplier s2 ON u.supplier_id=s2.id" . ($where ? " WHERE " . implode(' AND ', $where) : "") . " ORDER BY m.id DESC", $params);
-        foreach ($materials as &$m) { $m['env_status'] = $this->hmEnvStatus($m); }
-        unset($m);
         $title = '均质材料';
         $this->render('homogeneous/index', get_defined_vars());
+    }
+
+    /** 服务端分页数据接口（action=data）：返回 JSON { total, html } */
+    private function data() {
+        $this->requirePermission('homogeneous.view');
+        $db = DB::getInstance();
+        [$page, $perPage] = $this->pageParams();
+        $search = $_GET['search'] ?? '';
+        $where = []; $params = [];
+        if (isSupplier()) { $where[] = "m.created_by=?"; $params[] = userId(); }
+        if ($search) { $where[] = "m.material_name LIKE ?"; $params[] = "%$search%"; }
+        $reportSelects = $this->reportSelectsSql();
+        $whereSql = $where ? " WHERE " . implode(' AND ', $where) : '';
+        $total = (int)$db->single("SELECT COUNT(*) FROM homogeneous_material m" . $whereSql, $params);
+        $offset = ($page - 1) * $perPage;
+        $rows = $db->query(
+            "SELECT m.*, COALESCE(s.name_short, s2.name_short) AS supplier_name_short, $reportSelects
+             FROM homogeneous_material m
+             LEFT JOIN supplier s ON m.supplier_id=s.id
+             LEFT JOIN users u ON m.created_by=u.id
+             LEFT JOIN supplier s2 ON u.supplier_id=s2.id" . $whereSql . " ORDER BY m.id DESC LIMIT ? OFFSET ?",
+            array_merge($params, [$perPage, $offset])
+        );
+        $html = '';
+        foreach ($rows as $m) { $m['env_status'] = $this->hmEnvStatus($m); $html .= $this->hmRowHtml($m); }
+        $this->paginationResponse($total, $html);
+    }
+
+    private function reportSelectsSql(): string {
+        return "
+          (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='RoHS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS rohs_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='RoHS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS rohs_expiry,
+          (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='MSDS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS msds_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='MSDS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS msds_expiry,
+          (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='REACH' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS reach_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='REACH' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS reach_expiry,
+          (SELECT id FROM hm_report WHERE hm_id=m.id AND report_type='HF' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS hf_id,
+          (SELECT expiry_date FROM hm_report WHERE hm_id=m.id AND report_type='HF' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS hf_expiry";
+    }
+
+    /** 均质材料列表行 HTML（服务端渲染，保留报告状态/权限/按钮逻辑） */
+    private function hmRowHtml($m): string {
+        $html = '<tr>';
+        $html .= colId($m['id']);
+        $html .= '<td class="text-start"><a class="fw-bold text-primary" href="/homogeneous?action=usage&id=' . $m['id'] . '" title="查看使用该均质材料的物料">' . h($m['material_name']) . '</a></td>';
+        $html .= '<td><span class="badge badge-soft-success">均质原材料</span></td>';
+        if (!isSupplier()) {
+            $html .= '<td><small>' . h($m['supplier_name_short'] ?: ($m['supplier_name'] ?? '-')) . '</small></td>';
+        }
+        $html .= '<td>' . h($m['weight_mg'] ?? '-') . ' ' . h($m['weight_unit'] ?? 'g') . '</td>';
+        foreach (['RoHS', 'REACH', 'HF', 'MSDS'] as $rt) {
+            $hasId = $m[strtolower($rt) . '_id'] ?? '';
+            $expiry = $m[strtolower($rt) . '_expiry'] ?? '';
+            $html .= '<td class="small px-1">';
+            if (!$hasId) {
+                $html .= '<span class="text-muted">无</span>';
+            } elseif ($rt === 'MSDS') {
+                $html .= '<span class="text-success" title="有MSDS">✓</span>';
+            } elseif (!$expiry) {
+                $html .= '<span class="text-muted" title="无有效期">-</span>';
+            } elseif (strtotime($expiry) < time()) {
+                $html .= '<a href="/homogeneous?action=edit&id=' . $m['id'] . '&step=3" class="badge bg-danger text-white" title="点击重新上传">过期</a>';
+            } elseif (strtotime($expiry) <= strtotime('+30 days')) {
+                $html .= '<a href="/homogeneous?action=edit&id=' . $m['id'] . '&step=3" class="badge bg-warning" title="点击更新">将到期</a>';
+            } else {
+                $html .= '<span class="badge bg-success text-white" title="' . h($expiry) . '">' . h(substr($expiry, 5)) . '</span>';
+            }
+            $html .= '</td>';
+        }
+        $html .= '<td>';
+        if ($m['env_status'] === 'compliant') $html .= '<span class="badge badge-soft-success">合规</span>';
+        elseif ($m['env_status'] === 'non_compliant') $html .= '<span class="badge badge-soft-danger">不合规</span>';
+        else $html .= '<span class="badge badge-soft-warning">待评估</span>';
+        $html .= '</td>';
+        $html .= '<td class="nowrap">' . statusBadge($m['audit_status'] ?? 'N') . '</td>';
+        $html .= '<td><small class="text-muted">' . h(substr($m['updated_at'] ?: $m['created_at'], 0, 10)) . '</small></td>';
+        $html .= '<td><div class="btn-group btn-group-sm">';
+        $html .= '<button class="btn-icon btn btn-sm btn-outline-success" title="复制" onclick="openCopyModal(' . $m['id'] . ',\'' . h(addslashes($m['material_name'])) . '\')"><i class="fas fa-copy"></i></button>';
+        $html .= '<a href="/homogeneous?action=reports&id=' . $m['id'] . '" class="btn-icon btn btn-sm btn-outline-info" title="检测报告"><i class="fas fa-file-alt"></i></a>';
+        $html .= '<a href="/homogeneous?action=compliance&id=' . $m['id'] . '" class="btn-icon btn btn-sm btn-outline-info" title="合规分析"><i class="fas fa-balance-scale"></i></a>';
+        if (can('homogeneous.edit') && ($m['audit_status'] !== 'A' || isAdmin())) {
+            $html .= '<a href="/homogeneous?action=edit&id=' . $m['id'] . '" class="btn-icon btn btn-sm btn-outline-primary" title="编辑"><i class="fas fa-edit"></i></a>';
+        }
+        if (can('homogeneous.delete') && ($m['audit_status'] !== 'A' || isAdmin())) {
+            $html .= '<form method="post" style="display:contents"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . $m['id'] . '">' . csrf_field() . '<button type="submit" class="btn-icon btn btn-sm btn-outline-danger" title="删除" onclick="return confirm(\'确认删除？\')"><i class="fas fa-trash"></i></button></form>';
+        }
+        if ($m['audit_status'] === 'S' && isAdmin()) {
+            $html .= '<form method="post" style="display:contents"><input type="hidden" name="action" value="audit_hm"><input type="hidden" name="id" value="' . $m['id'] . '"><input type="hidden" name="audit_status" value="A">' . csrf_field() . '<button type="submit" class="btn-icon btn btn-sm btn-outline-success" title="批准" onclick="return confirm(\'确认批准？\')"><i class="fas fa-check"></i></button></form>';
+            $html .= '<form method="post" style="display:contents"><input type="hidden" name="action" value="audit_hm"><input type="hidden" name="id" value="' . $m['id'] . '"><input type="hidden" name="audit_status" value="R">' . csrf_field() . '<button type="submit" class="btn-icon btn btn-sm btn-outline-danger" title="驳回" onclick="return confirm(\'确认驳回？\')"><i class="fas fa-times"></i></button></form>';
+        }
+        $html .= '</div></td></tr>';
+        return $html;
     }
     private function hmEnvStatus($m): string {
         // 与列表「环保状态」列口径一致：RoHS/REACH/HF 均有未过期报告为合规，
@@ -313,22 +397,7 @@ class HomogeneousController extends Controller {
         }
         header('Location: /homogeneous'); exit;
     }
-    private function doSubmitAudit() {
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) {
-            $hm = DB::getInstance()->single("SELECT * FROM homogeneous_material WHERE id=?", [$id], true);
-            if (!$hm) { flash('error', '均质材料不存在'); header('Location: /homogeneous'); exit; }
-            $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous');
-            if (in_array($hm['audit_status'], ['N', 'R'])) {
-                DB::getInstance()->execute("UPDATE homogeneous_material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$id]);
-                logOp('submit', 'homogeneous', $id, '提交审核');
-                flash('success', '已提交审核');
-            } else {
-                flash('error', '当前状态不允许提交审核');
-            }
-        }
-        header('Location: /homogeneous'); exit;
-    }
+
     private function doAuditHm() {
         $this->requirePermission('homogeneous.audit');
         if (!isAdmin()) { flash('error', '无权操作'); header('Location: /homogeneous'); exit; }
@@ -345,35 +414,7 @@ class HomogeneousController extends Controller {
         }
         header('Location: /homogeneous'); exit;
     }
-    private function doUploadReport() {
-        $this->requirePermission('homogeneous.edit');
-        $hmId = (int)($_POST['hm_id'] ?? 0);
-        if (!$hmId || empty($_FILES['report_file']['name'])) { flash('error', '请选择文件'); header('Location: /homogeneous?action=reports&id=' . $hmId); exit; }
-        $db = DB::getInstance();
-        $hm = $db->single("SELECT * FROM homogeneous_material WHERE id=?", [$hmId], true);
-        if (!$hm) { flash('error', '均质材料不存在'); header('Location: /homogeneous'); exit; }
-        $this->requireNotApproved($hm['audit_status'] ?? 'N', '/homogeneous?action=reports&id=' . $hmId);
-        $this->requireOwnership($hm['created_by'] ?? 0, '/homogeneous?action=reports&id=' . $hmId);
-        $no = trim($_POST['report_no'] ?? '');
-        $testDate = $_POST['test_date'] ?? '';
-        $expiryDate = $_POST['expiry_date'] ?? ($testDate ? date('Y-m-d', strtotime($testDate . ' +1 year')) : '');
-        $dir = uploadPath($_SESSION['username'] ?? 'unknown');
-        $f = $_FILES['report_file'];
-        $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
-        $fileName = pathinfo($f['name'], PATHINFO_FILENAME) . '_' . date('Ymd') . '.' . $ext;
-        $filePath = $dir . '/' . $fileName;
-        $n = 1;
-        while (file_exists($filePath)) { $fileName = pathinfo($f['name'], PATHINFO_FILENAME) . '_' . date('Ymd') . '_' . ($n++) . '.' . $ext; $filePath = $dir . '/' . $fileName; }
-        move_uploaded_file($f['tmp_name'], $filePath);
-        $type = $_POST['report_type'] ?? '';
-        $newId = $this->upsertReport($hmId, $type, $no, $_POST['test_agency'] ?? '', $testDate, $expiryDate, $filePath, $f['size']);
-        $db->execute("UPDATE homogeneous_material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$hmId]);
-        logOp($newId ? 'create' : 'update', 'hm_report', $hmId, '上传报告: ' . $no);
-        // auto-analyze
-        (new ComplianceEngine())->analyzeHm($hmId);
-        flash('success', '报告上传成功');
-        header('Location: /homogeneous?action=reports&id=' . $hmId); exit;
-    }
+
     private function showCompliance($hmId) {
         $this->requirePermission('compliance.view');
         $db = DB::getInstance();
@@ -483,6 +524,22 @@ class HomogeneousController extends Controller {
                 }
             }
             $reportElements[$r['id']] = $elems;
+        }
+        // load admin internal standards + official limits for the 3-way comparison
+        $internalStd = [];
+        foreach ($db->query("SELECT report_type, cas_no, substance_name, limit_value FROM internal_standard") as $is) {
+            $internalStd[$is['report_type']][$is['cas_no']] = (float)$is['limit_value'];
+        }
+        $stdLimits = [];
+        foreach ($reports as $r) {
+            $byCas = [];
+            foreach (stdOfficialLimits($r['report_type']) as $def) {
+                $byCas[$def['cas_no']] = [
+                    'official' => (float)$def['limit_value'],
+                    'internal' => $internalStd[$r['report_type']][$def['cas_no']] ?? null,
+                ];
+            }
+            $stdLimits[$r['id']] = $byCas;
         }
         $title = '检测报告 ' . $item['material_name'];
         $this->render('homogeneous/reports', get_defined_vars());

@@ -1,8 +1,8 @@
 <div class="page-header">
   <h4><i class="fas fa-tasks"></i> 流程中心</h4>
   <div>
-    <a href="/bpm/config" class="btn btn-sm btn-outline-primary">流程配置</a>
-    <a href="/bpm/agent" class="btn btn-sm btn-outline-info">流程代理</a>
+    <a href="/bpm/config" class="btn btn-success">流程配置</a>
+    <a href="/bpm/agent" class="btn btn-success">流程代理</a>
   </div>
 </div>
 <div class="row">

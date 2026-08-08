@@ -1,7 +1,7 @@
 <div class="page-header">
   <h4><i class="fas fa-file-alt"></i> 检测报告 - <?=h($item['material_name'])?></h4>
   <div>
-    <a href="/homogeneous" class="btn btn-sm btn-outline-secondary"><i class="fas fa-list"></i> 返回列表</a>
+    <a href="/homogeneous" class="btn btn-success"><i class="fas fa-list"></i> 返回列表</a>
   </div>
 </div>
 
@@ -34,39 +34,9 @@
     <?php foreach ($reports as $i => $r): ?>
     <?php $expired = $r['expiry_date'] && strtotime($r['expiry_date']) < time(); ?>
     <?php $elems = $reportElements[$r['id']] ?? []; ?>
-    <?php if ($r['report_type'] === 'RoHS'):
-      $rohsDefaults = [
-        ['substance_name'=>'铅（Pb）','cas_no'=>'7439-92-1','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'汞（Hg）','cas_no'=>'7439-97-6','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'镉（Cd）','cas_no'=>'7440-43-9','limit_value'=>100,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'六价铬（Cr VI）','cas_no'=>'18540-29-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'多溴联苯（PBBs）','cas_no'=>'59080-40-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'多溴二苯醚（PBDEs）','cas_no'=>'32534-81-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'邻苯二甲酸二正丁酯（DBP）','cas_no'=>'84-74-2','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'邻苯二甲酸丁基苄酯（BBP）','cas_no'=>'85-68-7','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'邻苯二甲酸二(2-乙基己)酯（DEHP）','cas_no'=>'117-81-7','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'邻苯二甲酸二异丁酯（DIBP）','cas_no'=>'84-69-5','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-      ];
-      $defaults = $rohsDefaults;
-    elseif ($r['report_type'] === 'REACH'):
-      $reachDefaults = [
-        ['substance_name'=>'铅（Pb）','cas_no'=>'7439-92-1','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'汞（Hg）','cas_no'=>'7439-97-6','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'镉（Cd）','cas_no'=>'7440-43-9','limit_value'=>100,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'六价铬（Cr VI）','cas_no'=>'18540-29-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
-      ];
-      $defaults = $reachDefaults;
-    elseif ($r['report_type'] === 'HF'):
-      $hfDefaults = [
-        ['substance_name'=>'氟（F）','cas_no'=>'7782-41-4','limit_value'=>900,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'氯（Cl）','cas_no'=>'7782-50-5','limit_value'=>900,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'溴（Br）','cas_no'=>'7726-95-6','limit_value'=>900,'limit_unit'=>'mg/kg'],
-        ['substance_name'=>'碘（I）','cas_no'=>'7553-56-2','limit_value'=>900,'limit_unit'=>'mg/kg'],
-      ];
-      $defaults = $hfDefaults;
+    <?php if (in_array($r['report_type'], ['RoHS', 'REACH', 'HF'])):
+      $defaults = stdOfficialLimits($r['report_type']);
     else:
-      $defaults = [];
-    endif;
     if (!empty($defaults)):
       $merged = [];
       foreach ($defaults as $def) {
@@ -87,7 +57,9 @@
         if (!$exists) $merged[] = $e;
       }
       $elems = $merged;
-    endif; ?>
+    endif;
+    endif;
+    ?>
     <div class="tab-pane fade <?=(($activeReportId ?? 0) == $r['id'] ? 'show active' : ($i === 0 && !$activeReportId ? 'show active' : ''))?>" id="report-<?=$r['id']?>" role="tabpanel">
       <div class="row">
         <div class="col-md-5">
@@ -124,7 +96,7 @@
             <div class="card-body p-0">
               <?php if (in_array($r['report_type'], ['RoHS', 'REACH', 'HF'])): ?>
               <table class="table table-hover table-sm mb-0">
-                <thead><tr><th style="width:40px" class="col-id">ID</th><th>物质名称</th><th>CAS</th><th>检测值(mg/kg)</th><th>限值(mg/kg)</th></tr></thead>
+                <thead><tr><th style="width:40px" class="col-id">ID</th><th>物质名称</th><th>CAS</th><th>检测值</th><th>限值</th></tr></thead>
                 <tbody>
 
                   <?php if ($elems): ?>
@@ -198,9 +170,29 @@
                     <?php endforeach; ?>
                   </tr>
                   <tr>
-                    <th class="text-muted va-middle" style="font-size:12px">限值</th>
+                    <th class="text-muted va-middle" style="font-size:12px" title="客户方（供应商或客户）要求限值">客户方限值</th>
                     <?php foreach ($elems as $j => $e): ?>
                     <td class="text-muted" style="font-size:11px;vertical-align:middle"><?=h($e['limit_value'])?></td>
+                    <?php endforeach; ?>
+                  </tr>
+                  <tr>
+                    <th class="text-primary va-middle" style="font-size:12px" title="管理员在系统管理-内部标准限值中配置的己方内部标准">内部标准限值</th>
+                    <?php foreach ($elems as $j => $e):
+                      $sl = $stdLimits[$r['id']][$e['cas_no'] ?? ''] ?? null;
+                      $internal = $sl ? $sl['internal'] : null;
+                    ?>
+                    <td class="text-primary" style="font-size:11px;vertical-align:middle;font-weight:bold">
+                      <?=($internal !== null) ? h($internal) : '<span class="text-muted">-</span>'?>
+                    </td>
+                    <?php endforeach; ?>
+                  </tr>
+                  <tr>
+                    <th class="text-success va-middle" style="font-size:12px" title="官方（指令/法规）限值">官方限值</th>
+                    <?php foreach ($elems as $j => $e):
+                      $sl = $stdLimits[$r['id']][$e['cas_no'] ?? ''] ?? null;
+                      $official = $sl ? $sl['official'] : null;
+                    ?>
+                    <td class="text-success" style="font-size:11px;vertical-align:middle"><?=($official !== null) ? h($official) : '-'?></td>
                     <?php endforeach; ?>
                   </tr>
                   <tr>
@@ -257,11 +249,23 @@ function addReachCol(reportId) {
   tdLimit.textContent = '-';
   rows[1].appendChild(tdLimit);
 
+  var tdInternal = document.createElement('td');
+  tdInternal.className = 'text-center small text-muted';
+  tdInternal.style.cssText = 'vertical-align:middle';
+  tdInternal.textContent = '-';
+  rows[2].appendChild(tdInternal);
+
+  var tdOfficial = document.createElement('td');
+  tdOfficial.className = 'text-center small text-muted';
+  tdOfficial.style.cssText = 'vertical-align:middle';
+  tdOfficial.textContent = '-';
+  rows[3].appendChild(tdOfficial);
+
   var tdUnit = document.createElement('td');
   tdUnit.className = 'text-center text-muted small';
   tdUnit.style.cssText = 'vertical-align:middle';
   tdUnit.textContent = 'mg/kg';
-  rows[2].appendChild(tdUnit);
+  rows[4].appendChild(tdUnit);
 }
 </script>
 

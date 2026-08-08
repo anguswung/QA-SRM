@@ -69,13 +69,11 @@ return [
     'rule' => ['label' => '合规规则', 'perms' => [
         'rule.view' => '查看规则',
     ]],
-    'document' => ['label' => '文档管理', 'perms' => [
-        'document.view' => '查看文档',
-    ]],
     'system' => ['label' => '系统管理', 'perms' => [
         'system.users'  => '用户管理',
         'system.roles'  => '角色管理',
-        'system.config' => '系统参数',
-        'system.logs'   => '操作日志',
+        'system.config'      => '系统参数',
+        'system.logs'        => '操作日志',
+        'system.std_limit'   => '内部标准限值',
     ]],
 ];

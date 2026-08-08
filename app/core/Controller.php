@@ -76,15 +76,24 @@ class Controller {
         }
     }
 
-    protected function supplierScope(array &$where, array &$params, string $field = 'supplier_id'): void {
-        if (isSupplier()) {
-            $where[] = "$field=?";
-            $params[] = userSupplierId();
-        }
-    }
+
 
     protected function redirect(string $url): void {
         header("Location: $url");
+        exit;
+    }
+
+    /** 服务端分页参数：返回 [page, perPage]，page 从 1 起，perPage 限 5-100 */
+    protected function pageParams(): array {
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = min(100, max(5, (int)($_GET['perPage'] ?? 20)));
+        return [$page, $perPage];
+    }
+
+    /** 服务端分页统一 JSON 输出：{ total, html } */
+    protected function paginationResponse(int $total, string $html): void {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['total' => $total, 'html' => $html], JSON_UNESCAPED_UNICODE);
         exit;
     }
 }

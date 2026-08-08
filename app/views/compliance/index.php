@@ -2,37 +2,14 @@
   <h4><i class="fas fa-balance-scale"></i> 合规分析看板</h4>
   <div>
     <a href="/compliance/analyze" class="btn btn-sm btn-primary"><i class="fas fa-flask"></i> 合规评估</a>
-    <a href="/compliance/matrix" class="btn btn-sm btn-outline-info"><i class="fas fa-th"></i> 合规矩阵</a>
   </div>
 </div>
 <div class="row">
-  <div class="col-md-6">
+  <div class="col-12">
     <div class="card">
       <div class="card-header"><i class="fas fa-chart-pie"></i> 物料环保状态分布</div>
       <div class="card-body">
         <canvas id="envChart" height="250"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header"><i class="fas fa-trophy"></i> 超标物质 Top 10</div>
-      <div class="card-body p-0">
-        <table class="table table-sm">
-          <thead><tr><th style="width:60px">#</th><th>物质</th><th style="width:20%">超标次数</th></tr></thead>
-          <tbody>
-<?php $__rnum = 0; ?>
-            <?php foreach ($topViolations as $v): ?>
-            <tr>
-              <td class="row-num"><?=++$__rnum?></td><td><span class="badge badge-soft-danger"><?=h($v['substance_name'])?></span></td>
-              <td><span class="badge badge-soft-danger"><?=h($v['violation_count'])?></span></td>
-            </tr>
-            <?php endforeach; ?>
-            <?php if (empty($topViolations)): ?>
-            <tr><td colspan="2" class="text-muted py-3">暂无超标数据</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
       </div>
     </div>
   </div>

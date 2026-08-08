@@ -1,4 +1,4 @@
-<div class="summary-cards">
+<div class="summary-cards mb-3">
   <div class="card stat-card">
     <div class="stat-icon text-primary"><i class="fas fa-boxes"></i></div>
     <div class="stat-value"><?=h($totalMaterials ?? 0)?></div>
@@ -20,11 +20,6 @@
     <div class="stat-label">待评估</div>
   </div>
   <div class="card stat-card">
-    <div class="stat-icon text-danger"><i class="fas fa-exclamation-triangle"></i></div>
-    <div class="stat-value"><?=h($overLimit ?? 0)?></div>
-    <div class="stat-label">物质超标</div>
-  </div>
-  <div class="card stat-card">
     <div class="stat-icon text-warning"><i class="fas fa-calendar-times"></i></div>
     <div class="stat-value"><?=h($expiringSoon ?? 0)?></div>
     <div class="stat-label">即将过期</div>
@@ -32,7 +27,7 @@
 </div>
 
 <?php if (isAdmin()): ?>
-<div class="summary-cards">
+<div class="summary-cards mb-3">
   <div class="card stat-card">
     <div class="stat-icon text-info"><i class="fas fa-file-signature"></i></div>
     <div class="stat-value"><?=h($pendingReports ?? 0)?></div>
@@ -57,8 +52,9 @@
 <?php endif; ?>
 
 <?php if (isSupplier()): ?>
-<div class="row mb-3">
-  <div class="col-md-7">
+<div class="px-3">
+  <div class="row mb-3">
+  <div class="col-12">
     <div class="card">
       <div class="card-header"><i class="fas fa-tasks text-warning"></i> 待办事项</div>
       <div class="card-body py-2">
@@ -83,12 +79,22 @@
               <div class="small text-muted">未读通知</div>
             </div>
           </a>
+          <div class="border-end"></div>
+          <a href="/survey" class="text-decoration-none">
+            <div class="p-3">
+              <div class="h3 mb-1 fw-bold <?=$todoUnfilledSurveys > 0 ? 'text-success' : 'text-muted'?>"><?=(int)($todoUnfilledSurveys ?? 0)?></div>
+              <div class="small text-muted">未填问卷</div>
+            </div>
+          </a>
         </div>
       </div>
     </div>
   </div>
-  <div class="col-md-5">
-    <div class="card">
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-6">
+    <div class="card h-100">
       <div class="card-header"><i class="fas fa-bullhorn text-info"></i> 最新通知</div>
       <div class="card-body p-0">
         <ul class="list-group list-group-flush">
@@ -96,6 +102,8 @@
           <li class="list-group-item py-2 px-3">
             <span class="text-muted ms-2"><?=$snum?>.</span>
             <a href="javascript:;" onclick='showDashboardNotice(<?=htmlspecialchars(json_encode($n['title']), ENT_QUOTES)?>,<?=htmlspecialchars(json_encode($n['content']), ENT_QUOTES)?>,"<?=h($n['publisher_name'])?>","<?=h($n['publish_time'] ?: $n['created_at'])?>")'><?=h($n['title'])?></a>
+            <?php if (!empty($n['attach_count'])): ?><span class="badge bg-secondary text-white ms-1" title="该通知包含附件"><i class="fas fa-paperclip"></i> 文件</span><?php endif; ?>
+            <?php if (preg_match('/<img\b/i', (string)$n['content'])): ?><span class="badge bg-info text-white ms-1" title="该通知内容包含图片">图</span><?php endif; ?>
             <small class="text-muted float-end"><?=h(substr($n['publish_time'] ?: $n['created_at'], 0, 10))?></small>
           </li>
           <?php endforeach; else: ?>
@@ -105,23 +113,36 @@
       </div>
     </div>
   </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="fas fa-poll text-success"></i> 最新问卷</div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          <?php if (!empty($recentSurveys)): $snum = 0; foreach ($recentSurveys as $s): if (++$snum > 5) break; ?>
+          <li class="list-group-item py-2 px-3">
+            <span class="text-muted ms-2"><?=$snum?>.</span>
+            <a href="/survey?action=detail&id=<?=$s['id']?>"><?=h($s['title'])?></a>
+            <?php if (!empty($s['question_count'])): ?><span class="badge bg-info text-white ms-1" title="题目数量">题 <?=$s['question_count']?></span><?php endif; ?>
+            <?php if (!empty($s['my_submit_status']) && $s['my_submit_status'] != '0'): ?><span class="badge bg-success text-white ms-1" title="已提交">已填</span><?php else: ?><span class="badge bg-warning text-dark ms-1" title="未填写">待填</span><?php endif; ?>
+            <small class="text-muted float-end"><?=h(substr($s['expiration_date'] ?: $s['created_at'], 0, 10))?></small>
+          </li>
+          <?php endforeach; else: ?>
+          <li class="list-group-item py-3 text-center text-muted">暂无问卷</li>
+          <?php endif; ?>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 </div>
 <?php endif; ?>
 
 <div class="row mb-3">
-  <div class="col-md-6">
+  <div class="col-12">
     <div class="card">
       <div class="card-header"><i class="fas fa-chart-pie"></i> 状态分布</div>
       <div class="card-body">
         <canvas id="statusChart" height="220"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header"><i class="fas fa-chart-line"></i> 近6个月趋势</div>
-      <div class="card-body">
-        <canvas id="trendChart" height="220"></canvas>
       </div>
     </div>
   </div>
@@ -134,9 +155,7 @@
       <thead>
         <tr>
           <th style="width:40px" class="col-id">ID</th><th>物料</th>
-          <th>超标物质</th>
-          <th>含量</th>
-          <th>限值</th>
+          <th>预警内容</th>
           <th>报告编号</th>
           <th>日期</th>
         </tr>
@@ -146,14 +165,12 @@
         <?php if (!empty($warnings)): $idx = 0; foreach ($warnings as $w): if (++$idx > 10) break; ?>
         <tr>
           <td class="col-id"><?=h($w['id'] ?? '')?></td><td><?=h($w['material_name'] ?? '')?></td>
-          <td><?=h($w['substance_name'] ?? '')?></td>
-          <td class="text-danger fw-bold"><?=h($w['content_value'] ?? '')?></td>
-          <td><?=h($w['limit_value'] ?? '')?></td>
+          <td><?=h($w['warning_desc'] ?? '')?></td>
           <td><?=h($w['report_no'] ?? '')?></td>
           <td><?=h($w['test_date'] ?? $w['created_at'] ?? '')?></td>
         </tr>
         <?php endforeach; else: ?>
-        <tr><td colspan="6" class="text-muted py-4">暂无预警数据</td></tr>
+        <tr><td colspan="5" class="text-muted py-4">暂无预警数据</td></tr>
         <?php endif; ?>
       </tbody>
     </table>
@@ -196,22 +213,6 @@ new Chart(document.getElementById('statusChart'), {
   options: {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { position: 'bottom' } }
-  }
-});
-new Chart(document.getElementById('trendChart'), {
-  type: 'line',
-  data: {
-    labels: [<?php foreach ($months ?? [] as $m): ?>'<?=h($m)?>',<?php endforeach; ?>],
-    datasets: [
-      { label: '检测总数', data: [<?php foreach ($totals ?? [] as $v): ?><?=h($v)?>,<?php endforeach; ?>], borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.1)', fill: true, tension: .3 },
-      { label: '超标数', data: [<?php foreach ($violations ?? [] as $v): ?><?=h($v)?>,<?php endforeach; ?>], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.1)', fill: true, tension: .3 }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    interaction: { intersect: false, mode: 'index' },
-    plugins: { legend: { position: 'bottom' } },
-    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
   }
 });
 </script>

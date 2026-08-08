@@ -31,21 +31,10 @@
 </div>
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover mb-0" data-server="1" data-url="/query/material?action=data">
       <thead><tr><th style="width:40px" class="col-id">ID</th><th style="width:12%">编号</th><th class="text-start">名称</th><th style="width:14%">供应商</th><th style="width:9%">环保状态</th><th style="width:9%">审核</th><th style="width:8%">有效</th><th style="width:8%">报告数</th></tr></thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php foreach ($materials as $m): ?>
-        <tr>
-          <td class="col-id"><?=h($m['id'] ?? '')?></td><td><?=h($m['material_no'])?></td>
-          <td class="text-start"><a href="/material?action=detail&id=<?=$m['id']?>"><?=h($m['material_name'])?></a></td>
-          <td><?=h($m['supplier_name'] ?? '-')?></td>
-          <td><?=statusBadge($m['env_status'])?></td>
-          <td><?=statusBadge($m['audit_status'])?></td>
-          <td><?=statusBadge($m['valid_status'])?></td>
-          <td><span class="badge badge-soft-info"><?=(int)$m['report_count']?></span></td>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="7" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
   </div>

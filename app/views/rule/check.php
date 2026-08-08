@@ -1,7 +1,7 @@
 <div class="page-header">
   <h4><i class="fas fa-search"></i> 合规检查</h4>
   <div>
-    <a href="/rule" class="btn btn-sm btn-outline-secondary">规则管理</a>
+    <a href="/rule" class="btn btn-success">规则管理</a>
   </div>
 </div>
 <div class="card">

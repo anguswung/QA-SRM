@@ -26,9 +26,31 @@ class RuleController extends Controller {
     }
     private function showList() {
         $db = DB::getInstance();
-        $rules = $db->query("SELECT * FROM compliance_rule ORDER BY sort_order");
+        if (($_GET['action'] ?? '') === 'data') { $this->data(); return; }
         $title = '合规规则管理';
         $this->render('rule/index', get_defined_vars());
+    }
+
+    /** 服务端分页数据接口（action=data） */
+    private function data() {
+        $this->requirePermission('rule.view');
+        $db = DB::getInstance();
+        [$page, $perPage] = $this->pageParams();
+        $total = (int)$db->single("SELECT COUNT(*) FROM compliance_rule");
+        $offset = ($page - 1) * $perPage;
+        $rows = $db->query("SELECT * FROM compliance_rule ORDER BY sort_order LIMIT ? OFFSET ?", [$perPage, $offset]);
+        $html = '';
+        foreach ($rows as $r) {
+            $html .= '<tr>';
+            $html .= colId($r['id'] ?? '') . '<td>' . h($r['rule_code']) . '</td>';
+            $html .= '<td>' . h($r['name']) . '</td>';
+            $html .= '<td>' . badge($r['doc_category_code'] ?: '-', 'info') . '</td>';
+            $html .= '<td>' . ($r['rule_type'] === 'mandatory' ? '<span class="status-tag danger">强制</span>' : '<span class="status-tag warning">提醒</span>') . '</td>';
+            $html .= '<td>' . ($r['enabled'] ? '<span class="status-tag success">启用</span>' : '<span class="status-tag secondary">禁用</span>') . '</td>';
+            $html .= '<td><button class="btn btn-sm btn-outline-' . ($r['enabled'] ? 'warning' : 'success') . '" onclick="toggleRule(' . $r['id'] . ')">' . ($r['enabled'] ? '禁用' : '启用') . '</button></td>';
+            $html .= '</tr>';
+        }
+        $this->paginationResponse($total, $html);
     }
     private function showCheck() {
         $db = DB::getInstance();

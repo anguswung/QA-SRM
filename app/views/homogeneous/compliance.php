@@ -61,7 +61,7 @@
       </div>
       <div class="card-body p-0">
         <table class="table table-hover">
-          <thead><tr><th class="nowrap" style="width:6%">序号</th><th>物质中文</th><th>物质英文</th><th>CAS</th><th>检测值(mg/kg)</th><th>法规限值</th><th>判定</th><th>时间</th></tr></thead>
+          <thead><tr><th class="nowrap" style="width:6%">序号</th><th>物质中文</th><th>物质英文</th><th>CAS</th><th>检测值</th><th>法规限值</th><th>判定</th><th>时间</th></tr></thead>
           <tbody>
 <?php $__rnum = 0; ?>
             <?php foreach ($results as $i => $r): ?>

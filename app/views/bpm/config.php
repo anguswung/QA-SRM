@@ -1,8 +1,8 @@
 <div class="page-header">
   <h4><i class="fas fa-cog"></i> 流程配置</h4>
   <div>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#templateModal"><i class="fas fa-plus"></i> 新增模板</button>
-    <a href="/bpm" class="btn btn-sm btn-outline-secondary">任务中心</a>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#templateModal"><i class="fas fa-plus"></i> 新增模板</button>
+    <a href="/bpm" class="btn btn-success">任务中心</a>
   </div>
 </div>
 <div class="row">

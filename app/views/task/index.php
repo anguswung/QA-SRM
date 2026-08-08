@@ -2,7 +2,7 @@
   <h4><i class="fas fa-tasks"></i> 任务中心</h4>
   <?php if (canManage('task.create')): ?>
   <div>
-    <a href="/task?action=create" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> 下发任务</a>
+    <a href="/task?action=create" class="btn btn-primary"><i class="fas fa-plus"></i> 下发任务</a>
   </div>
   <?php endif; ?>
 </div>
@@ -71,24 +71,10 @@
 <div class="card">
   <div class="card-header"><i class="fas fa-list"></i> 任务列表</div>
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover mb-0" data-server="1" data-url="/task?action=data">
       <thead><tr><th style="width:40px" class="col-id">ID</th><th width="50">优先</th><th class="text-start">标题</th><th width="90">模板</th><?php if (isAdmin()): ?><th width="100">供应商</th><?php endif; ?><th width="60">状态</th><th width="100">截止日期</th><th width="140">创建时间</th><th width="60">操作</th></tr></thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php foreach ($instances as $i): ?>
-        <tr class="<?=$i['priority'] >= 1 ? 'table-warning' : ''?>">
-          <td class="col-id"><?=h($i['id'] ?? '')?></td><td><?=priorityBadge($i['priority'] ?? 0)?></td>
-          <td class="text-start"><a href="/task?action=detail&id=<?=$i['id']?>"><?=h($i['title'])?></a></td>
-          <td><?=h($i['template_name'])?></td>
-          <?php if (isAdmin()): ?>
-          <td><?=h($i['initiator_name'] ?? '-')?></td>
-          <?php endif; ?>
-          <td><?=statusBadge($i['status'])?></td>
-          <td><small><?php if (!empty($i['due_date'])): ?><span class="<?=$i['due_date'] < date('Y-m-d') && $i['status'] === 'active' ? 'text-danger' : ''?>"><?=h($i['due_date'])?></span><?php else: ?>-<?php endif; ?></small></td>
-          <td><small><?=h($i['created_at'])?></small></td>
-          <td><a href="/task?action=detail&id=<?=$i['id']?>" class="btn-icon btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a></td>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="9" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
   </div>

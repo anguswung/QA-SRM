@@ -62,6 +62,17 @@
               <div class="mb-3"><label>地址</label><input type="text" name="address" class="form-control" value="<?=h($item['address'] ?? '')?>"></div>
             </div>
           </div>
+          <?php if ($id && !isSupplier()): ?>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label>重置登录密码</label>
+                <input type="password" name="reset_password" class="form-control" placeholder="留空则不修改" autocomplete="new-password">
+                <small class="text-muted">重置后供应商下次登录需修改密码；登录账号为供应商编码。</small>
+              </div>
+            </div>
+          </div>
+          <?php endif; ?>
           <?php if (!$id): ?>
           <div class="alert alert-info py-2">供应商登录账号和初始密码为分配的三位编码</div>
           <?php endif; ?>

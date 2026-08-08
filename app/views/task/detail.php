@@ -1,7 +1,7 @@
 <div class="page-header">
   <h4><i class="fas fa-tasks"></i> <?=h($instance['title'])?></h4>
   <div>
-    <a href="/task" class="btn btn-sm btn-outline-secondary"><i class="fas fa-list"></i> 返回</a>
+    <a href="/task" class="btn btn-success"><i class="fas fa-list"></i> 返回</a>
   </div>
 </div>
 <div class="row">

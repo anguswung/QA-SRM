@@ -92,6 +92,11 @@ html {
     background: #fff
 }
 
+.login-body .mb-3 label {
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
 @media(max-width: 480px) {
     .login-card {
         width: 90%
@@ -125,25 +130,29 @@ html {
     white-space: nowrap;
 }
 
-/* ===== 报告 tab 导航加粗 + 激活蓝底高亮（homogeneous/reports、material/detail 页面） ===== */
+/* ===== 报告 tab 导航加粗 + 激活蓝底高亮（homogeneous/reports、material/detail、supplier 评价弹窗 页面） ===== */
 #reportTabs,
-#materialTabs {
+#materialTabs,
+#supplierRatingTabs {
     border-bottom: 3px solid var(--tblr-primary, #0054a6);
 }
 
 #reportTabs .nav-link,
-#materialTabs .nav-link {
+#materialTabs .nav-link,
+#supplierRatingTabs .nav-link {
     font-weight: 700;
     color: var(--tblr-primary, #0054a6);
 }
 
 #reportTabs .nav-link:hover,
-#materialTabs .nav-link:hover {
+#materialTabs .nav-link:hover,
+#supplierRatingTabs .nav-link:hover {
     background-color: var(--tblr-primary-bg-subtle, #e6effb);
 }
 
 #reportTabs .nav-link.active,
-#materialTabs .nav-link.active {
+#materialTabs .nav-link.active,
+#supplierRatingTabs .nav-link.active {
     background-color: var(--tblr-primary, #0054a6) !important;
     color: #fff !important;
     border-color: var(--tblr-primary, #0054a6) !important;
@@ -181,23 +190,58 @@ html {
 
 /* ===== 图标按钮尺寸规范化（列表操作按钮统一紧凑尺寸） ===== */
 .btn-icon {
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
+    text-align: center;
 }
 
 .btn-icon i {
     font-size: 0.875rem;
     line-height: 1;
+    margin: 0;
 }
 
 .btn-icon.btn-sm {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 1.5rem;
+    padding: 0;
 }
 
 .btn-icon.btn-sm i {
     font-size: 0.8125rem;
+}
+
+/* 所有页 fa-undo 重置按钮：固定 1.5rem 方块、去除 outline-secondary 的横向 padding，图标居中 */
+.btn-icon.btn-sm.btn-outline-secondary {
+    width: 1.5rem;
+    min-width: 1.5rem;
+    padding: 0;
+}
+
+/* 用户管理：姓名列自动撑满内容宽度，完整显示不换行 */
+#usersTable th.col-realname,
+#usersTable td.col-realname {
+    white-space: nowrap;
+}
+
+/* 次级小按钮统一紧凑尺寸（参考 fa-arrow-left 图标盒高 1.75rem，图标版为等腰，文字版高度一致） */
+.btn-sm.btn-outline-secondary {
+    height: 1.5rem;
+    min-width: 1.5rem;
+    padding: 0 0.4375rem;
+    font-size: 0.8125rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.btn-sm.btn-outline-secondary i {
+    line-height: 1;
 }
 
 /* ===== DataTables 布局微调 ===== */
@@ -969,6 +1013,11 @@ a:not(.nav-link):not(.dropdown-item):not(.btn) i {
     margin-right: .35em;
 }
 
+/* 图标纯按钮：无相邻文字，不需要图标右间距（覆盖上方 .btn i 的 margin-right） */
+.btn-icon i {
+    margin-right: 0 !important;
+}
+
 /* ===== 侧边栏折叠：飞出菜单必须脱离文档流置顶（覆盖 Tabler .dropdown-menu 的 static 定位） ===== */
 @media (min-width: 992px) {
     body.sidebar-collapsed .navbar-vertical .navbar-collapse .dropdown-menu.show {
@@ -986,4 +1035,5 @@ a:not(.nav-link):not(.dropdown-item):not(.btn) i {
         padding: 4px;
         z-index: 1045 !important;
     }
+}
 }

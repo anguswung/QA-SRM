@@ -55,7 +55,19 @@ class DB {
     public function lastInsertId() { return $this->pdo->lastInsertId(); }
     private function translate($sql) {
         if ($this->driver === 'mysql') {
+            // 顺序重要：先匹配更具体的形态
             $sql = preg_replace("/datetime\('now','localtime'\)/i", 'NOW()', $sql);
+            $sql = preg_replace("/date\('now','localtime'\)/i", 'DATE(NOW())', $sql);
+            $sql = preg_replace("/date\('now',\s*'(-?\d+)\s*(year|month|week|day|hour)s?'\)/i", 'DATE_SUB(CURDATE(), INTERVAL $1 $2)', $sql);
+            $sql = preg_replace("/date\('now'\)/i", 'CURDATE()', $sql);
+            // SQLite julianday 日期差 → MySQL DATEDIFF
+            $sql = preg_replace("/julianday\(([^)]+)\)\s*-\s*julianday\('now'\)/i", 'DATEDIFF($1, CURDATE())', $sql);
+            $sql = preg_replace("/julianday\('now'\)\s*-\s*julianday\(([^)]+)\)/i", 'DATEDIFF(CURDATE(), $1)', $sql);
+            // SQLite strftime('%Y-%m', col) -> MySQL DATE_FORMAT(col, '%Y-%m')；SQLite %M=分钟 -> MySQL %i
+            $sql = preg_replace_callback("/strftime\('([^']*)',\s*([^)]+)\)/i", function ($m) {
+                return "DATE_FORMAT(" . $m[2] . ", '" . str_replace('%M', '%i', $m[1]) . "')";
+            }, $sql);
+            $sql = str_replace('AUTOINCREMENT', 'AUTO_INCREMENT', $sql);
             $sql = str_replace('"', '`', $sql);
         }
         return $sql;

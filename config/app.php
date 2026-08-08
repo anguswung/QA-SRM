@@ -36,17 +36,6 @@ return [
         'password' => env('DB_PASSWORD', ''),
         'charset'  => env('DB_CHARSET', 'utf8mb4'),
     ],
-    'redis' => [
-        'host'     => env('REDIS_HOST', '127.0.0.1'),
-        'port'     => (int)env('REDIS_PORT', 6379),
-        'password' => env('REDIS_PASSWORD', ''),
-        'db'       => (int)env('REDIS_DB', 0),
-    ],
-    'jwt' => [
-        'secret'          => env('JWT_SECRET', hash('sha256', __FILE__ . php_uname() . __DIR__)),
-        'access_expire'   => (int)env('JWT_ACCESS_EXPIRE', 7200),
-        'refresh_expire'  => (int)env('JWT_REFRESH_EXPIRE', 604800),
-    ],
     'upload' => [
         'path'     => dirname(__DIR__) . '/' . env('UPLOAD_PATH', './uploads'),
     ],

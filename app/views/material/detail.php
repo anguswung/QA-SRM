@@ -1,9 +1,9 @@
 <div class="page-header">
   <h4><i class="fas fa-boxes"></i> <?=h($item['material_name'])?> <small class="text-muted">[<?=h($item['material_no'])?>]</small></h4>
   <div>
-    <?php if (can('material.edit')): ?><a href="/material?action=edit&id=<?=$item['id']?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> 编辑</a><?php endif; ?>
-    <a href="/compliance/analyze?material_id=<?=$item['id']?>" class="btn btn-outline-info"><i class="fas fa-balance-scale"></i> 合规分析</a>
-    <a href="/material" class="btn btn-outline-secondary"><i class="fas fa-list"></i> 返回列表</a>
+    <?php if (can('material.edit')): ?><a href="/material?action=edit&id=<?=$item['id']?>" class="btn btn-primary"><i class="fas fa-edit"></i> 编辑</a><?php endif; ?>
+    <a href="/compliance/analyze?material_id=<?=$item['id']?>" class="btn btn-success"><i class="fas fa-balance-scale"></i> 合规分析</a>
+    <a href="/material" class="btn btn-success"><i class="fas fa-list"></i> 返回列表</a>
   </div>
 </div>
 <div class="card">
@@ -167,7 +167,6 @@
                   <?php if ($r['file_path']): ?>
                   <a href="<?=h(fileUrl($r['file_path']))?>" class="btn-icon btn btn-sm btn-outline-info" target="_blank" title="下载文件"><i class="fas fa-download"></i></a>
                   <?php endif; ?>
-                  <a href="/report/elements?report_id=<?=$r['id']?>" class="btn-icon btn btn-sm btn-outline-success" title="查看含量"><i class="fas fa-flask"></i></a>
                 </td>
               </tr>
               <?php endforeach; ?>
@@ -181,11 +180,10 @@
       <div class="card-header">
         检测结果 - 物质含量
         <div class="card-actions">
-          <a href="/report/elements" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> 管理</a>
         </div>
       </div>
       <div class="card-body p-0">
-        <table class="table table-hover datatable">
+        <table class="table table-hover ">
           <thead>
             <tr><th style="width:40px" class="col-id">ID</th><th>报告编号</th><th>物质</th><th>CAS</th><th>含量</th><th>单位</th><th>限值</th><th>超标</th></tr>
           </thead>
@@ -244,14 +242,26 @@
       <div class="card-header">审核记录</div>
       <div class="card-body p-0">
         <table class="table table-hover">
-          <thead><tr><th style="width:40px" class="col-id">ID</th><th>操作</th><th>意见</th><th>操作人</th><th>时间</th></tr></thead>
+          <thead><tr><th style="width:40px" class="col-id">ID</th><th>操作</th><th>说明</th><th>操作人</th><th>时间</th></tr></thead>
           <tbody>
 <?php $__rnum = 0; ?>
-            <?php foreach ($auditLogs as $l): ?>
+            <?php
+            $auditActionMap = [
+                'create'  => ['success', '创建'],
+                'update'  => ['info', '编辑'],
+                'submit'  => ['warning', '提交审核'],
+                'approve' => ['success', '通过'],
+                'reject'  => ['danger', '驳回'],
+            ];
+            ?>
+            <?php foreach ($auditLogs as $l):
+              [$auditColor, $auditLabel] = $auditActionMap[$l['action'] ?? ''] ?? ['secondary', h($l['action'] ?? $l['action'])];
+            ?>
             <tr>
-              <td class="col-id"><?=h($l['id'] ?? '')?></td><td><span class="status-tag <?=$l['action'] === 'approve' ? 'success' : 'danger'?>"><?=h($l['action'])?></span></td>
+              <td class="col-id"><?=h($l['id'] ?? '')?></td>
+              <td><span class="status-tag <?=$auditColor?>"><?=$auditLabel?></span></td>
               <td><?=h($l['comment'] ?? '-')?></td>
-              <td><?=h($l['operator_id'])?></td>
+              <td><?=h($l['operator_name'] ?? $l['operator_id'] ?? '-')?></td>
               <td><small><?=h($l['operated_at'])?></small></td>
             </tr>
             <?php endforeach; ?>

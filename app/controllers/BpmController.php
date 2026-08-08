@@ -19,11 +19,6 @@ class BpmController extends Controller {
                 $engine->reject($instanceId, userId(), $_POST['comment'] ?? '');
                 flash('success', '已驳回');
             }
-            if ($action === 'start') {
-                $engine = new BpmEngine();
-                $engine->start((int)($_POST['template_id'] ?? 0), $_POST['title'] ?? '', $_POST['ref_type'] ?? '', (int)($_POST['ref_id'] ?? 0), userId());
-                flash('success', '流程已发起');
-            }
             header('Location: /bpm'); exit;
         }
         $tasks = $db->query("SELECT bt.*, bi.title, bi.ref_type, bi.ref_id, bn.node_name, t.name AS template_name FROM bpm_task bt JOIN bpm_instance bi ON bt.instance_id=bi.id JOIN bpm_node bn ON bt.node_id=bn.id JOIN bpm_template t ON bi.template_id=t.id WHERE bt.assignee_id=? AND bt.status='pending' ORDER BY bt.created_at DESC", [userId()]);

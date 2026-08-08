@@ -36,8 +36,8 @@ class QueryRegistry {
     public static function supplierIdByName(string $name): ?int {
         $k = "sid_$name";
         if (!array_key_exists($k, self::$cache)) {
-            $row = self::db()->single("SELECT id FROM supplier WHERE name=? OR name_short=?", [$name]);
-            self::$cache[$k] = $row ? (int)$row['id'] : null;
+            $id = self::db()->single("SELECT id FROM supplier WHERE name=? OR name_short=?", [$name, $name]);
+            self::$cache[$k] = ($id !== false && $id !== null) ? (int)$id : null;
         }
         return self::$cache[$k];
     }
@@ -53,7 +53,7 @@ class QueryRegistry {
     public static function validMaterials(): array {
         $k = 'valid_materials';
         if (!isset(self::$cache[$k])) {
-            self::$cache[$k] = self::db()->query("SELECT id, material_name, material_no, env_status FROM material WHERE valid_status='Valid' ORDER BY material_name");
+            self::$cache[$k] = self::db()->query("SELECT id, material_name, material_no, env_status, supplier_id FROM material WHERE valid_status='Valid' ORDER BY material_name");
         }
         return self::$cache[$k];
     }

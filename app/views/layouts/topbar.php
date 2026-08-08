@@ -9,8 +9,15 @@
     <div class="navbar-nav flex-row order-md-last">
       <div class="nav-item d-none d-md-flex me-2">
         <div class="nav-link d-flex align-items-center gap-2">
+          <?php if (isSupplier()): ?>
+          <a href="<?=h('/supplier?action=edit&id=' . userSupplierId())?>" class="d-flex align-items-center gap-2 text-decoration-none text-body" title="编辑我的资料">
+            <i class="fas fa-user-circle"></i>
+            <span><?=h($_SESSION['supplier_name'] ?? userRealname())?></span>
+          </a>
+          <?php else: ?>
           <i class="fas fa-user-circle"></i>
-          <span><?=h(isSupplier() ? ($_SESSION['supplier_name'] ?? userRealname()) : userRealname())?></span>
+          <span><?=h(userRealname())?></span>
+          <?php endif; ?>
         </div>
         <span class="badge bg-<?=isAdmin() ? 'danger' : 'primary'?> text-white align-self-center"><?=isAdmin() ? '管理员' : '供应商'?></span>
       </div>

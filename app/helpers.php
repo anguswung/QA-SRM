@@ -30,6 +30,36 @@ function loadUserPermissions($roleName): void {
     $perms = DB::getInstance()->single("SELECT permissions FROM roles WHERE name=?", [$roleName], false);
     $_SESSION['permissions'] = $perms ? json_decode($perms, true) : [];
 }
+function stdOfficialLimits($type): array {
+    $types = [
+        'RoHS' => [
+            ['substance_name'=>'铅（Pb）','cas_no'=>'7439-92-1','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'汞（Hg）','cas_no'=>'7439-97-6','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'镉（Cd）','cas_no'=>'7440-43-9','limit_value'=>100,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'六价铬（Cr VI）','cas_no'=>'18540-29-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'多溴联苯（PBBs）','cas_no'=>'59080-40-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'多溴二苯醚（PBDEs）','cas_no'=>'32534-81-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'邻苯二甲酸二正丁酯（DBP）','cas_no'=>'84-74-2','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'邻苯二甲酸丁基苄酯（BBP）','cas_no'=>'85-68-7','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'邻苯二甲酸二(2-乙基己)酯（DEHP）','cas_no'=>'117-81-7','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'邻苯二甲酸二异丁酯（DIBP）','cas_no'=>'84-69-5','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ],
+        'REACH' => [
+            ['substance_name'=>'铅（Pb）','cas_no'=>'7439-92-1','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'汞（Hg）','cas_no'=>'7439-97-6','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'镉（Cd）','cas_no'=>'7440-43-9','limit_value'=>100,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'六价铬（Cr VI）','cas_no'=>'18540-29-9','limit_value'=>1000,'limit_unit'=>'mg/kg'],
+        ],
+        'HF' => [
+            ['substance_name'=>'氟（F）','cas_no'=>'7782-41-4','limit_value'=>900,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'氯（Cl）','cas_no'=>'7782-50-5','limit_value'=>900,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'溴（Br）','cas_no'=>'7726-95-6','limit_value'=>900,'limit_unit'=>'mg/kg'],
+            ['substance_name'=>'碘（I）','cas_no'=>'7553-56-2','limit_value'=>900,'limit_unit'=>'mg/kg'],
+        ],
+    ];
+    return $types[$type] ?? [];
+}
+
 function menuOpen($path): string {
     $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
     return strpos($uri, $path) === 0 ? 'menu-open' : '';
@@ -130,6 +160,19 @@ function csrf_expired_page(): void {
         . '<h1>表单已过期</h1><p>页面停留时间过长或会话已更新，请刷新页面后重试。</p>'
         . '<a href="' . $back . '">刷新页面</a></div></body></html>');
 }
+
+/* ===== 列表行渲染公共单元（封装常用 HTML 片段，统一风格） ===== */
+
+/** ID 单元格：<td class="col-id">值</td> */
+function colId($v): string {
+    return '<td class="col-id">' . h($v) . '</td>';
+}
+
+/** 软徽章：<span class="badge badge-soft-颜色">文字</span>，颜色默认 info */
+function badge($text, $color = 'info'): string {
+    return '<span class="badge badge-soft-' . $color . '">' . h($text) . '</span>';
+}
+
 function canManage($perm): bool {
     return isAdmin() && can($perm);
 }

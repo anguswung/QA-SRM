@@ -5,15 +5,24 @@ function calcPageLength() {
 function paginateTable(table, perPage) {
     if (typeof $ === 'undefined') return;
     var $table = $(table);
-    if ($table.find('tbody tr').length <= perPage) return;
     if ($table.closest('.dataTables_wrapper').length) return;
     $table.data('perPage', perPage);
+    if ($table.data('server')) {
+        if (!$table.next('.table-pagination').length) {
+            var $nav = $('<div class="table-pagination d-flex justify-content-center align-items-center mt-2"></div>');
+            $table.after($nav);
+        }
+        goPage($table, 0);
+        return;
+    }
+    if ($table.find('tbody tr').length <= perPage) return;
     var $nav = $('<div class="table-pagination d-flex justify-content-center align-items-center mt-2"></div>');
     $table.after($nav);
     goPage($table, 0);
 }
 
 function goPage($table, page) {
+    if ($table.data('server')) return serverGoPage($table, page);
     var perPage = $table.data('perPage');
     var $rows = $table.find('tbody tr');
     var total = $rows.length;
@@ -21,6 +30,39 @@ function goPage($table, page) {
     if (page < 0) page = 0;
     if (page >= pages) page = pages - 1;
     $rows.hide().slice(page * perPage, (page + 1) * perPage).show();
+    var html = buildPaginationHtml($table, page, total, perPage, pages);
+    $table.next('.table-pagination').html(html);
+}
+
+/* 服务端分页：表格声明 data-server="1" data-url="/xxx?action=data" 时，翻页请求服务端渲染的行 HTML */
+function serverGoPage($table, page) {
+    var perPage = $table.data('perPage') || 20;
+    var url = $table.data('url');
+    if (!url) return;
+    $table.next('.table-pagination').addClass('loading');
+    var sep = url.indexOf('?') >= 0 ? '&' : '?';
+    var full = url + sep + 'page=' + (page + 1) + '&perPage=' + perPage + (location.search || '');
+    fetch(full, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.error) { $table.find('tbody').html('<tr><td colspan="99" class="text-center text-danger py-3">' + res.error + '</td></tr>'); }
+            else {
+                $table.find('tbody').html(res.html || '<tr><td colspan="99" class="text-center text-muted py-3">暂无数据</td></tr>');
+                $table.data('total', res.total || 0);
+                $('.server-total').text(res.total || 0);
+                var pages = Math.max(1, Math.ceil((res.total || 0) / perPage));
+                if (page >= pages) page = pages - 1;
+                $table.next('.table-pagination').html(buildPaginationHtml($table, page, res.total || 0, perPage, pages));
+            }
+            $table.next('.table-pagination').removeClass('loading');
+        })
+        .catch(function() {
+            $table.next('.table-pagination').removeClass('loading');
+            $table.find('tbody').html('<tr><td colspan="99" class="text-center text-danger py-3">加载失败，请刷新页面重试</td></tr>');
+        });
+}
+
+function buildPaginationHtml($table, page, total, perPage, pages) {
     var html = '<div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:8px">';
     html += '<div class="text-muted small">共 ' + total + ' 条</div>';
     html += '<nav><ul class="pagination pagination-sm mb-0">';
@@ -33,14 +75,14 @@ function goPage($table, page) {
     if (end < pages - 1) html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
     html += '<li class="page-item' + (page >= pages - 1 ? ' disabled' : '') + '"><a class="page-link" href="javascript:;" onclick="goPageClick(this,' + perPage + ',' + (page + 1) + ')">下一页</a></li>';
     html += '</ul></nav>';
-  html += '<div class="d-flex align-items-center" style="gap:6px;flex-shrink:0">';
-  html += '<span style="white-space:nowrap;font-size:13px">跳转 <input type="number" min="1" max="' + pages + '" value="' + (page + 1) + '" style="width:48px;text-align:center;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:13px" onchange="gotoPage(this,' + perPage + ',' + pages + ')"> 页</span>';
+    html += '<div class="d-flex align-items-center" style="gap:6px;flex-shrink:0">';
+    html += '<span style="white-space:nowrap;font-size:13px">跳转 <input type="number" min="1" max="' + pages + '" value="' + (page + 1) + '" style="width:48px;text-align:center;padding:2px 4px;border:1px solid #d1d5db;border-radius:3px;font-size:13px" onchange="gotoPage(this,' + perPage + ',' + pages + ')"> 页</span>';
     html += '<select class="form-control form-control-sm" onchange="changePerPage(this)" style="width:auto">';
     [10, 20, 30, 50, 100].forEach(function(v) {
         html += '<option value="' + v + '"' + (v === perPage ? ' selected' : '') + '>每页 ' + v + ' 条</option>';
     });
     html += '</select></div></div>';
-    $table.next('.table-pagination').html(html);
+    return html;
 }
 
 function goPageClick(el, perPage, page) {
@@ -129,6 +171,9 @@ $(function() {
             }
         });
     }
+    $('table[data-server="1"]').each(function() {
+        paginateTable(this, pl);
+    });
     $('table.table').each(function() {
         if ($(this).find('tbody tr').length > pl) paginateTable(this, pl);
     });

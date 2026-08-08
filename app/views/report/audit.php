@@ -1,7 +1,7 @@
 <div class="page-header">
   <h4><i class="fas fa-clipboard-check"></i> 报告审核</h4>
   <div>
-    <a href="/report" class="btn btn-sm btn-outline-secondary">报告列表</a>
+    <a href="/report" class="btn btn-success">报告列表</a>
   </div>
 </div>
 <div class="search-bar mb-3">
@@ -12,30 +12,10 @@
 </div>
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover mb-0" data-server="1" data-url="/report/audit?action=data">
       <thead><tr><th style="width:40px" class="col-id">ID</th><th style="width:12%">报告编号</th><th>物料</th><th style="width:10%">供应商</th><th style="width:7%">类型</th><th style="width:14%">机构</th><th style="width:10%">日期</th><th style="width:8%">状态</th><th style="width:10%">操作</th></tr></thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php foreach ($reports as $r): ?>
-        <tr>
-          <td class="col-id"><?=h($r['id'] ?? '')?></td><td><?=h($r['report_no'])?></td>
-          <td><?=h($r['material_name'] ?? '-')?></td>
-          <td><?=h($r['supplier_name'] ?? '-')?></td>
-          <td><span class="badge badge-soft-info"><?=h($r['report_type'])?></span></td>
-          <td><?=h($r['test_agency'])?></td>
-          <td><?=h($r['test_date'])?></td>
-          <td><?=statusBadge($r['audit_status'])?></td>
-          <td>
-            <a href="/report/elements?report_id=<?=$r['id']?>" class="btn-icon btn btn-sm btn-outline-info" title="元素含量"><i class="fas fa-flask"></i></a>
-            <?php if (can('report.audit')): ?>
-            <button class="btn-icon btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#auditModal"
-              data-id="<?=$r['id']?>" data-status="approved"><i class="fas fa-check"></i></button>
-            <button class="btn-icon btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#auditModal"
-              data-id="<?=$r['id']?>" data-status="rejected"><i class="fas fa-times"></i></button>
-            <?php endif; ?>
-          </td>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="9" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
   </div>

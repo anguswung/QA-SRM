@@ -102,6 +102,19 @@ CREATE TABLE IF NOT EXISTS hm_report_element (
     created_at TEXT DEFAULT (datetime('now','localtime'))
 );
 
+-- 内部标准限值表（管理员配置的己方内部标准，与官方限值对照）
+CREATE TABLE IF NOT EXISTS internal_standard (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_type TEXT NOT NULL,
+    substance_name TEXT NOT NULL,
+    cas_no TEXT NOT NULL,
+    limit_value REAL,
+    limit_unit TEXT DEFAULT 'mg/kg',
+    updated_by INTEGER,
+    updated_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(report_type, cas_no)
+);
+
 -- 均质材料成分表
 CREATE TABLE IF NOT EXISTS hm_composition (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -231,33 +244,6 @@ CREATE TABLE IF NOT EXISTS test_report (
     updated_at TEXT DEFAULT (datetime('now','localtime'))
 );
 
--- 检测元素含量
-CREATE TABLE IF NOT EXISTS element_content (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_id INTEGER REFERENCES test_report(id),
-    substance_name TEXT,
-    cas_no TEXT,
-    content_value REAL,
-    unit TEXT DEFAULT 'mg/kg',
-    limit_value REAL,
-    limit_unit TEXT,
-    is_over_limit INTEGER DEFAULT 0,
-    detection_method TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 文档分类
-CREATE TABLE IF NOT EXISTS document_category (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL,
-    parent_id INTEGER REFERENCES document_category(id),
-    validity_days INTEGER DEFAULT 365,
-    is_required INTEGER DEFAULT 1,
-    sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
 -- 文档提醒配置
 CREATE TABLE IF NOT EXISTS regulation_lib (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,33 +290,8 @@ CREATE TABLE IF NOT EXISTS substance (
     name_en TEXT,
     molecular_formula TEXT,
     alias TEXT,
-    substance_group_id INTEGER REFERENCES substance_group(id),
     is_controlled INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 物质分组
-CREATE TABLE IF NOT EXISTS substance_group (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    parent_id INTEGER REFERENCES substance_group(id),
-    sort_order INTEGER,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 用途
-CREATE TABLE IF NOT EXISTS maybe_use (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-);
-
--- 物质用途关联
-CREATE TABLE IF NOT EXISTS substance_maybe_use (
-    substance_id INTEGER REFERENCES substance(id),
-    maybe_use_id INTEGER REFERENCES maybe_use(id),
-    PRIMARY KEY (substance_id, maybe_use_id)
 );
 
 -- 分析配置
@@ -499,6 +460,30 @@ CREATE TABLE IF NOT EXISTS survey (
     created_at TEXT DEFAULT (datetime('now','localtime'))
 );
 
+-- 问卷问题（结构化工项）
+CREATE TABLE IF NOT EXISTS survey_question (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    survey_id INTEGER NOT NULL REFERENCES survey(id),
+    question_type TEXT NOT NULL DEFAULT 'text',
+    question_title TEXT NOT NULL,
+    is_required INTEGER DEFAULT 0,
+    sort_order INTEGER DEFAULT 0,
+    options TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+);
+
+-- 问卷问题答案
+CREATE TABLE IF NOT EXISTS survey_answer (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    response_id INTEGER NOT NULL REFERENCES survey_response(id),
+    question_id INTEGER NOT NULL REFERENCES survey_question(id),
+    answer_value TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(response_id, question_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sq_survey ON survey_question(survey_id);
+
 -- 问卷回复
 CREATE TABLE IF NOT EXISTS survey_response (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -561,6 +546,22 @@ CREATE TABLE IF NOT EXISTS system_config (
     updated_at TEXT DEFAULT (datetime('now','localtime'))
 );
 
+-- 邮件发送记录（到期报告提醒去重与审计）
+CREATE TABLE IF NOT EXISTS mail_send_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_type TEXT,
+    report_id INTEGER,
+    report_no TEXT,
+    report_name TEXT,
+    supplier_id INTEGER,
+    recipient TEXT,
+    subject TEXT,
+    body TEXT,
+    status TEXT DEFAULT 'ok',
+    error TEXT,
+    sent_at TEXT DEFAULT (datetime('now','localtime'))
+);
+
 -- 默认数据
 INSERT OR IGNORE INTO system_config (config_key, config_value, description) VALUES
 ('report_expiry_yellow_days', '30', '报告到期黄色预警天数'),
@@ -574,7 +575,17 @@ INSERT OR IGNORE INTO system_config (config_key, config_value, description) VALU
 ('company_name', '绿色产品管理系统GPM', '公司名称'),
 ('company_phone', '0755-88888888', '公司电话'),
 ('company_address', '广东省深圳市南山区', '公司地址'),
-('system_name', '绿色产品管理系统GPM', '系统名称');
+('system_name', '绿色产品管理系统GPM', '系统名称'),
+('mail_smtp_host', '', 'SMTP 服务器'),
+('mail_smtp_port', '587', 'SMTP 端口'),
+('mail_smtp_encryption', 'tls', 'SMTP 加密方式 tls/ssl/none'),
+('mail_smtp_username', '', 'SMTP 账号'),
+('mail_smtp_password', '', 'SMTP 密码'),
+('mail_from_address', '', '发件人邮箱'),
+('mail_from_name', '', '发件人名称'),
+('mail_report_expiry_enabled', '1', '是否启用到期报告邮件提醒'),
+('mail_template_expiry_title', '【{company_name}】检测报告到期提醒', '到期提醒邮件主题模板'),
+('mail_template_expiry_body', '', '到期提醒邮件正文模板');
 
 INSERT OR IGNORE INTO roles (name, description, permissions) VALUES
 ('admin', '系统管理员', '["*"]'),
@@ -589,3 +600,20 @@ INSERT OR IGNORE INTO users (username, password, realname, role, status, passwor
 -- ==================== V2.0 新增表 ====================
 
 -- 物料分类表 (V2.0)
+
+-- ===== 关键索引（SQLite/MySQL 双兼容，10W 级数据性能保障） =====
+CREATE INDEX IF NOT EXISTS idx_material_supplier ON material(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_material_spec ON material(spec);
+CREATE INDEX IF NOT EXISTS idx_material_valid ON material(valid_status);
+CREATE INDEX IF NOT EXISTS idx_material_env ON material(env_status);
+CREATE INDEX IF NOT EXISTS idx_material_no ON material(material_no);
+CREATE INDEX IF NOT EXISTS idx_supplier_code ON supplier(code);
+CREATE INDEX IF NOT EXISTS idx_test_report_material ON test_report(material_id);
+CREATE INDEX IF NOT EXISTS idx_hm_report_hm ON hm_report(hm_id);
+CREATE INDEX IF NOT EXISTS idx_hmr_type_status ON hm_report(report_type, status);
+CREATE INDEX IF NOT EXISTS idx_hre_report ON hm_report_element(hm_report_id);
+CREATE INDEX IF NOT EXISTS idx_nrl_notice ON notice_read_log(notice_id);
+CREATE INDEX IF NOT EXISTS idx_nrl_supplier ON notice_read_log(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_sr_survey ON survey_response(survey_id);
+CREATE INDEX IF NOT EXISTS idx_ar_hm ON analysis_record(hm_id);
+CREATE INDEX IF NOT EXISTS idx_bt_assignee ON bpm_task(assignee_id, status);

@@ -7,9 +7,6 @@ class ReportController extends Controller {
             if ($action === 'create') { $this->doCreate(); return; }
             if ($action === 'update') { $this->doUpdate(); return; }
             if ($action === 'delete') { $this->doDelete(); return; }
-            if ($action === 'element_add') { $this->elementAdd(); return; }
-            if ($action === 'element_delete') { $this->elementDelete(); return; }
-            if ($action === 'element_batch') { $this->elementBatch(); return; }
         }
         $action = $_GET['action'] ?? '';
         if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
@@ -31,74 +28,34 @@ class ReportController extends Controller {
             header('Location: /report/audit'); exit;
         }
         $status = $_GET['status'] ?? 'pending';
-        $reports = $db->query("SELECT tr.*, m.material_name, s.name AS supplier_name FROM test_report tr LEFT JOIN material m ON tr.material_id=m.id LEFT JOIN supplier s ON m.supplier_id=s.id WHERE tr.audit_status=? ORDER BY tr.created_at DESC", [$status]);
+        $action = $_GET['action'] ?? '';
+        if ($action === 'data') {
+            $this->requirePermission('report.audit');
+            $db = DB::getInstance();
+            [$page, $perPage] = $this->pageParams();
+            $total = (int)$db->single("SELECT COUNT(*) FROM test_report WHERE audit_status=?", [$status]);
+            $offset = ($page - 1) * $perPage;
+            $rows = $db->query("SELECT tr.*, m.material_name, s.name AS supplier_name FROM test_report tr LEFT JOIN material m ON tr.material_id=m.id LEFT JOIN supplier s ON m.supplier_id=s.id WHERE tr.audit_status=? ORDER BY tr.created_at DESC LIMIT ? OFFSET ?", [$status, $perPage, $offset]);
+            $html = '';
+            foreach ($rows as $r) {
+                $html .= '<tr>';
+                $html .= colId($r['id'] ?? '') . '<td>' . h($r['report_no']) . '</td>';
+                $html .= '<td>' . h($r['material_name'] ?? '-') . '</td>';
+                $html .= '<td>' . h($r['supplier_name'] ?? '-') . '</td>';
+                $html .= '<td>' . badge($r['report_type'], 'info') . '</td>';
+                $html .= '<td>' . h($r['test_agency']) . '</td>';
+                $html .= '<td>' . h($r['test_date']) . '</td>';
+                $html .= '<td>' . statusBadge($r['audit_status']) . '</td>';
+                if (can('report.audit')) {
+                    $html .= '<button class="btn-icon btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="' . $r['id'] . '" data-status="approved"><i class="fas fa-check"></i></button>';
+                    $html .= '<button class="btn-icon btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="' . $r['id'] . '" data-status="rejected"><i class="fas fa-times"></i></button>';
+                }
+                $html .= '</td></tr>';
+            }
+            $this->paginationResponse($total, $html);
+        }
         $title = '报告审核';
         $this->render('report/audit', get_defined_vars());
-    }
-    public function elements() {
-        $this->requirePermission('report.view');
-        $db = DB::getInstance();
-        $reportId = (int)($_GET['report_id'] ?? $_POST['report_id'] ?? 0);
-        $search = trim($_GET['search'] ?? '');
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $action = $_POST['action'] ?? '';
-            if ($action === 'element_add') { $this->elementAdd(); return; }
-            if ($action === 'element_delete') { $this->elementDelete(); return; }
-            if ($action === 'element_batch') { $this->elementBatch(); return; }
-        }
-        $reportWhere = $search ? " WHERE tr.report_no LIKE ? OR tr.file_path LIKE ?" : '';
-        $reportParams = $search ? ["%$search%", "%$search%"] : [];
-        $reportWhere = $search ? " WHERE tr.report_no LIKE ? OR tr.file_path LIKE ?" : '';
-        if (isSupplier()) {
-            $sid = userSupplierId();
-            $reportWhere = ($reportWhere ? $reportWhere . ' AND ' : ' WHERE ') . " tr.material_id IN (SELECT id FROM material WHERE supplier_id=$sid)";
-        }
-        $reports = $db->query("SELECT tr.id, tr.report_no, tr.file_path FROM test_report tr$reportWhere ORDER BY tr.report_no", $reportParams);
-        $elements = $reportId ? $db->query("SELECT ec.*, tr.report_no FROM element_content ec JOIN test_report tr ON ec.report_id=tr.id WHERE ec.report_id=? ORDER BY ec.id", [$reportId]) : [];
-        $title = '物质含量管理';
-        $this->render('report/elements', get_defined_vars());
-    }
-    public function categories() {
-        $this->requirePermission('document.view');
-        $db = DB::getInstance();
-        $isSupplier = isSupplier();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if ($isSupplier) { flash('error', '无操作权限'); header('Location: /report/categories'); exit; }
-            $action = $_POST['action'] ?? '';
-            if ($action === 'create') {
-                $db->execute("INSERT INTO document_category (code, name, parent_id, validity_days, is_required, sort_order) VALUES (?,?,?,?,?,?)",
-                    [$_POST['code'] ?? '', $_POST['name'] ?? '', (int)($_POST['parent_id'] ?? 0) ?: null, (int)($_POST['validity_days'] ?? 365), (int)($_POST['is_required'] ?? 1), (int)($_POST['sort_order'] ?? 0)]);
-                flash('success', '分类已创建');
-            }
-            if ($action === 'update') {
-                $id = (int)($_POST['id'] ?? 0);
-                $db->execute("UPDATE document_category SET code=?, name=?, parent_id=?, validity_days=?, is_required=?, sort_order=? WHERE id=?",
-                    [$_POST['code'] ?? '', $_POST['name'] ?? '', (int)($_POST['parent_id'] ?? 0) ?: null, (int)($_POST['validity_days'] ?? 365), (int)($_POST['is_required'] ?? 1), (int)($_POST['sort_order'] ?? 0), $id]);
-                flash('success', '分类已更新');
-            }
-            if ($action === 'delete') {
-                $id = (int)($_POST['id'] ?? 0);
-                if ($id) { $db->execute("DELETE FROM document_category WHERE id=?", [$id]); flash('success', '已删除'); }
-            }
-            header('Location: /report/categories'); exit;
-        }
-        $action = $_GET['action'] ?? '';
-        if ($action === 'create' || $action === 'edit') {
-            if ($isSupplier) { flash('error', '无操作权限'); header('Location: /report/categories'); exit; }
-            $this->showCategoryForm($action === 'edit' ? (int)($_GET['id'] ?? 0) : 0);
-            return;
-        }
-        $cats = $db->query("SELECT * FROM document_category ORDER BY sort_order, code");
-        $title = '文档分类管理';
-        $canManage = !isSupplier();
-        $this->render('report/categories', get_defined_vars());
-    }
-    private function showCategoryForm($id = 0) {
-        $db = DB::getInstance();
-        $item = $id ? $db->single("SELECT * FROM document_category WHERE id=?", [$id], true) : [];
-        $allCats = $db->query("SELECT * FROM document_category ORDER BY sort_order, code");
-        $title = $id ? '编辑分类' : '新增分类';
-        $this->render('report/category_form', get_defined_vars());
     }
     private function showList() {
         $db = DB::getInstance();
@@ -109,13 +66,40 @@ class ReportController extends Controller {
         $where = []; $params = [];
         if ($isSupplier) {
             $sid = userSupplierId();
-            $where[] = "((r.source_type='material' AND r.source_id IN (SELECT id FROM material WHERE supplier_id=$sid)) OR (r.source_type='hm' AND r.source_id IN (SELECT id FROM homogeneous_material WHERE supplier_id=$sid)))";
+            $where[] = "(((r.source_type='material' AND r.source_id IN (SELECT id FROM material WHERE supplier_id=$sid))
+                OR (r.source_type='hm' AND r.source_id IN (SELECT hm.id FROM homogeneous_material hm WHERE hm.supplier_id=$sid OR hm.created_by IN (SELECT u.id FROM users u WHERE u.supplier_id=$sid)))))";
         }
         if ($search) { $where[] = "(r.report_no LIKE ? OR r.test_agency LIKE ? OR r.supplier_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if ($type) { $where[] = "r.report_type=?"; $params[] = $type; }
         if ($audit) { $where[] = "r.audit_status=?"; $params[] = $audit; }
         $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        $sql = "
+        $action = $_GET['action'] ?? '';
+        if ($action === 'data') { $this->data($where, $params); return; }
+        $title = '检测报告';
+        $this->render('report/index', get_defined_vars());
+    }
+
+    /** 服务端分页数据接口（action=data）：report/index 列表 */
+    private function data($where = null, $params = null) {
+        $this->requirePermission('report.view');
+        $db = DB::getInstance();
+        if ($where === null) {
+            $search = $_GET['search'] ?? '';
+            $type = $_GET['report_type'] ?? '';
+            $audit = $_GET['audit_status'] ?? '';
+            $where = []; $params = [];
+            if (isSupplier()) {
+                $sid = userSupplierId();
+                $where[] = "(((r.source_type='material' AND r.source_id IN (SELECT id FROM material WHERE supplier_id=$sid))
+                    OR (r.source_type='hm' AND r.source_id IN (SELECT hm.id FROM homogeneous_material hm WHERE hm.supplier_id=$sid OR hm.created_by IN (SELECT u.id FROM users u WHERE u.supplier_id=$sid)))))";
+            }
+            if ($search) { $where[] = "(r.report_no LIKE ? OR r.test_agency LIKE ? OR r.supplier_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%"; }
+            if ($type) { $where[] = "r.report_type=?"; $params[] = $type; }
+            if ($audit) { $where[] = "r.audit_status=?"; $params[] = $audit; }
+        }
+        [$page, $perPage] = $this->pageParams();
+        $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        $base = "
             SELECT r.id, r.report_no, r.report_type, r.test_agency, r.test_date, r.expiry_date,
                    r.file_path, r.file_size, r.audit_status, r.created_at,
                    r.source_type, r.source_id, r.supplier_name, r.supplier_name_short,
@@ -128,9 +112,7 @@ class ReportController extends Controller {
                 FROM test_report tr
                 LEFT JOIN material m ON tr.material_id=m.id
                 LEFT JOIN supplier s ON m.supplier_id=s.id
-
                 UNION ALL
-
                 SELECT hr.id, hr.report_no, hr.report_type, hr.test_agency, hr.test_date, hr.expiry_date,
                        hr.file_path, hr.file_size, 'N' AS audit_status, hr.created_at,
                        'hm' AS source_type, hr.hm_id AS source_id,
@@ -139,12 +121,37 @@ class ReportController extends Controller {
                 LEFT JOIN homogeneous_material hm ON hr.hm_id=hm.id
                 LEFT JOIN supplier s ON hm.supplier_id=s.id
             ) r
-            $whereSql
-            ORDER BY r.created_at DESC
         ";
-        $reports = $db->query($sql, $params);
-        $title = '检测报告';
-        $this->render('report/index', get_defined_vars());
+        $total = (int)$db->single("SELECT COUNT(*) FROM ($base) r $whereSql", $params);
+        $offset = ($page - 1) * $perPage;
+        $rows = $db->query($base . " $whereSql ORDER BY r.created_at DESC LIMIT ? OFFSET ?", array_merge($params, [$perPage, $offset]));
+        $html = '';
+        foreach ($rows as $r) $html .= $this->reportRowHtml($r);
+        $this->paginationResponse($total, $html);
+    }
+
+    private function reportRowHtml($r): string {
+        $html = '<tr>';
+        $html .= colId($r['id'] ?? '') . '<td>' . h($r['report_no']) . '</td>';
+        if (!isSupplier()) { $html .= '<td>' . h($r['supplier_name_short'] ?: ($r['supplier_name'] ?? '-')) . '</td>'; }
+        $html .= '<td><span class="badge badge-soft-' . ($r['source_type'] === 'material' ? 'primary' : 'success') . '">' . ($r['source_type'] === 'material' ? '物料' : '均质') . '</span> ' . h($r['item_name'] ?? '-') . '</td>';
+        $html .= '<td>' . badge($r['report_type'], 'info') . '</td>';
+        $html .= '<td>' . h($r['test_agency']) . '</td>';
+        $html .= '<td>' . h($r['test_date']) . '</td>';
+        $html .= '<td><small class="' . (strtotime($r['expiry_date'] ?? '') < time() ? 'text-danger' : '') . '">' . h($r['expiry_date'] ?? '-') . '</small></td>';
+        $html .= '<td>' . statusBadge($r['audit_status']) . '</td>';
+        $html .= '<td>';
+        if ($r['source_type'] === 'material') {
+            if (can('report.edit')) { $html .= '<a href="/report?action=edit&id=' . $r['id'] . '" class="btn-icon btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>'; }
+            if (can('report.delete')) {
+                $html .= '<form method="post" class="d-inline" onsubmit="return confirm(\'确定删除？\')">' . csrf_field() . '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . $r['id'] . '"><button class="btn-icon btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button></form>';
+            }
+        } else {
+            $html .= '<a href="/homogeneous?action=detail&id=' . $r['source_id'] . '" class="btn-icon btn btn-sm btn-outline-success" title="查看均质材料"><i class="fas fa-eye"></i></a>';
+        }
+        if ($r['file_path']) { $html .= '<a href="' . h(fileUrl($r['file_path'])) . '" class="btn-icon btn btn-sm btn-outline-info" target="_blank"><i class="fas fa-download"></i></a>'; }
+        $html .= '</td></tr>';
+        return $html;
     }
     private function showForm($id) {
         $this->requirePermission('report.edit');
@@ -230,7 +237,6 @@ class ReportController extends Controller {
                 if (!$m || (int)$m['supplier_id'] !== userSupplierId()) { flash('error', '无权操作'); header('Location: /report'); exit; }
             }
             if ($r && $r['file_path'] && file_exists($r['file_path'])) unlink($r['file_path']);
-            $db->execute("DELETE FROM element_content WHERE report_id=?", [$id]);
             $db->execute("DELETE FROM warning_record WHERE report_id=?", [$id]);
             $db->execute("DELETE FROM test_report WHERE id=?", [$id]);
             logOp('delete', 'report', $id, '删除报告');
@@ -245,71 +251,5 @@ class ReportController extends Controller {
         $dest = $dir . '/' . $name;
         move_uploaded_file($file['tmp_name'], $dest);
         return $dest;
-    }
-    private function requireSupplierTestReport(int $reportId): void {
-        if (!isSupplier()) return;
-        $db = DB::getInstance();
-        $m = $db->single("SELECT m.supplier_id FROM test_report tr LEFT JOIN material m ON tr.material_id=m.id WHERE tr.id=?", [$reportId], true);
-        if (!$m || (int)$m['supplier_id'] !== userSupplierId()) {
-            flash('error', '无权操作');
-            header('Location: /report/elements');
-            exit;
-        }
-    }
-    private function elementAdd() {
-        $this->requirePermission('report.edit');
-        $db = DB::getInstance();
-        $reportId = (int)($_POST['report_id'] ?? 0);
-        if ($reportId) {
-            $this->requireSupplierTestReport($reportId);
-            $value = (float)($_POST['content_value'] ?? 0);
-            $limitVal = (float)($_POST['limit_value'] ?? 0);
-            $isOver = ($limitVal > 0 && $value > $limitVal) ? 1 : 0;
-            $db->execute("INSERT INTO element_content (report_id, substance_name, cas_no, content_value, unit, limit_value, limit_unit, is_over_limit, detection_method) VALUES (?,?,?,?,?,?,?,?,?)",
-                [$reportId, $_POST['substance_name'] ?? '', $_POST['cas_no'] ?? '', $value,
-                 $_POST['unit'] ?? 'mg/kg', $limitVal, $_POST['limit_unit'] ?? 'mg/kg', $isOver,
-                 $_POST['detection_method'] ?? '']);
-            if ($isOver) {
-                $r = $db->single("SELECT material_id FROM test_report WHERE id=?", [$reportId], true);
-                if ($r && $r['material_id']) {
-                    $db->execute("INSERT INTO warning_record (material_id, report_id, warning_type, warning_level, warning_desc, created_at) VALUES (?,?,'over_limit','red',?,datetime('now','localtime'))",
-                        [$r['material_id'], $reportId, $_POST['substance_name'] . ' 超标']);
-                }
-            }
-            logOp('create', 'element_content', $reportId, '添加检测元素');
-            flash('success', '元素已添加');
-        }
-        header('Location: /report/elements?report_id=' . $reportId); exit;
-    }
-    private function elementDelete() {
-        $this->requirePermission('report.edit');
-        $id = (int)($_POST['id'] ?? 0);
-        if ($id) {
-            $e = DB::getInstance()->single("SELECT report_id FROM element_content WHERE id=?", [$id], true);
-            if ($e) $this->requireSupplierTestReport($e['report_id']);
-            DB::getInstance()->execute("DELETE FROM element_content WHERE id=?", [$id]);
-            if ($e) { header('Location: /report/elements?report_id=' . $e['report_id']); exit; }
-        }
-        header('Location: /report/elements'); exit;
-    }
-    private function elementBatch() {
-        $this->requirePermission('report.edit');
-        $reportId = (int)($_POST['report_id'] ?? 0);
-        if ($reportId && isset($_POST['substances'])) {
-            $db = DB::getInstance();
-            $this->requireSupplierTestReport($reportId);
-            $db->execute("DELETE FROM element_content WHERE report_id=?", [$reportId]);
-            foreach ($_POST['substances'] as $i => $name) {
-                if (empty($name)) continue;
-                $value = (float)($_POST['values'][$i] ?? 0);
-                $limitVal = (float)($_POST['limits'][$i] ?? 0);
-                $isOver = ($limitVal > 0 && $value > $limitVal) ? 1 : 0;
-                $db->execute("INSERT INTO element_content (report_id, substance_name, cas_no, content_value, unit, limit_value, limit_unit, is_over_limit, detection_method) VALUES (?,?,?,?,?,?,?,?,?)",
-                    [$reportId, $name, $_POST['cas_list'][$i] ?? '', $value, $_POST['units'][$i] ?? 'mg/kg',
-                     $limitVal, $_POST['limit_units'][$i] ?? 'mg/kg', $isOver, $_POST['methods'][$i] ?? '']);
-            }
-            flash('success', '批量保存完毕');
-        }
-        header('Location: /report/elements?report_id=' . $reportId); exit;
     }
 }

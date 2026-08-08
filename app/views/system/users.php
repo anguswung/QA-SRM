@@ -1,39 +1,15 @@
 <div class="page-header">
   <h4><i class="fas fa-users"></i> 用户管理</h4>
   <div>
-    <?php if (can('system.users')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#userModal"><i class="fas fa-plus"></i> 新增用户</button><?php endif; ?>
+    <?php if (can('system.users')): ?><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal"><i class="fas fa-plus"></i> 新增用户</button><?php endif; ?>
   </div>
 </div>
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
-      <thead><tr><th style="width:40px" class="col-id">ID</th><th style="width:12%">用户名</th><th style="width:10%">姓名</th><th style="width:9%">角色</th><th>邮箱</th><th style="width:14%">供应商</th><th style="width:8%">状态</th><th style="width:14%">操作</th></tr></thead>
+<table id="usersTable" class="table table-hover mb-0" data-server="1" data-url="/system/users?action=data">
+      <thead><tr><th style="width:40px" class="col-id">ID</th><th style="width:12%">用户名</th><th class="col-realname">姓名</th><th style="width:9%">角色</th><th>邮箱</th><th style="width:14%">供应商</th><th style="width:8%">状态</th></tr></thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php foreach ($users as $u): ?>
-        <tr>
-          <td class="col-id"><?=h($u['id'] ?? '')?></td><td><?=h($u['username'])?></td>
-          <td><?=h($u['realname'])?></td>
-          <td><span class="badge badge-soft-info"><?=h($u['role'])?></span></td>
-          <td><?=h($u['email'] ?? '-')?></td>
-          <td><small><?=h($u['supplier_name'] ?? '-')?></small></td>
-          <td><?=statusBadge($u['status'])?></td>
-          <td>
-            <?php if (can('system.users')): ?>
-            <button class="btn-icon btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal"
-              data-id="<?=$u['id']?>" data-username="<?=h($u['username'])?>" data-realname="<?=h($u['realname'])?>"
-              data-role="<?=$u['role']?>" data-email="<?=h($u['email'])?>" data-phone="<?=h($u['phone'])?>"
-              data-supplier="<?=$u['supplier_id']?>" data-status="<?=$u['status']?>"><i class="fas fa-edit"></i></button>
-            <?php endif; ?>
-            <?php if (can('system.users') && $u['id'] !== userId()): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$u['id']?>">
-              <button class="btn-icon btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-            </form>
-            <?php endif; ?>
-          </td>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="7" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
   </div>
@@ -127,14 +103,17 @@
   </div>
 </div>
 <script>
-$('#editUserModal').on('show.bs.modal', function(e){
-  var btn = $(e.relatedTarget);
-  $(this).find('#editId').val(btn.data('id'));
-  $(this).find('#editUsername').val(btn.data('username'));
-  $(this).find('#editRealname').val(btn.data('realname'));
-  $(this).find('#editRole').val(btn.data('role'));
-  $(this).find('#editEmail').val(btn.data('email'));
-  $(this).find('#editSupplier').val(btn.data('supplier'));
-  $(this).find('#editStatus').val(btn.data('status'));
+$('#usersTable').on('click', 'tbody tr', function(e){
+  if ($(e.target).closest('a').length) return;
+  var $t = $(this);
+  var m = $('#editUserModal');
+  m.find('#editId').val($t.data('id'));
+  m.find('#editUsername').val($t.data('username'));
+  m.find('#editRealname').val($t.data('realname'));
+  m.find('#editRole').val($t.data('role'));
+  m.find('#editEmail').val($t.data('email'));
+  m.find('#editSupplier').val($t.data('supplier'));
+  m.find('#editStatus').val($t.data('status'));
+  m.modal('show');
 });
 </script>

@@ -9,7 +9,6 @@ class MaterialController extends Controller {
             if ($action === 'audit') { $this->doAudit(); return; }
             if ($action === 'composition_add') { $this->compositionAdd(); return; }
             if ($action === 'composition_delete') { $this->compositionDelete(); return; }
-            if ($action === 'composition_update') { $this->compositionUpdate(); return; }
             if ($action === 'composition_batch_update') { $this->compositionBatchUpdate(); return; }
             if ($action === 'import') { $this->doImport(); return; }
             if ($action === 'submit_audit') { $this->submitAudit(); return; }
@@ -19,8 +18,8 @@ class MaterialController extends Controller {
         if ($action === 'create') { $this->showForm(); return; }
         if ($action === 'edit') { $this->showForm((int)($_GET['id'] ?? 0)); return; }
         if ($action === 'detail') { $this->detail((int)($_GET['id'] ?? 0)); return; }
+        if ($action === 'data') { $this->data(); return; }
         if ($action === 'hm_data') { $this->hmData(); return; }
-        if ($action === 'mcd_template') { $this->mcdTemplate(); return; }
         if ($action === 'hm_template') { $this->hmTemplate(); return; }
         if ($action === 'import_template') { $this->importTemplate(); return; }
         $this->showList();
@@ -31,20 +30,83 @@ class MaterialController extends Controller {
         $search = $_GET['search'] ?? '';
         $env = $_GET['env_status'] ?? '';
         $audit = $_GET['audit_status'] ?? '';
+        $supplier = $_GET['supplier_id'] ?? '';
         $where = ["m.spec='零部件'"]; $params = [];
         if (isSupplier()) { $where[] = "m.supplier_id=?"; $params[] = userSupplierId(); }
+        elseif ($supplier !== '') { $where[] = "m.supplier_id=?"; $params[] = (int)$supplier; }
         if ($search) { $where[] = "(m.material_no LIKE ? OR m.material_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if ($env) { $where[] = "m.env_status=?"; $params[] = $env; }
         if ($audit) { $where[] = "m.audit_status=?"; $params[] = $audit; }
-        $materials = $db->query("SELECT m.*, s.name AS supplier_name, s.name_short AS supplier_name_short FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id WHERE " . implode(' AND ', $where) . " ORDER BY m.id DESC", $params);
         $countSql = "SELECT COUNT(*) FROM material m WHERE " . implode(' AND ', $where);
         $total = $db->single($countSql, $params);
         $compliantCount = $db->single($countSql . " AND m.env_status='compliant'", $params);
         $nonCompliantCount = $db->single($countSql . " AND m.env_status='non_compliant'", $params);
         $pendingCount = $db->single($countSql . " AND m.env_status='pending'", $params);
         $configs = $db->query("SELECT config_key, config_value FROM system_config");
+        $suppliers = QueryRegistry::supplierDropdown();
         $title = '物料管理';
         $this->render('material/index', get_defined_vars());
+    }
+
+    /** 服务端分页数据接口（action=data）：返回 JSON { total, html } */
+    private function data() {
+        $this->requirePermission('material.view');
+        $db = DB::getInstance();
+        [$page, $perPage] = $this->pageParams();
+        $search = $_GET['search'] ?? '';
+        $env = $_GET['env_status'] ?? '';
+        $audit = $_GET['audit_status'] ?? '';
+        $supplier = $_GET['supplier_id'] ?? '';
+        $where = ["m.spec='零部件'"]; $params = [];
+        if (isSupplier()) { $where[] = "m.supplier_id=?"; $params[] = userSupplierId(); }
+        elseif ($supplier !== '') { $where[] = "m.supplier_id=?"; $params[] = (int)$supplier; }
+        if ($search) { $where[] = "(m.material_no LIKE ? OR m.material_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if ($env) { $where[] = "m.env_status=?"; $params[] = $env; }
+        if ($audit) { $where[] = "m.audit_status=?"; $params[] = $audit; }
+        $whereSql = implode(' AND ', $where);
+        $total = (int)$db->single("SELECT COUNT(*) FROM material m WHERE $whereSql", $params);
+        $offset = ($page - 1) * $perPage;
+        $rows = $db->query(
+            "SELECT m.*, s.name AS supplier_name, s.name_short AS supplier_name_short
+             FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id
+             WHERE $whereSql ORDER BY m.id DESC LIMIT ? OFFSET ?",
+            array_merge($params, [$perPage, $offset])
+        );
+        $html = '';
+        foreach ($rows as $m) $html .= $this->materialRowHtml($m);
+        $this->paginationResponse($total, $html);
+    }
+
+    /** 物料列表行 HTML（服务端渲染，保留权限/按钮逻辑） */
+    private function materialRowHtml($m): string {
+        $html = '<tr>';
+        $html .= '<td><input type="checkbox" class="mat-check" value="' . h($m['id']) . '" ' . (in_array($m['audit_status'], ['N', 'R']) ? '' : 'disabled') . '></td>';
+        $html .= colId($m['id']);
+        $html .= '<td>' . h($m['material_no']) . '</td>';
+        $html .= '<td class="text-start"><a href="/material?action=detail&id=' . $m['id'] . '" class="fw-bold">' . h($m['material_name']) . '</a></td>';
+        if (!isSupplier()) {
+            $html .= '<td><small>' . h($m['supplier_name'] ? ($m['supplier_name_short'] ?? $m['supplier_name']) : '-') . '</small></td>';
+        }
+        $html .= '<td>' . h($m['unit_weight'] ?? 0) . ' g</td>';
+        $html .= '<td>' . statusBadge($m['env_status']) . '</td>';
+        $html .= '<td>' . statusBadge($m['audit_status']) . '</td>';
+        $html .= '<td><div class="btn-group btn-group-sm">';
+        $html .= '<a href="/material?action=detail&id=' . $m['id'] . '" class="btn-icon btn btn-sm btn-outline-info" title="查看"><i class="fas fa-eye"></i></a>';
+        if (can('material.edit')) {
+            $html .= '<a href="/material?action=edit&id=' . $m['id'] . '" class="btn-icon btn btn-sm btn-outline-primary" title="编辑"><i class="fas fa-pen"></i></a>';
+        }
+        if (isSupplier() && in_array($m['audit_status'], ['N', 'R'])) {
+            $html .= '<form method="post" style="display:contents"><input type="hidden" name="action" value="submit_audit"><input type="hidden" name="id" value="' . $m['id'] . '">' . csrf_field() . '<button type="submit" class="btn-icon btn btn-sm btn-outline-success" title="提交审核" onclick="return confirm(\'确定提交审核？\')"><i class="fas fa-paper-plane"></i></button></form>';
+        }
+        if (isAdmin() && $m['audit_status'] === 'S' && can('material.audit')) {
+            $html .= '<button class="btn-icon btn btn-sm btn-outline-success" title="通过" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="' . $m['id'] . '" data-action="A"><i class="fas fa-check"></i></button>';
+            $html .= '<button class="btn-icon btn btn-sm btn-outline-danger" title="驳回" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="' . $m['id'] . '" data-action="R"><i class="fas fa-times"></i></button>';
+        }
+        if (can('material.delete')) {
+            $html .= '<form method="post" style="display:contents"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . $m['id'] . '">' . csrf_field() . '<button type="submit" class="btn-icon btn btn-sm btn-outline-danger" title="删除" onclick="return confirm(\'确认删除？\')"><i class="fas fa-trash"></i></button></form>';
+        }
+        $html .= '</div></td></tr>';
+        return $html;
     }
     private function showForm($id = 0) {
         $this->requirePermission($id ? 'material.edit' : 'material.create');
@@ -83,8 +145,8 @@ class MaterialController extends Controller {
           (SELECT expiry_date FROM hm_report WHERE hm_id=mc.substance_id AND report_type='MSDS' AND status='current' AND file_path IS NOT NULL AND file_path != '' ORDER BY version DESC LIMIT 1) AS msds_expiry
           FROM material_composition mc WHERE mc.material_id=?", [$id]);
         $reports = $db->query("SELECT * FROM test_report WHERE material_id=? ORDER BY created_at DESC", [$id]);
-        $auditLogs = $db->query("SELECT * FROM material_audit_log WHERE material_id=? ORDER BY operated_at DESC", [$id]);
-        $elements = $db->query("SELECT ec.*, tr.report_no FROM element_content ec JOIN test_report tr ON ec.report_id=tr.id WHERE tr.material_id=? ORDER BY ec.id", [$id]);
+        $auditLogs = $db->query("SELECT l.*, u.realname AS operator_name FROM material_audit_log l LEFT JOIN users u ON l.operator_id=u.id WHERE l.material_id=? ORDER BY l.operated_at DESC, l.id DESC", [$id]);
+        $elements = [];
         // Aggregate HM reports & analysis counts from composition substances
         $hmIds = array_column($composition, 'substance_id');
         $hmIds = array_filter(array_map('intval', $hmIds));
@@ -154,6 +216,8 @@ class MaterialController extends Controller {
                  $supplierId, (float)($_POST['unit_weight'] ?? 0), (float)($_POST['weight_mg'] ?? 0), 'non_compliant']);
             $mid = $db->lastInsertId();
             logOp('create', 'material', $mid, '新增物料(步骤2): ' . ($_POST['material_name'] ?? ''));
+            $db->execute("INSERT INTO material_audit_log (material_id, action, comment, operator_id) VALUES (?,?,?,?)",
+                [$mid, 'create', '创建物料', userId()]);
             header('Location: /material?action=edit&id=' . $mid . '&step=2'); exit;
         }
         $mid = (int)($_POST['id'] ?? 0);
@@ -186,19 +250,26 @@ class MaterialController extends Controller {
                 [$_POST['material_no'] ?? '', $_POST['material_name'] ?? '', $spec, $_POST['mpn'] ?? '',
                  (int)($_POST['supplier_id'] ?? 0), (float)($_POST['unit_weight'] ?? 0), $id]);
             logOp('update', 'material', $id, '更新基本信息(步骤2)');
+            $db->execute("INSERT INTO material_audit_log (material_id, action, comment, operator_id) VALUES (?,?,?,?)",
+                [$id, 'update', '编辑物料（基本信息）', userId()]);
             header('Location: /material?action=edit&id=' . $id . '&step=2'); exit;
         }
         if ($step == 3) {
             $this->handleMcdUpload($id);
             $db->execute("DELETE FROM material_composition WHERE material_id=?", [$id]); $this->saveComposition($id);
             $this->saveReport($id);
-            logOp('update', 'material', $id, '更新成分与报告(步骤3)'); header('Location: /material?action=edit&id=' . $id . '&step=3'); exit;
+            logOp('update', 'material', $id, '更新成分与报告(步骤3)'); 
+            $db->execute("INSERT INTO material_audit_log (material_id, action, comment, operator_id) VALUES (?,?,?,?)",
+                [$id, 'update', '编辑物料（成分与报告）', userId()]);
+            header('Location: /material?action=edit&id=' . $id . '&step=3'); exit;
         }
         $db->execute("DELETE FROM material_composition WHERE material_id=?", [$id]); $this->saveComposition($id); $this->saveReport($id);
         $db->execute("UPDATE material SET material_no=?, material_name=?, spec=?, mpn=?, supplier_id=?, unit_weight=?, updated_at=datetime('now','localtime') WHERE id=?",
             [$_POST['material_no'] ?? '', $_POST['material_name'] ?? '', $spec, $_POST['mpn'] ?? '',
              (int)($_POST['supplier_id'] ?? 0), (float)($_POST['unit_weight'] ?? 0), $id]);
         logOp('update', 'material', $id, '完成物料更新');
+        $db->execute("INSERT INTO material_audit_log (material_id, action, comment, operator_id) VALUES (?,?,?,?)",
+            [$id, 'update', '编辑物料', userId()]);
         flash('success', '物料更新成功'); header('Location: /material'); exit;
     }
     private function doDelete() {
@@ -215,7 +286,6 @@ class MaterialController extends Controller {
             $reports = $db->query("SELECT * FROM test_report WHERE material_id=?", [$id]);
             foreach ($reports as $r) {
                 if ($r['file_path'] && file_exists($r['file_path'])) unlink($r['file_path']);
-                $db->execute("DELETE FROM element_content WHERE report_id=?", [$r['id']]);
                 $db->execute("DELETE FROM warning_record WHERE report_id=?", [$r['id']]);
                 $db->execute("DELETE FROM test_report WHERE id=?", [$r['id']]);
             }
@@ -238,6 +308,8 @@ class MaterialController extends Controller {
         }
         $db->execute("UPDATE material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id=?", [$id]);
         logOp('update', 'material', $id, '提交审核');
+        $db->execute("INSERT INTO material_audit_log (material_id, action, comment, operator_id) VALUES (?,?,?,?)",
+            [$id, 'submit', '提交审核', userId()]);
         flash('success', '已提交审核');
         header('Location: /material'); exit;
     }
@@ -258,6 +330,10 @@ class MaterialController extends Controller {
             $db->execute("UPDATE material SET audit_status='S', updated_at=datetime('now','localtime') WHERE id IN ($placeholders)", $params);
         }
         logOp('update', 'material', 0, '批量提交审核 ' . count($idArr) . ' 项');
+        foreach ($idArr as $aid) {
+            $db->execute("INSERT INTO material_audit_log (material_id, action, comment, operator_id) VALUES (?,?,?,?)",
+                [$aid, 'submit', '批量提交审核', userId()]);
+        }
         flash('success', '已提交 ' . count($idArr) . ' 项物料审核');
         header('Location: /material'); exit;
     }
@@ -298,35 +374,7 @@ class MaterialController extends Controller {
             }
         }
     }
-    private function mcdTemplate() {
-        $this->requirePermission('material.view');
-        require_once __DIR__ . '/../../vendor/autoload.php';
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('MCD模板');
-        $db = DB::getInstance();
-        $sysName = $db->single("SELECT config_value FROM system_config WHERE config_key='system_name'", [], false) ?: '绿色产品管理系统GPM';
-        $sheet->setCellValue('A1', $sysName . ' - MCD材料成分表');
-        $sheet->mergeCells('A1:D1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        $sheet->setCellValue('A3', '物料编号');
-        $sheet->setCellValue('B3', '物料名称');
-        $sheet->setCellValue('C3', '均质材料ID');
-        $sheet->setCellValue('D3', '均质材料名称');
-        $sheet->setCellValue('E3', '用量');
-        $sheet->getStyle('A3:E3')->getFont()->setBold(true);
-        $sheet->setCellValue('A4', '示例: MAT20250101');
-        $sheet->setCellValue('B4', '示例: 连接器');
-        $sheet->setCellValue('C4', '示例: 1');
-        $sheet->setCellValue('D4', '示例: 锡膏');
-        $sheet->setCellValue('E4', '示例: 50');
-        foreach (range('A','E') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="MCD模板.xlsx"');
-        ob_clean();
-        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save('php://output');
-        exit;
-    }
+
     private function hmTemplate() {
         $this->requirePermission('material.view');
         require_once __DIR__ . '/../../vendor/autoload.php';
@@ -383,7 +431,7 @@ class MaterialController extends Controller {
         $headers = [
             'A' => "*物料编号\nPart No.",
             'B' => "*物料名称\nPart Name",
-            'C' => "*物料供应商\nSupplier Name",
+            'C' => "*供应商编号/名称\nSupplier Code/Name",
             'D' => "制造商料号\nMPN",
             'E' => "单位重量(g)\nUnit Weight",
             'F' => "单位\nUnit",
@@ -395,25 +443,18 @@ class MaterialController extends Controller {
         $sheet->getStyle('A2:F2')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->getRGB('E2E8F0');
         $sheet->getStyle('A2:F2')->getAlignment()->setWrapText(true);
         $sheet->getRowDimension(2)->setRowHeight(45);
-        $materials = isSupplier()
-            ? $db->query("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id WHERE m.supplier_id=? ORDER BY m.id DESC LIMIT 3", [userSupplierId()])
-            : $db->query("SELECT m.*, s.name AS supplier_name FROM material m LEFT JOIN supplier s ON m.supplier_id=s.id ORDER BY m.id DESC LIMIT 3");
-        if (empty($materials)) {
-            $materials = [[
-                'material_no' => 'MAT202507001', 'material_name' => '示例物料-连接器',
-                'supplier_name' => '深圳供应商', 'mpn' => 'MPN-001', 'unit_weight' => 150, 'weight_unit' => 'g',
-            ]];
-        }
+        // 仅填充一行演示数据，供用户参照格式填写后导入
+        $demoSupplier = $db->single("SELECT code, name FROM supplier WHERE blacklist=0 ORDER BY code LIMIT 1");
+        $demoSupplierCode = $demoSupplier['code'] ?? '';
+        $demoSupplierName = $demoSupplier['name'] ?? '示例供应商';
         $row = 3;
-        foreach ($materials as $m) {
-            $sheet->setCellValue('A'.$row, $m['material_no']);
-            $sheet->setCellValue('B'.$row, $m['material_name']);
-            $sheet->setCellValue('C'.$row, $m['supplier_name'] ?? '');
-            $sheet->setCellValue('D'.$row, $m['mpn'] ?? '');
-            $sheet->setCellValue('E'.$row, $m['unit_weight'] ?? '');
-            $sheet->setCellValue('F'.$row, $m['weight_unit'] ?? 'g');
-            $row++;
-        }
+        $sheet->setCellValue('A'.$row, 'MAT' . date('Ymd') . '001');
+        $sheet->setCellValue('B'.$row, '示例物料-连接器');
+        $sheet->setCellValue('C'.$row, $demoSupplierCode !== '' ? $demoSupplierCode . ' / ' . $demoSupplierName : $demoSupplierName);
+        $sheet->setCellValue('D'.$row, 'MPN-001');
+        $sheet->setCellValue('E'.$row, 150);
+        $sheet->setCellValue('F'.$row, 'g');
+        $row++;
         $endRow = $row - 1;
         $thinBorder = [
             'borders' => [
@@ -465,15 +506,24 @@ class MaterialController extends Controller {
             $unitWeight = (float)($row[4] ?? 0); $unit = trim($row[5] ?? 'g');
             if (!in_array($unit, ['g', 'M', 'Pcs'])) $unit = 'g';
             if (empty($no) && empty($name)) continue;
+            // 供应商编号/名称与系统中供应商比对（编号优先，名称兜底）
+            $supplierId = 0;
+            if (isSupplier()) {
+                $supplierId = userSupplierId();
+            } elseif ($supplierName !== '') {
+                $resolved = $this->resolveSupplierByImportCol($supplierName);
+                if ($resolved === null) {
+                    $errors[] = "第".($i+1)."行 供应商[$supplierName]不存在，请与系统供应商编号/名称核对";
+                    continue;
+                }
+                $supplierId = $resolved;
+            }
             $existing = $db->single("SELECT id, supplier_id FROM material WHERE material_no=? AND material_name=?", [$no, $name], true);
             if ($existing) {
                 if (isSupplier() && (int)$existing['supplier_id'] !== userSupplierId()) {
                     $errors[] = "第".($i+1)."行 物料已存在且不属于当前供应商";
                     continue;
                 }
-                $supplierId = 0;
-                if ($supplierName) { $supplierId = QueryRegistry::supplierIdByName($supplierName) ?? 0; }
-                if (isSupplier()) $supplierId = userSupplierId();
                 try {
                     $db->execute("UPDATE material SET mpn=?, supplier_id=?, unit_weight=?, weight_unit=?, updated_at=datetime('now','localtime') WHERE id=?",
                         [$mpn, $supplierId, $unitWeight, $unit, $existing['id']]);
@@ -485,9 +535,6 @@ class MaterialController extends Controller {
                 $maxNo = $db->single("SELECT material_no FROM material WHERE material_no LIKE 'MAT%' ORDER BY id DESC LIMIT 1");
                 $no = $maxNo ? 'MAT' . date('Ymd') . str_pad(((int)substr($maxNo, -3) + 1), 3, '0', STR_PAD_LEFT) : 'MAT' . date('Ymd') . '001';
             }
-            $supplierId = 0;
-            if ($supplierName) { $supplierId = QueryRegistry::supplierIdByName($supplierName) ?? 0; }
-            if (isSupplier()) $supplierId = userSupplierId();
             try {
                 $db->execute("INSERT INTO material (material_no, material_name, spec, mpn, supplier_id, unit_weight, weight_unit, created_by) VALUES (?,?,?,?,?,?,?,?)",
                     [$no, $name, '零部件', $mpn, $supplierId, $unitWeight, $unit, userId()]);
@@ -500,6 +547,26 @@ class MaterialController extends Controller {
         if (!empty($errors)) $msg .= '。' . implode('; ', array_slice($errors, 0, 5));
         flash($imported > 0 || $updated > 0 ? 'success' : 'error', $msg);
         header('Location: /material'); exit;
+    }
+    /** 供应商导入列解析：格式支持 "001"、"艾迈斯"、"001 / 艾迈斯"。优先按编号精确匹配，未命中再按名称/简称兜底。 */
+    private function resolveSupplierByImportCol(string $col): ?int {
+        $col = trim($col);
+        if ($col === '') return 0;
+        $code = ''; $name = '';
+        if (str_contains($col, '/')) {
+            [$a, $b] = explode('/', $col, 2);
+            $code = trim($a); $name = trim($b);
+        } else {
+            $code = $col;
+        }
+        if ($code !== '') {
+            $row = DB::getInstance()->single("SELECT id FROM supplier WHERE code=?", [$code], true);
+            if ($row) return (int)$row['id'];
+        }
+        $lookup = $name !== '' ? $name : $code;
+        if ($lookup === '') return null;
+        $id = QueryRegistry::supplierIdByName($lookup);
+        return $id !== null ? (int)$id : null;
     }
     private function handleMcdUpload($materialId) {
         if (empty($_FILES['mcd_file']['name'])) return;
@@ -588,19 +655,7 @@ class MaterialController extends Controller {
         }
         header('Location: /material'); exit;
     }
-    private function compositionUpdate() {
-        $this->requirePermission('material.edit');
-        $id = (int)($_POST['id'] ?? 0);
-        if (!$id) { echo json_encode(['success' => false, 'message' => '无效ID']); exit; }
-        $c = DB::getInstance()->single("SELECT material_id FROM material_composition WHERE id=?", [$id], true);
-        if (!$c) { echo json_encode(['success' => false, 'message' => '记录不存在']); exit; }
-        $this->requireSupplierRecord('material', $c['material_id'], '/material');
-        $pct = (float)($_POST['min_percentage'] ?? 0);
-        $db = DB::getInstance();
-        $db->execute("UPDATE material_composition SET min_percentage=?, max_percentage=? WHERE id=?", [$pct, $pct, $id]);
-        echo json_encode(['success' => true]);
-        exit;
-    }
+
     private function compositionBatchUpdate() {
         $this->requirePermission('material.edit');
         $mid = (int)($_POST['material_id'] ?? 0);

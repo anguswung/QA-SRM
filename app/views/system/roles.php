@@ -1,35 +1,15 @@
 <div class="page-header">
   <h4><i class="fas fa-user-tag"></i> 角色管理</h4>
   <div>
-    <?php if (can('system.roles')): ?><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#roleModal"><i class="fas fa-plus"></i> 新增角色</button><?php endif; ?>
+    <?php if (can('system.roles')): ?><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#roleModal"><i class="fas fa-plus"></i> 新增角色</button><?php endif; ?>
   </div>
 </div>
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover mb-0" data-server="1" data-url="/system/roles?action=data">
       <thead><tr><th style="width:40px" class="col-id">ID</th><th style="width:14%">名称</th><th>描述</th><th style="width:10%">权限数</th><th style="width:12%">操作</th></tr></thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php foreach ($roles as $r): $p = json_decode($r['permissions'] ?: '[]', true); $isSuper = in_array('*', $p); ?>
-        <tr>
-          <td class="col-id"><?=h($r['id'] ?? '')?></td><td><span class="badge badge-soft-info"><?=h($r['name'])?></span></td>
-          <td><?=h($r['description'])?></td>
-          <td><?=$isSuper ? '所有权限' : count($p) . ' 项'?></td>
-          <td>
-            <?php if (can('system.roles')): ?>
-            <button class="btn-icon btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRoleModal"
-              data-id="<?=$r['id']?>" data-name="<?=h($r['name'])?>" data-desc="<?=h($r['description'])?>"
-              data-perms='<?=$r['permissions']?>'><i class="fas fa-edit"></i></button>
-            <?php endif; ?>
-            <?php if (can('system.roles')): ?>
-            <form method="post" class="d-inline" onsubmit="return confirm('确定删除？')"><?=csrf_field()?>
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>">
-              <button class="btn-icon btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-            </form>
-            <?php endif; ?>
-          </td>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="5" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
   </div>

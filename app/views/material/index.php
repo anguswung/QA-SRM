@@ -37,7 +37,7 @@
       <div class="d-flex align-items-center flex-wrap gap-2">
         <div class="input-group input-group-sm w-220">
           <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
-          <input type="text" name="search" class="form-control" placeholder="搜索编号/名称" value="<?=h($_GET['search'] ?? '')?>">
+          <input type="text" name="search" class="form-control" placeholder="搜索编号/名称" value="<?=h($_GET['search'] ?? '')?>" oninput="this.form.submit()">
         </div>
 
         <select name="env_status" class="form-control form-control-sm w-auto" onchange="this.form.submit()">
@@ -53,17 +53,24 @@
           <option value="A" <?=($_GET['audit_status'] ?? '') === 'A' ? 'selected' : ''?>>已认证</option>
           <option value="R" <?=($_GET['audit_status'] ?? '') === 'R' ? 'selected' : ''?>>已驳回</option>
         </select>
-        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fas fa-filter"></i> 筛选</button>
-        <a href="/material" class="btn btn-sm btn-outline-secondary btn-icon"><i class="fas fa-undo"></i></a>
+        <?php if (!isSupplier()): ?>
+        <select name="supplier_id" class="form-control form-control-sm w-auto" onchange="this.form.submit()">
+          <option value="">按供应商筛选</option>
+          <?php foreach ($suppliers ?? [] as $s): ?>
+            <option value="<?=(int)$s['id']?>" <?=(string)($_GET['supplier_id'] ?? '') === (string)(int)$s['id'] ? 'selected' : ''?>><?=h($s['name'])?></option>
+          <?php endforeach; ?>
+        </select>
+        <?php endif; ?>
+        <a href="/material" class="btn btn-sm btn-outline-secondary btn-icon" title="重置"><i class="fas fa-undo"></i></a>
       </div>
-      <small class="text-muted">共<?=count($materials)?> 条记录</small>
+      <small class="text-muted">共 <span class="server-total">0</span> 条记录</small>
     </form>
   </div>
 </div>
 <div class="card mt-3">
   <div class="card-body p-0">
     <div class="table-responsive">
-    <table class="table table-hover datatable mb-0" data-options='{"language":{"emptyTable":"暂无物料数据"}}'>
+    <table class="table table-hover mb-0" data-server="1" data-url="/material?action=data">
       <thead>
         <tr>
           
@@ -79,41 +86,13 @@
         </tr>
       </thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php foreach ($materials as $m): ?>
-        <tr>
-          <td><input type="checkbox" class="mat-check" value="<?=$m['id']?>" <?=in_array($m['audit_status'], ['N','R']) ? '' : 'disabled'?>></td>
-          <td class="text-muted col-id"><?=h($m['id'])?></td>
-          <td><?=h($m['material_no'])?></td>
-          <td class="text-start">
-            <a href="/material?action=detail&id=<?=$m['id']?>" class="fw-bold"><?=h($m['material_name'])?></a>
-          </td>
-          <?php if (!isSupplier()): ?><td><small><?=h($m['supplier_name'] ? ($m['supplier_name_short'] ?? $m['supplier_name']) : '-')?></small></td><?php endif; ?>
-          <td><?=h($m['unit_weight'] ?? 0)?> g</td>
-          <td><?=statusBadge($m['env_status'])?></td>
-          <td class=""><?=statusBadge($m['audit_status'])?></td>
-          <td>
-            <div class="btn-group btn-group-sm">
-              <a href="/material?action=detail&id=<?=$m['id']?>" class="btn-icon btn btn-sm btn-outline-info" title="查看"><i class="fas fa-eye"></i></a>
-              <?php if (can('material.edit')): ?><a href="/material?action=edit&id=<?=$m['id']?>" class="btn-icon btn btn-sm btn-outline-primary" title="编辑"><i class="fas fa-pen"></i></a><?php endif; ?>
-               <?php if (isSupplier() && in_array($m['audit_status'], ['N','R'])): ?>
-               <form method="post" style="display:contents"><input type="hidden" name="action" value="submit_audit"><input type="hidden" name="id" value="<?=$m['id']?>"><?=csrf_field()?><button type="submit" class="btn-icon btn btn-sm btn-outline-success" title="提交审核" onclick="return confirm('确定提交审核？')"><i class="fas fa-paper-plane"></i></button></form>
-               <?php endif; ?>
-              <?php if (isAdmin() && $m['audit_status'] === 'S' && can('material.audit')): ?>
-               <button class="btn-icon btn btn-sm btn-outline-success" title="通过" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="<?=$m['id']?>" data-action="A"><i class="fas fa-check"></i></button>
-               <button class="btn-icon btn btn-sm btn-outline-danger" title="驳回" data-bs-toggle="modal" data-bs-target="#auditModal" data-id="<?=$m['id']?>" data-action="R"><i class="fas fa-times"></i></button>
-              <?php endif; ?>
-               <?php if (can('material.delete')): ?><form method="post" style="display:contents"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$m['id']?>"><?=csrf_field()?><button type="submit" class="btn-icon btn btn-sm btn-outline-danger" title="删除" onclick="return confirm('确认删除？')"><i class="fas fa-trash"></i></button></form><?php endif; ?>
-            </div>
-          </td>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="9" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
     </div>
     <div class="card-footer d-flex justify-content-between align-items-center">
       <span id="selectedCount" class="text-muted"></span>
-      <button type="button" class="btn btn-success" onclick="batchSubmitAudit()"><i class="fas fa-paper-plane ms-1"></i> 批量提交审核</button>
+      <button type="button" id="batchSubmitBtn" class="btn btn-success" onclick="batchSubmitAudit()" disabled><i class="fas fa-paper-plane ms-1"></i> 批量提交审核</button>
     </div>
   </div>
 </div>
@@ -124,8 +103,10 @@
       <div class="modal-body">
         <input type="hidden" name="action" value="import">
         <div class="alert alert-info py-2">
-          <i class="fas fa-info-circle ms-1"></i> 下载 <a href="/material?action=import_template" target="_blank">导入模板</a>，填写后上传<br>
-          <small class="text-muted">层级模板：同一物料下多个均质材料，同一均质材料下多个元素。空白物料行表示延续上一物料</small>
+          <div class="text-secondary">
+            <i class="fas fa-info-circle me-1"></i> 下载 <a href="/material?action=import_template" target="_blank">导入模板</a>，填写后上传
+            <div class="mt-1"><small class="text-muted">模板表头：物料编号、物料名称、供应商编号/名称、MPN、单位重量(g)、单位。仅需填写物料基础信息，成分与均质材料请通过物料编辑页添加。供应商支持填编号或名称（如"001 / 艾迈斯"）。</small></div>
+          </div>
         </div>
         <div class="mb-3">
           <label>上传Excel文件</label>
@@ -168,19 +149,30 @@ function toggleAll(el) {
   updateSelectedCount();
 }
 
-document.querySelectorAll('.mat-check').forEach(function(cb) {
-  cb.addEventListener('change', function() {
+document.addEventListener('change', function(e) {
+  if (!e.target || e.target.id === 'checkAll') return;
+  if (e.target.classList && e.target.classList.contains('mat-check')) {
     var all = document.querySelectorAll('.mat-check');
     var checked = document.querySelectorAll('.mat-check:checked');
-    document.getElementById('checkAll').checked = all.length === checked.length;
+    var checkAll = document.getElementById('checkAll');
+    if (checkAll) checkAll.checked = all.length > 0 && all.length === checked.length;
     updateSelectedCount();
-  });
+  }
 });
+
+var _matBody = document.querySelector('table[data-server="1"] tbody');
+if (_matBody) {
+  new MutationObserver(function() {
+    if (!document.querySelectorAll('.mat-check:checked').length) updateSelectedCount();
+  }).observe(_matBody, { childList: true, subtree: true });
+}
 
 function updateSelectedCount() {
   var n = document.querySelectorAll('.mat-check:checked').length;
   var el = document.getElementById('selectedCount');
   if (el) el.textContent = n > 0 ? '已选择 ' + n + ' 项' : '';
+  var btn = document.getElementById('batchSubmitBtn');
+  if (btn) btn.disabled = n === 0;
 }
 
 function batchSubmitAudit() {

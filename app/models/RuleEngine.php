@@ -73,7 +73,11 @@ class RuleEngine {
     private function checkDocument($item, $type, $docCode) {
         $id = $item['id'];
         if ($type === 'hm') {
-            return (bool)$this->db->single("SELECT COUNT(*) FROM hm_report hr JOIN document_category dc ON 1=1 WHERE hr.hm_id=? AND dc.code=? LIMIT 1", [$id, $docCode]);
+            $rt = strtoupper(trim((string)$docCode));
+            if (in_array($rt, ['ROHS','REACH','HF','MSDS'], true)) {
+                return (bool)$this->db->single("SELECT COUNT(*) FROM hm_report WHERE hm_id=? AND report_type=? AND status='current'", [$id, $rt === 'ROHS' ? 'RoHS' : $rt]);
+            }
+            return (bool)$this->db->single("SELECT COUNT(*) FROM hm_report WHERE hm_id=? AND status='current'", [$id]);
         } else {
             return (bool)$this->db->single("SELECT COUNT(*) FROM test_report tr WHERE tr.material_id=?", [$id]);
         }

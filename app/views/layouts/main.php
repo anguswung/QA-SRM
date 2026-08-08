@@ -20,7 +20,7 @@ $logoPath ??= '/assets/images/logo.png';
 <link href="/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
 <link href="/assets/vendor/datatables/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="/assets/vendor/toastr/toastr.min.css" rel="stylesheet">
-<link href="/assets/css/app.css?v=38" rel="stylesheet">
+<link href="/assets/css/app.css?v=48" rel="stylesheet">
 <link href="/assets/css/icomoon.css" rel="stylesheet">
   <link href="/assets/vendor/quill/quill.snow.css" rel="stylesheet">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">

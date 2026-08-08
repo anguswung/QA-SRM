@@ -1,8 +1,8 @@
 <div class="page-header">
   <h4><i class="fas fa-gavel"></i> <?=h($item['name'])?> <small class="text-muted">[<?=h($item['regulation_no'])?>]</small></h4>
   <div>
-    <a href="/regulation?action=edit&id=<?=$item['id']?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> 编辑</a>
-    <a href="/regulation" class="btn btn-sm btn-outline-secondary"><i class="fas fa-list"></i> 返回列表</a>
+    <?php if (can('regulation.edit')): ?><a href="/regulation?action=edit&id=<?=$item['id']?>" class="btn btn-primary"><i class="fas fa-edit"></i> 编辑</a><?php endif; ?>
+    <a href="/regulation" class="btn btn-success"><i class="fas fa-list"></i> 返回列表</a>
   </div>
 </div>
 <div class="row">

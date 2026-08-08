@@ -1,8 +1,8 @@
 <div class="page-header">
   <h4><i class="fas fa-truck"></i> <?=h($item['name'])?> <small class="text-muted">[<?=h($item['code'])?>]</small></h4>
   <div>
-    <?php if (can('supplier.edit') || (isSupplier() && userSupplierId() === (int)$item['id'])): ?><a href="/supplier?action=edit&id=<?=$item['id']?>" class="btn-icon btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a><?php endif; ?>
-    <a href="/supplier" class="btn btn-sm btn-outline-secondary">返回</a>
+    <?php if (can('supplier.edit') || (isSupplier() && userSupplierId() === (int)$item['id'])): ?><a href="/supplier?action=edit&id=<?=$item['id']?>" class="btn btn-primary"><i class="fas fa-edit"></i> 编辑</a><?php endif; ?>
+    <a href="/supplier" class="btn btn-success">返回</a>
   </div>
 </div>
 <div class="row">
@@ -20,6 +20,30 @@
           <tr><td class="row-num"><?=++$__rnum?></td><td>地址</td><td><small><?=h($item['address'] ?: '-')?></small></td></tr>
           <tr><td class="row-num"><?=++$__rnum?></td><td>等级</td><td><?=statusBadge($item['level'] . '_')?></td></tr>
           <tr><td class="row-num"><?=++$__rnum?></td><td>状态</td><td><?=$item['blacklist'] ? '<span class="status-tag danger">黑名单</span>' : '<span class="status-tag success">正常</span>'?></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header">关联用户账号</div>
+      <div class="card-body p-0">
+        <table class="table table-sm">
+          <thead><tr><th style="width:40px" class="col-id">ID</th><th>账号</th><th>姓名</th><th>角色</th><th>状态</th></tr></thead>
+          <tbody>
+            <?php if (empty($linkedUsers)): ?>
+            <tr><td colspan="5" class="text-muted py-3">无关联账号</td></tr>
+            <?php else: ?>
+            <?php foreach ($linkedUsers as $lu): ?>
+            <tr>
+              <td class="col-id"><?=h($lu['id'])?></td>
+              <td><?=h($lu['username'])?></td>
+              <td><?=h($lu['realname'] ?: '-')?></td>
+              <td><?=h($lu['role'])?></td>
+              <td><span class="status-tag <?=$lu['status'] === 'active' ? 'success' : 'secondary'?>"><?=$lu['status'] === 'active' ? '启用' : '禁用'?></span></td>
+            </tr>
+            <?php endforeach; ?>
+            <?php endif; ?>
+          </tbody>
         </table>
       </div>
     </div>
@@ -96,8 +120,8 @@
         <input type="hidden" name="action" value="rating_create">
         <input type="hidden" name="supplier_id" value="<?=$item['id']?>">
         <div class="mb-3"><label>评价日期</label><input type="date" name="rating_date" class="form-control" value="<?=date('Y-m-d')?>"></div>
-        <div class="card-header" style="padding:10px 16px 0;border-bottom:3px solid var(--primary-dark);background:transparent;border-radius:0">
-          <ul class="nav nav-tabs card-header-tabs">
+        <div class="card-header" style="padding:10px 0 0;background:transparent;border-radius:0">
+          <ul class="nav nav-tabs card-header-tabs" id="supplierRatingTabs">
             <?php $dims = ['资料完整性', '合规率', '响应速度', '综合']; ?>
             <?php foreach ($dims as $i => $dim): ?>
             <li class="nav-item"><a class="nav-link <?=$i === 0 ? 'active' : ''?>" data-bs-toggle="tab" href="#tab<?=$i?>"><?=$dim?></a></li>

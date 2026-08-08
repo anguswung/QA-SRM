@@ -39,13 +39,6 @@
               <label class="form-check-label" for="isControlled">受控物质</label>
             </div>
           </div>
-          <div class="mb-3"><label>可能用途</label>
-            <select name="maybe_use_ids[]" class="form-control" multiple>
-              <?php foreach ($uses as $u): ?>
-              <option value="<?=$u['id']?>" <?=in_array($u['id'], $selectedIds ?? []) ? 'selected' : ''?>><?=h($u['name'])?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
           <button type="submit" class="btn btn-primary">保存</button>
           <a href="/substance" class="btn btn-secondary">取消</a>
         </form>

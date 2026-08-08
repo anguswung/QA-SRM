@@ -18,20 +18,10 @@
 </div>
 <div class="card">
   <div class="card-body p-0">
-    <table class="table table-hover datatable">
+    <table class="table table-hover mb-0" data-server="1" data-url="/query/history?action=data">
       <thead><tr><th style="width:40px" class="col-id">ID</th><th style="width:14%">时间</th><th style="width:20%">操作人</th><th style="width:8%">操作</th><th style="width:10%">模块</th><th>详情</th><th style="width:12%">IP</th></tr></thead>
       <tbody>
-<?php $__rnum = 0; ?>
-        <?php foreach ($logs as $l): ?>
-        <tr>
-          <td class="col-id"><?=h($l['id'] ?? '')?></td><td><small><?=h($l['created_at'])?></small></td>
-          <td><?=h($l['realname'] ?? $l['user_id'])?></td>
-          <td><span class="badge badge-soft-info"><?=h($l['action'])?></span></td>
-          <td><?=h($l['module'])?></td>
-          <td><small><?=h($l['detail'])?></small></td>
-          <td><small><?=h($l['ip_address'])?></small></td>
-        </tr>
-        <?php endforeach; ?>
+        <tr><td colspan="8" class="text-center text-muted py-4">加载中...</td></tr>
       </tbody>
     </table>
   </div>
